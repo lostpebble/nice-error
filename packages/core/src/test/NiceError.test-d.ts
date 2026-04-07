@@ -34,11 +34,13 @@ test("[NiceErrorDefined] fromId returns correctly typed NiceError", () => {
 
   // fromId without context
   const err1 = err_test.fromId("no_context_id");
-  expectTypeOf(err1).toMatchTypeOf<NiceError>();
+  assertType<InstanceType<typeof NiceError>>(err1);
+  expectTypeOf(err1.id).toEqualTypeOf<"no_context_id">();
 
   // fromId with context
   const err2 = err_test.fromId("with_context_id", { userId: "abc" });
-  expectTypeOf(err2).toMatchTypeOf<NiceError>();
+  assertType<InstanceType<typeof NiceError>>(err2);
+  expectTypeOf(err2.id).toEqualTypeOf<"with_context_id">();
 });
 
 test("[NiceError] hasId narrows ACTIVE_IDS", () => {
