@@ -1,4 +1,5 @@
 import { defineNiceError } from "../NiceErrorDefined/defineNiceError";
+import { logger_NiceError_testing } from "../utils/logger";
 
 export const err_example_app = defineNiceError({
   domain: "err_example_app",
@@ -33,7 +34,10 @@ function throwUserAuthError() {
     username: "test_user",
   });
 
-  if (testAuthError.hasId()) {
+  if (testAuthError.hasId(EErrId_UserAuth.invalid_credentials)) {
+    // Do something with the context or the error
+    const { username } = testAuthError.getContext(EErrId_UserAuth.invalid_credentials);
+    logger_NiceError_testing.debug("Error context (username):", username);
   }
 
   throw testAuthError;
