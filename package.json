@@ -17,11 +17,13 @@
   ],
   "scripts": {
     "format": "biome check --write .",
-    "type-check-all": "bun run --filter '*' type-check"
+    "type-check-all": "bun run --filter '*' type-check",
+    "vitest-all": "bun run --filter '*' vitest"
   },
   "devDependencies": {
-    "@types/bun": "latest",
     "@biomejs/biome": "^2.4.10",
-    "typescript": "^6.0.2"
+    "@types/bun": "latest",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.3"
   }
 }
