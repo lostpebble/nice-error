@@ -29,5 +29,12 @@ export const err_user_auth = err_example_app.createChildDomain({
 } as const);
 
 function throwUserAuthError() {
-  throw err_user_auth.fromId(EErrId_UserAuth.invalid_credentials, { username: "test_user" });
+  const testAuthError = err_user_auth.fromId(EErrId_UserAuth.invalid_credentials, {
+    username: "test_user",
+  });
+
+  if (testAuthError.hasId()) {
+  }
+
+  throw testAuthError;
 }

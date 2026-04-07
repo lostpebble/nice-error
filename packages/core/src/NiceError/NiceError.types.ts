@@ -40,6 +40,11 @@ export type TContextDataFromMeta<E extends string, META extends TNiceErrorContex
   [K in E]: ExtractContextType<NonNullable<META[(`${K}` | K) & keyof META]>>;
 };
 
+export interface IDefineNewNiceErrorDomainOptions<ERR_DOMAIN extends string = string> {
+  domain: ERR_DOMAIN;
+  schema: object; // TODO: implement this
+}
+
 export interface INiceErrorDefinedProps<ERR_DOMAINS extends string[] = string[]> {
   domain: ERR_DOMAINS[number];
   allDomains: ERR_DOMAINS;

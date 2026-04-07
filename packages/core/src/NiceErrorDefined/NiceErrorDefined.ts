@@ -1,6 +1,8 @@
 import { NiceError } from "../NiceError/NiceError";
-import type { INiceErrorDefinedProps } from "../NiceError/NiceError.types";
-import type { IDefineNewNiceErrorDomainOptions } from "./defineNiceError.types";
+import type {
+  IDefineNewNiceErrorDomainOptions,
+  INiceErrorDefinedProps,
+} from "../NiceError/NiceError.types";
 
 export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   domain: ERR_DEF["domain"];

@@ -1,4 +1,4 @@
-import type { IDefineNewNiceErrorDomainOptions } from "./defineNiceError.types";
+import type { IDefineNewNiceErrorDomainOptions } from "../NiceError/NiceError.types";
 import { NiceErrorDefined } from "./NiceErrorDefined";
 
 export const defineNiceError = <ERR_DEF extends IDefineNewNiceErrorDomainOptions>(
