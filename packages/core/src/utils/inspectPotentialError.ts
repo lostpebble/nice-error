@@ -1,5 +1,8 @@
-import { message } from "valibot";
+import { NiceError } from "../NiceError/NiceError";
+import type { IRegularErrorJsonObject } from "../NiceError/NiceError.types";
 import { EInspectErrorResultType, type TInspectErrorResult } from "./inspectPotentialError.types";
+import { isNiceErrorObject } from "./isNiceErrorObject";
+import { isRegularErrorJsonObject } from "./isRegularErrorObject";
 import { logger_NiceError } from "./logger";
 
 export const inspectPotentialError = (potentialError: unknown): TInspectErrorResult => {
@@ -26,7 +29,7 @@ export const inspectPotentialError = (potentialError: unknown): TInspectErrorRes
     };
   }
 
-  let parsedError = potentialError;
+  let parsedError: unknown = potentialError;
 
   if (typeof potentialError === "string") {
     if (potentialError.includes("{") && potentialError.includes("name")) {
@@ -40,10 +43,16 @@ export const inspectPotentialError = (potentialError: unknown): TInspectErrorRes
           jsDataValue: potentialError,
         };
       }
+    } else {
+      return {
+        type: EInspectErrorResultType.jsDataType,
+        jsDataType: "string",
+        jsDataValue: potentialError,
+      };
     }
   }
 
-  if (typeof parsedError !== "object") {
+  if (typeof parsedError !== "object" || parsedError === null) {
     logger_NiceError.warn({
       message:
         "Received a potential error that is a primitive data type other than string, number, or boolean. This is unexpected and may indicate an issue with error handling in the code.",
@@ -55,4 +64,38 @@ export const inspectPotentialError = (potentialError: unknown): TInspectErrorRes
       type: EInspectErrorResultType.jsOther,
     };
   }
+
+  if (parsedError instanceof NiceError) {
+    return {
+      type: EInspectErrorResultType.niceError,
+      niceError: parsedError,
+    };
+  }
+
+  if (isNiceErrorObject(parsedError)) {
+    return {
+      type: EInspectErrorResultType.niceErrorObject,
+      niceErrorObject: parsedError,
+    };
+  }
+
+  if (parsedError instanceof Error) {
+    return {
+      type: EInspectErrorResultType.jsError,
+      jsError: parsedError,
+    };
+  }
+
+  if (isRegularErrorJsonObject(parsedError)) {
+    return {
+      type: EInspectErrorResultType.jsErrorObject,
+      jsErrorObject: parsedError as IRegularErrorJsonObject,
+    };
+  }
+
+  return {
+    type: EInspectErrorResultType.jsDataType,
+    jsDataType: "object",
+    jsDataValue: parsedError,
+  };
 };

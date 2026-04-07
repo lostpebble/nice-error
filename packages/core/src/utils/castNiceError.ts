@@ -1,7 +1,15 @@
 import { NiceError } from "../NiceError/NiceError";
+import { inspectPotentialError } from "./inspectPotentialError";
+import { EInspectErrorResultType } from "./inspectPotentialError.types";
 import { isNiceErrorObject } from "./isNiceErrorObject";
 
 export const castNiceError = (error: unknown): NiceError => {
+  const inspected = inspectPotentialError(error);
+
+  if (inspected.type === EInspectErrorResultType.nullish) {
+    return new NiceError();
+  }
+
   let err: NiceError;
 
   if (error == null) {
@@ -27,6 +35,5 @@ export const castNiceError = (error: unknown): NiceError => {
         ? JSON.stringify(error)
         : String(error),
   );
-  err.cause = error;
   return err;
 };
