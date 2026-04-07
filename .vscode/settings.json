@@ -1,0 +1,8 @@
+{
+  "chat.tools.terminal.autoApprove": {
+    "npx tsc": true,
+    "npm run -w packages/core": true,
+    "node_modules/.bin/tsc": true,
+    "&": true
+  }
+}
