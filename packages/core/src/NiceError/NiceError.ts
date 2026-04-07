@@ -3,79 +3,166 @@ import type {
   INiceErrorDefinedProps,
   INiceErrorJsonObject,
   IRegularErrorJsonObject,
+  TContextMap,
   TNiceErrorSchema,
+  TUnknownNiceErrorDef,
+  TUnknownNiceErrorId,
 } from "./NiceError.types";
 
 // ---------------------------------------------------------------------------
-// Helper: given a schema S and an id K, extract the context type
+// Internal helpers
 // ---------------------------------------------------------------------------
+
 type ContextOf<S extends TNiceErrorSchema, K extends keyof S> = ExtractContextType<S[K]>;
+
+/** The default "unknown" def used when NiceError is constructed without a definition. */
+const UNKNOWN_DEF: TUnknownNiceErrorDef = {
+  domain: "unknown",
+  allDomains: ["unknown"],
+  schema: {},
+};
+
+// ---------------------------------------------------------------------------
+// Constructor options overloads
+// ---------------------------------------------------------------------------
+
+/** Full-featured construction from NiceErrorDefined.fromId / fromContext. */
+export interface INiceErrorOptions<
+  ERR_DEF extends INiceErrorDefinedProps,
+  ID extends keyof ERR_DEF["schema"],
+> {
+  def: ERR_DEF;
+  /** Primary id — also the first entry in ids. */
+  id: ID;
+  /** All active ids with their context values (supports multi-id). */
+  contexts: TContextMap<ERR_DEF["schema"]>;
+  message: string;
+  wasntNice?: boolean;
+  httpStatusCode?: number;
+  originError?: Error;
+}
 
 // ---------------------------------------------------------------------------
 // NiceError
 // ---------------------------------------------------------------------------
 
 export class NiceError<
-  ERR_DEF extends INiceErrorDefinedProps = INiceErrorDefinedProps,
-  /** Tracks which error-id this instance was created from (narrows after hasId). */
-  CURRENT_ID extends keyof ERR_DEF["schema"] = keyof ERR_DEF["schema"],
+  ERR_DEF extends INiceErrorDefinedProps = TUnknownNiceErrorDef,
+  /**
+   * Union of active error-id keys.
+   * - After `fromId(id)`: exactly one key.
+   * - After `fromContext({...})`: a union of all supplied keys.
+   * - After `hasOneOfIds([a,b])`: narrows to that subset.
+   * - Default (bare construction / castNiceError): `TUnknownNiceErrorId`.
+   */
+  ACTIVE_IDS extends keyof ERR_DEF["schema"] = TUnknownNiceErrorId,
 > extends Error {
   override readonly name = "NiceError" as const;
 
   readonly def: ERR_DEF;
-  readonly id: CURRENT_ID;
+  /** Primary / first id. */
+  readonly id: ACTIVE_IDS;
   readonly wasntNice: boolean;
   readonly httpStatusCode: number;
   readonly originError?: Error;
 
-  /**
-   * Raw context storage. Typed as `unknown` here; strongly-typed access is
-   * provided through `getContext(id)`.
-   */
-  private readonly _context: unknown;
+  /** Internal: all active id → context pairs. */
+  private readonly _contexts: TContextMap<ERR_DEF["schema"]>;
 
-  constructor(options: {
-    def: ERR_DEF;
-    id: CURRENT_ID;
-    message: string;
-    wasntNice?: boolean;
-    httpStatusCode?: number;
-    context?: unknown;
-    originError?: Error;
-  }) {
-    super(options.message);
-    this.def = options.def;
-    this.id = options.id;
-    this.wasntNice = options.wasntNice ?? false;
-    this.httpStatusCode = options.httpStatusCode ?? 500;
-    this._context = options.context;
-    this.originError = options.originError;
+  // -------------------------------------------------------------------------
+  // Constructors
+  // -------------------------------------------------------------------------
+
+  /** Bare construction: `new NiceError()` or `new NiceError("message")` */
+  constructor(message?: string);
+  /** Full construction via NiceErrorDefined helpers. */
+  constructor(options: INiceErrorOptions<ERR_DEF, ACTIVE_IDS>);
+  constructor(
+    messageOrOptions?: string | INiceErrorOptions<ERR_DEF, ACTIVE_IDS>,
+  ) {
+    if (messageOrOptions === undefined || typeof messageOrOptions === "string") {
+      super(messageOrOptions ?? "NiceError");
+      this.def = UNKNOWN_DEF as unknown as ERR_DEF;
+      this.id = "unknown" as unknown as ACTIVE_IDS;
+      this._contexts = {} as TContextMap<ERR_DEF["schema"]>;
+      this.wasntNice = false;
+      this.httpStatusCode = 500;
+    } else {
+      const opts = messageOrOptions;
+      super(opts.message);
+      this.def = opts.def;
+      this.id = opts.id;
+      this._contexts = opts.contexts;
+      this.wasntNice = opts.wasntNice ?? false;
+      this.httpStatusCode = opts.httpStatusCode ?? 500;
+      this.originError = opts.originError;
+    }
   }
 
   // -------------------------------------------------------------------------
-  // hasId — narrows this instance to a NiceError with CURRENT_ID = ID
+  // hasId — narrows ACTIVE_IDS to exactly ID
   // -------------------------------------------------------------------------
 
+  /**
+   * Type guard: returns `true` if this error was created with (or contains) the
+   * given `id`. After the guard, `getContext(id)` will be strongly typed.
+   */
   hasId<ID extends keyof ERR_DEF["schema"]>(
     id: ID,
   ): this is NiceError<ERR_DEF, ID> {
-    return (this.id as string) === (id as string);
+    return id in this._contexts;
   }
 
   // -------------------------------------------------------------------------
-  // getContext — returns the strongly-typed context for a given id
+  // hasOneOfIds — narrows ACTIVE_IDS to the supplied subset
   // -------------------------------------------------------------------------
 
   /**
-   * Returns the context value for this error.
-   * Calling `hasId(id)` before this call narrows the return type automatically
-   * via the `CURRENT_ID` type parameter, so you usually just call
-   * `getContext(id)` after the `hasId` guard.
+   * Returns `true` if this error contains **at least one** of the supplied ids.
+   * Narrows `ACTIVE_IDS` to the matching subset of `IDS`.
    */
-  getContext<ID extends CURRENT_ID>(
-    _id: ID,
+  hasOneOfIds<IDS extends ReadonlyArray<keyof ERR_DEF["schema"]>>(
+    ids: IDS,
+  ): this is NiceError<ERR_DEF, IDS[number]> {
+    return ids.some((id) => id in this._contexts);
+  }
+
+  // -------------------------------------------------------------------------
+  // get hasMultiple
+  // -------------------------------------------------------------------------
+
+  /** `true` when this error was created with more than one id (via `fromContext`). */
+  get hasMultiple(): boolean {
+    return Object.keys(this._contexts).length > 1;
+  }
+
+  // -------------------------------------------------------------------------
+  // getIds
+  // -------------------------------------------------------------------------
+
+  /** Returns all active error ids on this instance. */
+  getIds(): Array<ACTIVE_IDS> {
+    return Object.keys(this._contexts) as Array<ACTIVE_IDS>;
+  }
+
+  // -------------------------------------------------------------------------
+  // getContext — strongly typed per ACTIVE_IDS
+  // -------------------------------------------------------------------------
+
+  /**
+   * Returns the context value for the given error id.
+   *
+   * TypeScript will only allow you to call this with an id that is part of
+   * `ACTIVE_IDS` (i.e. an id that was confirmed via `hasId` / `hasOneOfIds`,
+   * or that was passed to `fromId` / `fromContext`).
+   */
+  getContext<ID extends ACTIVE_IDS>(
+    id: ID,
   ): ContextOf<ERR_DEF["schema"], ID> {
-    return this._context as ContextOf<ERR_DEF["schema"], ID>;
+    return (this._contexts as Record<string, unknown>)[id as string] as ContextOf<
+      ERR_DEF["schema"],
+      ID
+    >;
   }
 
   // -------------------------------------------------------------------------

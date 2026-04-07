@@ -41,6 +41,7 @@ describe("inspectPotentialError", () => {
       def: {
         domain: "TEST_DOMAIN",
         allDomains: ["TEST_DOMAIN"],
+        schema: {},
       },
     };
 
@@ -61,6 +62,7 @@ describe("inspectPotentialError", () => {
       def: {
         domain: "TEST_DOMAIN",
         allDomains: ["TEST_DOMAIN"],
+        schema: {},
       },
     };
 

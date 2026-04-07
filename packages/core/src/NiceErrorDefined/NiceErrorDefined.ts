@@ -1,15 +1,17 @@
 import { NiceError } from "../NiceError/NiceError";
+import type { INiceErrorOptions } from "../NiceError/NiceError";
 import type {
-  ExtractContextType,
   ExtractFromIdContextArg,
   IDefineNewNiceErrorDomainOptions,
   INiceErrorDefinedProps,
-  TNiceErrorSchema,
+  TContextMap,
+  TFromContextInput,
 } from "../NiceError/NiceError.types";
 
 // ---------------------------------------------------------------------------
-// Helper: build the merged def type for a child domain
+// Internal type helpers
 // ---------------------------------------------------------------------------
+
 type ChildDef<
   PARENT_DEF extends INiceErrorDefinedProps,
   SUB extends IDefineNewNiceErrorDomainOptions,
@@ -19,13 +21,10 @@ type ChildDef<
   schema: SUB["schema"];
 };
 
-// ---------------------------------------------------------------------------
-// Helper: determine whether context arg is required or optional
-// ---------------------------------------------------------------------------
 /**
- * If the context arg for id K is `undefined` (i.e. no context defined),
- * we want `fromId(id)` to be callable with one argument.
- * Otherwise it requires the second argument.
+ * Resolves the args tuple for `fromId`:
+ * - No context defined on the entry → `[id]`
+ * - Context defined → `[id, context]`
  */
 type FromIdArgs<
   ERR_DEF extends INiceErrorDefinedProps,
@@ -35,6 +34,12 @@ type FromIdArgs<
     ? [id: K]
     : [id: K, context: ExtractFromIdContextArg<ERR_DEF["schema"][K]>];
 
+/**
+ * Extracts the union of keys present in a `TFromContextInput` object.
+ * e.g. `{ invalid_credentials: {...} }` → `"invalid_credentials"`
+ */
+type KeysOfContextInput<INPUT> = keyof INPUT & string;
+
 // ---------------------------------------------------------------------------
 // NiceErrorDefined
 // ---------------------------------------------------------------------------
@@ -42,7 +47,7 @@ type FromIdArgs<
 export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   readonly domain: ERR_DEF["domain"];
   readonly allDomains: ERR_DEF["allDomains"];
-  /** Kept for runtime use (message resolution, httpStatusCode, etc.) */
+  /** Kept for runtime use (message resolution, httpStatusCode, etc.). */
   private readonly _schema: ERR_DEF["schema"];
 
   constructor(definition: ERR_DEF) {
@@ -55,6 +60,10 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   // createChildDomain
   // -------------------------------------------------------------------------
 
+  /**
+   * Creates a child domain that inherits this domain in `allDomains`.
+   * The child has its own schema and its own domain string.
+   */
   createChildDomain<SUB extends IDefineNewNiceErrorDomainOptions>(
     subErrorDef: SUB,
   ): NiceErrorDefined<ChildDef<ERR_DEF, SUB>> {
@@ -69,47 +78,151 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   }
 
   // -------------------------------------------------------------------------
-  // fromId
+  // fromId — single-id construction
   // -------------------------------------------------------------------------
 
   /**
-   * Creates a NiceError instance for the given error id.
+   * Creates a `NiceError` for a single error id.
    *
-   * - `id` is constrained to keys of the schema — full autocomplete.
-   * - `context` is typed per-id: required, optional, or absent based on the
-   *   schema entry’s `context.required` flag.
-   * - The returned NiceError carries both `ERR_DEF` and the specific `ID`,
-   *   enabling `getContext(id)` to return the exact context type.
+   * - `id` autocompletes to the schema keys.
+   * - The second argument `context` is required / optional / absent based on
+   *   whether the schema entry declares `context.required`.
+   * - The returned error has `ACTIVE_IDS` narrowed to exactly `K`, so
+   *   `getContext(id)` is immediately strongly typed.
    */
   fromId<K extends keyof ERR_DEF["schema"] & string>(
     ...args: FromIdArgs<ERR_DEF, K>
   ): NiceError<ERR_DEF, K> {
     const [id, context] = args as [K, unknown];
-    const entry = this._schema[id] as ERR_DEF["schema"][K];
+    const entry = this._schema[id];
 
-    // Resolve message
-    let message: string;
-    if (typeof entry?.message === "function") {
-      message = (entry.message as (ctx: unknown) => string)(context);
-    } else if (typeof entry?.message === "string") {
-      message = entry.message;
-    } else {
-      message = id;
-    }
+    const message = this._resolveMessage(entry, context);
+    const httpStatusCode = this._resolveHttpStatusCode(entry);
 
-    const httpStatusCode: number =
-      typeof entry?.httpStatusCode === "number" ? entry.httpStatusCode : 500;
+    const contexts = { [id]: context } as TContextMap<ERR_DEF["schema"]>;
 
     return new NiceError<ERR_DEF, K>({
-      def: {
-        domain: this.domain,
-        allDomains: this.allDomains,
-        schema: this._schema,
-      } as unknown as ERR_DEF,
+      def: this._buildDef(),
       id,
+      contexts,
       message,
       httpStatusCode,
-      context,
-    });
+    } as INiceErrorOptions<ERR_DEF, K>);
+  }
+
+  // -------------------------------------------------------------------------
+  // fromContext — multi-id construction
+  // -------------------------------------------------------------------------
+
+  /**
+   * Creates a `NiceError` carrying **multiple** error ids at once, each with
+   * its own strongly-typed context value.
+   *
+   * ```ts
+   * const err = err_user_auth.fromContext({
+   *   invalid_credentials: { username: "alice" },
+   *   account_locked: undefined,
+   * });
+   *
+   * err.hasMultiple; // true
+   * err.getIds();    // ["invalid_credentials", "account_locked"]
+   *
+   * if (err.hasId(EErrId_UserAuth.invalid_credentials)) {
+   *   const { username } = err.getContext(EErrId_UserAuth.invalid_credentials);
+   * }
+   * ```
+   *
+   * The `ACTIVE_IDS` type parameter of the returned error is a union of all
+   * supplied keys, so every subsequent `getContext` call is strongly typed.
+   */
+  fromContext<INPUT extends TFromContextInput<ERR_DEF["schema"]>>(
+    context: INPUT,
+  ): NiceError<ERR_DEF, KeysOfContextInput<INPUT>> {
+    const ids = Object.keys(context) as Array<KeysOfContextInput<INPUT>>;
+    if (ids.length === 0) {
+      throw new Error(
+        "[NiceErrorDefined.fromContext] context object must contain at least one error id.",
+      );
+    }
+
+    const primaryId = ids[0] as KeysOfContextInput<INPUT>;
+    const primaryEntry = this._schema[primaryId as string];
+    const primaryContext = context[primaryId];
+
+    const message = this._resolveMessage(primaryEntry, primaryContext);
+    const httpStatusCode = this._resolveHttpStatusCode(primaryEntry);
+
+    return new NiceError<ERR_DEF, KeysOfContextInput<INPUT>>({
+      def: this._buildDef(),
+      id: primaryId,
+      contexts: context as unknown as TContextMap<ERR_DEF["schema"]>,
+      message,
+      httpStatusCode,
+    } as INiceErrorOptions<ERR_DEF, KeysOfContextInput<INPUT>>);
+  }
+
+  // -------------------------------------------------------------------------
+  // is — type-narrowing guard for post-cast checks
+  // -------------------------------------------------------------------------
+
+  /**
+   * Returns `true` if `error` is a `NiceError` whose `def.domain` matches this
+   * definition's domain (or any ancestor domain in `allDomains`).
+   *
+   * Use this after `castNiceError` to narrow an unknown error to this specific
+   * domain before accessing its typed ids/context:
+   *
+   * ```ts
+   * const caught = castNiceError(e);
+   *
+   * if (err_user_auth.is(caught)) {
+   *   // caught is now NiceError<typeof err_user_auth's ERR_DEF>
+   *   if (caught.hasId(EErrId_UserAuth.invalid_credentials)) {
+   *     const { username } = caught.getContext(EErrId_UserAuth.invalid_credentials);
+   *   }
+   * }
+   * ```
+   */
+  is(error: unknown): error is NiceError<ERR_DEF> {
+    if (!(error instanceof NiceError)) return false;
+    const errDef = error.def as INiceErrorDefinedProps;
+    // Match if the error's primary domain or any of its ancestor domains equals
+    // this definition's domain.
+    return (
+      errDef.domain === this.domain ||
+      (Array.isArray(errDef.allDomains) &&
+        (errDef.allDomains as string[]).includes(this.domain))
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Private helpers
+  // -------------------------------------------------------------------------
+
+  private _buildDef(): ERR_DEF {
+    return {
+      domain: this.domain,
+      allDomains: this.allDomains,
+      schema: this._schema,
+    } as unknown as ERR_DEF;
+  }
+
+  private _resolveMessage(
+    entry: INiceErrorDefinedProps["schema"][string] | undefined,
+    context: unknown,
+  ): string {
+    if (typeof entry?.message === "function") {
+      return (entry.message as (ctx: unknown) => string)(context);
+    }
+    if (typeof entry?.message === "string") {
+      return entry.message;
+    }
+    return "NiceError";
+  }
+
+  private _resolveHttpStatusCode(
+    entry: INiceErrorDefinedProps["schema"][string] | undefined,
+  ): number {
+    return typeof entry?.httpStatusCode === "number" ? entry.httpStatusCode : 500;
   }
 }

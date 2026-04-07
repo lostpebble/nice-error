@@ -54,6 +54,26 @@ export type ExtractFromIdContextArg<M> =
       : undefined;
 
 // ---------------------------------------------------------------------------
+// Multi-context map type (used by fromContext / getContext after hasOneOfIds)
+// ---------------------------------------------------------------------------
+
+/**
+ * Maps each schema key to its context value type (or `undefined` if no context).
+ * Used as the runtime context store inside a multi-id NiceError.
+ */
+export type TContextMap<SCHEMA extends TNiceErrorSchema> = {
+  [K in keyof SCHEMA]?: ExtractContextType<SCHEMA[K]>;
+};
+
+/**
+ * The Partial record that `fromContext` accepts: callers supply one or more
+ * { [errorId]: contextValue } entries and NiceError stores them all.
+ */
+export type TFromContextInput<SCHEMA extends TNiceErrorSchema> = {
+  [K in keyof SCHEMA]?: ExtractContextType<SCHEMA[K]>;
+};
+
+// ---------------------------------------------------------------------------
 // Defined-error props (carried on NiceErrorDefined)
 // ---------------------------------------------------------------------------
 
@@ -75,7 +95,7 @@ export interface INiceErrorDefinedProps<
 }
 
 // ---------------------------------------------------------------------------
-// NiceError instance shape
+// NiceError instance shape (JSON-serialisable)
 // ---------------------------------------------------------------------------
 
 export interface INiceErrorJsonObject<
@@ -88,3 +108,13 @@ export interface INiceErrorJsonObject<
   httpStatusCode: number;
   originError?: IRegularErrorJsonObject;
 }
+
+// ---------------------------------------------------------------------------
+// "Unknown" / bare NiceError — used when no schema is available
+// ---------------------------------------------------------------------------
+
+/** The minimal ERR_DEF used when creating a NiceError without a definition. */
+export type TUnknownNiceErrorDef = INiceErrorDefinedProps<["unknown"], TNiceErrorSchema>;
+
+/** Sentinel id used for bare / cast NiceErrors that have no schema. */
+export type TUnknownNiceErrorId = "unknown";
