@@ -28,7 +28,7 @@ export const err_user_auth = err_example_app.createChildDomain({
       httpStatusCode: 403,
     },
   },
-} as const);
+});
 
 export enum EErrId_UserAuth_Registration {
   password_error = "password_error",

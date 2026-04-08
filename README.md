@@ -13,26 +13,26 @@ bun add @nice-error/core    # or npm / yarn / pnpm
 ### 1. Define an error domain
 
 ```ts
-import { defineNiceError } from "@nice-error/core";
+import { defineNiceError, err } from "@nice-error/core";
 
 const err_billing = defineNiceError({
   domain: "err_billing",
   schema: {
-    payment_failed: {
-      message: (ctx: { reason: string }) => `Payment failed: ${ctx.reason}`,
+    payment_failed: err<{ reason: string }>({
+      message: ({ reason }) => `Payment failed: ${reason}`,
       httpStatusCode: 402,
-      context: { required: true, type: {} as { reason: string } },
-    },
-    card_expired: {
+      context: { required: true },
+    }),
+    card_expired: err({
       message: "Card has expired",
       httpStatusCode: 402,
-    },
-    insufficient_funds: {
+    }),
+    insufficient_funds: err({
       message: "Insufficient funds",
       httpStatusCode: 402,
-    },
+    }),
   },
-} as const);
+});
 ```
 
 ### 2. Create errors
@@ -91,14 +91,14 @@ const err2 = err_billing
 Child domains inherit their parent's ancestry for `isParentOf` checks:
 
 ```ts
-const err_app = defineNiceError({ domain: "err_app", schema: {} } as const);
+const err_app = defineNiceError({ domain: "err_app", schema: {} });
 
 const err_auth = err_app.createChildDomain({
   domain: "err_auth",
   schema: {
-    unauthorized: { message: "Unauthorized", httpStatusCode: 401 },
+    unauthorized: err({ message: "Unauthorized", httpStatusCode: 401 }),
   },
-} as const);
+});
 
 err_app.isParentOf(err_auth);  // true
 
@@ -115,19 +115,19 @@ Errors serialize to plain JSON and can be safely reconstructed on the other side
 ### Server — throw and serialize
 
 ```ts
-import { defineNiceError } from "@nice-error/core";
+import { defineNiceError, err } from "@nice-error/core";
 
 const err_order = defineNiceError({
   domain: "err_order",
   schema: {
-    not_found:    { message: "Order not found",   httpStatusCode: 404 },
-    out_of_stock: {
-      message: (ctx: { sku: string }) => `Item ${ctx.sku} is out of stock`,
+    not_found:    err({ message: "Order not found", httpStatusCode: 404 }),
+    out_of_stock: err<{ sku: string }>({
+      message: ({ sku }) => `Item ${sku} is out of stock`,
       httpStatusCode: 409,
-      context: { required: true, type: {} as { sku: string } },
-    },
+      context: { required: true },
+    }),
   },
-} as const);
+});
 
 // In your API handler
 function handleOrder(sku: string) {
@@ -175,6 +175,7 @@ if (!res.ok) {
 | Export | Description |
 |---|---|
 | `defineNiceError(opts)` | Create a root error domain with a typed schema |
+| `err<C>(meta?)` | Define a schema entry; pass context type as generic (e.g. `err<{ reason: string }>({...})`) |
 | `NiceErrorDefined.createChildDomain(opts)` | Create a child domain that inherits ancestry |
 | `NiceErrorDefined.fromId(id, ctx?)` | Create an error for a single schema ID |
 | `NiceErrorDefined.fromContext(map)` | Create a multi-ID error |
