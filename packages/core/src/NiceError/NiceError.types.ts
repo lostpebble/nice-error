@@ -51,27 +51,112 @@ export type TExtractContextType<M> = M extends INiceErrorIdMetadata<infer C> ? C
  */
 export type ExtractFromIdContextArg<M> =
   M extends INiceErrorIdMetadata<infer C> ? (C extends never ? undefined : C) : undefined;
-// : M extends INiceErrorIdMetadata<infer C>
-//   ? C | undefined
-//   : undefined;
+
+// ---------------------------------------------------------------------------
+// Context state — discriminated union tracking the lifecycle of context data
+// ---------------------------------------------------------------------------
+
+/**
+ * No custom serializer is defined for this error id's context.
+ * `value` holds the typed context directly (plain JSON-safe value, or `undefined`
+ * if the context was optional and not provided).
+ *
+ * This state is safe across a JSON round-trip because no type information is lost.
+ */
+export type TContextStateNoSerialization<C> = {
+  kind: "no_serialization";
+  /** The typed context value (or `undefined` if optional and not provided). */
+  value: C | undefined;
+};
+
+/**
+ * A custom serializer is defined, but the context has **not** been deserialized
+ * from its JSON-wire form yet.
+ *
+ * This state occurs after `castNiceError` reconstructs an error from a serialized
+ * payload. `value` is absent — the raw serialized representation is in `serialized`.
+ *
+ * Call `niceErrorDefined.hydrate(error)` to reconstruct the typed context via
+ * `fromJsonSerializable` and advance to the `"hydrated"` state.
+ */
+export type TContextStateUnhydrated = {
+  kind: "unhydrated";
+  /** The JSON-serializable representation of the original context. */
+  serialized: Record<string, any>;
+};
+
+/**
+ * A custom serializer is defined, and the context is fully deserialized to its
+ * original typed value.
+ *
+ * This state is set when the error is first created via `fromId`/`fromContext`,
+ * or after `niceErrorDefined.hydrate(error)` reconstructs it.
+ *
+ * Note: `toJsonObject()` intentionally downgrades this to `"unhydrated"` on
+ * output so the flag cannot survive a JSON round-trip as a false positive.
+ */
+export type TContextStateHydrated<C> = {
+  kind: "hydrated";
+  /** The typed context value — the original value as provided at error creation. */
+  value: C;
+  /** The JSON-serializable representation (produced by `toJsonSerializable`). */
+  serialized: Record<string, any>;
+};
+
+/**
+ * Runtime context state — union of all three lifecycle states.
+ * Stored in `_errorDataMap` on a live `NiceError` instance.
+ */
+export type TContextState<C> =
+  | TContextStateNoSerialization<C>
+  | TContextStateUnhydrated
+  | TContextStateHydrated<C>;
+
+/**
+ * Wire-safe context state — excludes `"hydrated"` because `toJsonObject()` downgrades
+ * it to `"unhydrated"` before serialization. This is the only state that appears in
+ * `INiceErrorJsonObject` and on errors reconstructed via `castNiceError`.
+ */
+export type TSerializedContextState<C> =
+  | TContextStateNoSerialization<C>
+  | TContextStateUnhydrated;
 
 // ---------------------------------------------------------------------------
 // Multi-context map type (used by fromContext / getContext after hasOneOfIds)
 // ---------------------------------------------------------------------------
 
 /**
- * Maps each schema key to its context value type (or `undefined` if no context).
- * Used as the runtime context store inside a multi-id NiceError.
+ * Runtime reconciled data for a single error id, stored in `_errorDataMap`.
+ * Uses the full `TContextState` union (including `"hydrated"`).
  */
 export type TErrorReconciledData<SCHEMA extends TNiceErrorSchema, K extends keyof SCHEMA> = {
-  context?: TExtractContextType<SCHEMA[K]> | undefined;
+  contextState: TContextState<TExtractContextType<SCHEMA[K]>>;
   message: string;
   httpStatusCode: number;
-  serialized: Record<string, any> | undefined;
+};
+
+/**
+ * Wire-safe reconciled data — uses `TSerializedContextState` (no `"hydrated"`).
+ * This is the shape stored in `INiceErrorJsonObject.errorData` and transmitted
+ * over the wire. `"hydrated"` is excluded so that the serialization state can
+ * never be trusted after a JSON round-trip.
+ */
+export type TSerializedErrorReconciledData<
+  SCHEMA extends TNiceErrorSchema,
+  K extends keyof SCHEMA,
+> = {
+  contextState: TSerializedContextState<TExtractContextType<SCHEMA[K]>>;
+  message: string;
+  httpStatusCode: number;
 };
 
 export type TErrorDataForIdMap<SCHEMA extends TNiceErrorSchema> = {
   [K in keyof SCHEMA]?: TErrorReconciledData<SCHEMA, K>;
+};
+
+/** Wire-safe version of `TErrorDataForIdMap`. Used in `INiceErrorJsonObject`. */
+export type TSerializedErrorDataMap<SCHEMA extends TNiceErrorSchema> = {
+  [K in keyof SCHEMA]?: TSerializedErrorReconciledData<SCHEMA, K>;
 };
 
 /**
@@ -128,7 +213,8 @@ export interface INiceErrorJsonObject<
   name: "NiceError";
   def: Omit<ERR_DEF, "schema">;
   ids: ID[];
-  errorData: TErrorDataForIdMap<ERR_DEF["schema"]>;
+  /** Wire-safe error data — context is in `"no_serialization"` or `"unhydrated"` state only. */
+  errorData: TSerializedErrorDataMap<ERR_DEF["schema"]>;
   wasntNice: boolean;
   message: string;
   httpStatusCode: number;

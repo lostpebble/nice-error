@@ -3,6 +3,7 @@ import type {
   FromIdArgs,
   IDefineNewNiceErrorDomainOptions,
   INiceErrorDefinedProps,
+  TContextState,
   TErrorDataForIdMap,
   TErrorReconciledData,
   TFromContextInput,
@@ -11,8 +12,6 @@ import {
   type INiceErrorExtendableOptions,
   NiceErrorExtendable,
 } from "../NiceError/NiceErrorExtendable";
-
-// import { castNiceError } from "../utils/castNiceError";
 
 // ---------------------------------------------------------------------------
 // Internal type helpers
@@ -39,6 +38,28 @@ interface ILinkedNiceErrorDefined {
 }
 
 // ---------------------------------------------------------------------------
+// InferNiceError — utility type
+// ---------------------------------------------------------------------------
+
+/**
+ * Infers the strongly-typed `NiceError` class type from a `NiceErrorDefined` instance.
+ *
+ * The resulting type has `ACTIVE_IDS` set to the full union of all schema keys,
+ * meaning all error ids are accessible. Use `hasId` / `hasOneOfIds` to narrow further.
+ *
+ * @example
+ * ```ts
+ * const err_user_auth = defineNiceError({ domain: "err_user_auth", schema: { ... } });
+ * type TUserAuthError = InferNiceError<typeof err_user_auth>;
+ * // → NiceError<{ domain: "err_user_auth"; allDomains: ["err_user_auth"]; schema: { ... } }, keyof schema>
+ * ```
+ */
+export type InferNiceError<T extends NiceErrorDefined<any>> =
+  T extends NiceErrorDefined<infer ERR_DEF>
+    ? NiceError<ERR_DEF, keyof ERR_DEF["schema"]>
+    : never;
+
+// ---------------------------------------------------------------------------
 // NiceErrorDefined
 // ---------------------------------------------------------------------------
 
@@ -48,7 +69,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   readonly defaultHttpStatusCode?: number;
   readonly defaultMessage?: string;
 
-  /** Kept for runtime use (message resolution, httpStatusCode, etc.). */
+  /** Kept for runtime use (message resolution, httpStatusCode, context serialization, etc.). */
   private readonly _schema: ERR_DEF["schema"];
   private _definedChildNiceErrors: ILinkedNiceErrorDefined[] = [];
   private _definedParentNiceError?: ILinkedNiceErrorDefined;
@@ -126,39 +147,72 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // hydrate
+  // -------------------------------------------------------------------------
+
   /**
+   * Promotes a plain `NiceError<ERR_DEF>` back into a `NiceErrorExtendable` so
+   * that builder methods (`addId`, `addContext`, etc.) are available again.
    *
-   * @param potentialNiceError An unknown value that may or may not be a `NiceError` instance matching this domain.
-   * @returns A `NiceError` instance with this definition's `ERR_DEF` if the input was a match, otherwise `undefined`.
+   * For each active id, if the context is in the `"unhydrated"` state (i.e. the
+   * error was reconstructed from a JSON payload), `hydrate` calls
+   * `fromJsonSerializable` to reconstruct the typed value and advances the state
+   * to `"hydrated"`. Ids already in `"hydrated"` or `"no_serialization"` state
+   * are passed through unchanged.
+   *
+   * ```ts
+   * const raw = castNiceError(apiResponseBody);
+   *
+   * if (err_user_auth.is(raw)) {
+   *   const hydrated = err_user_auth.hydrate(raw);
+   *   // hydrated.getContext("invalid_credentials") — fully typed, no throw
+   *   // hydrated.addId / addContext — available again
+   * }
+   * ```
    */
-  // cast(potentialNiceError: unknown): NiceErrorExtendable<ERR_DEF, keyof ERR_DEF["schema"]> {
-  //   const error = castNiceError(potentialNiceError);
+  hydrate<ACTIVE_IDS extends keyof ERR_DEF["schema"]>(
+    error: NiceError<ERR_DEF, ACTIVE_IDS>,
+  ): NiceErrorExtendable<ERR_DEF, ACTIVE_IDS> {
+    const reconciledErrorData: TErrorDataForIdMap<ERR_DEF["schema"]> = {};
 
-  //   if (this.is(error)) {
-  //     return this.hydrate(error);
-  //   }
+    for (const id of error.getIds()) {
+      const existingData = error.getErrorDataForId(id);
+      if (existingData == null) continue;
 
-  //   throw new Error("[cast] The provided error does not match this NiceErrorDefined's domain.");
-  // }
+      let contextState: TContextState<any> = existingData.contextState;
 
-  hydrate<E extends NiceError<ERR_DEF>>(
-    error: E,
-  ): E extends NiceError<ERR_DEF, infer K> ? NiceErrorExtendable<ERR_DEF, K> : never {
-    const definition =
-      this.domain === error.def.domain
-        ? this
-        : this._definedChildNiceErrors.find((linked) => linked.domain === error.def.domain)
-            ?.definedError;
+      if (contextState.kind === "unhydrated") {
+        const entry = this._schema[id as keyof ERR_DEF["schema"]];
+        const deserialize = entry?.context?.serialization?.fromJsonSerializable;
 
-    if (definition == null) {
-      // throw err_nice.
+        if (deserialize != null) {
+          contextState = {
+            kind: "hydrated",
+            value: deserialize(contextState.serialized),
+            serialized: contextState.serialized,
+          };
+        }
+        // If no deserializer found (schema mismatch), leave as "unhydrated".
+      }
+
+      reconciledErrorData[id as keyof ERR_DEF["schema"]] = {
+        contextState,
+        message: existingData.message,
+        httpStatusCode: existingData.httpStatusCode,
+      };
     }
 
-    console.log("[hydrate] Hydrating error with domain:", this.domain, error);
-    throw new Error(
-      `[hydrate] Not implemented yet. This should take a NiceError that matches this domain and return a NiceErrorExtendable with the same ids/context, but typed to this ERR_DEF.`,
-    );
-    // return new NiceErrorExtendable<ERR_DEF, keyof ERR_DEF["schema"]>();
+    return new NiceErrorExtendable<ERR_DEF, ACTIVE_IDS>({
+      def: this._buildDef(),
+      niceErrorDefined: this,
+      ids: error.ids,
+      errorData: reconciledErrorData,
+      message: error.message,
+      httpStatusCode: error.httpStatusCode,
+      wasntNice: error.wasntNice,
+      originError: error.originError,
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -320,30 +374,25 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
       : (this.defaultHttpStatusCode ?? 500);
   }
 
-  private _serializeContextForId<ID extends keyof ERR_DEF["schema"]>(
-    id: ID,
-    context: TFromContextInput<ERR_DEF["schema"]>[ID],
-  ): Record<string, any> | undefined {
-    const entry = this._schema[id];
-    if (entry?.context?.serialization?.toJsonSerializable) {
-      return entry.context.serialization.toJsonSerializable(context as any);
-    }
-    return undefined;
-  }
-
   reconcileErrorDataForId(
     id: keyof ERR_DEF["schema"] & string,
     context: TFromContextInput<ERR_DEF["schema"]>[typeof id],
   ): TErrorReconciledData<ERR_DEF["schema"], typeof id> {
     const message = this._resolveMessage(id, context);
     const httpStatusCode = this._resolveHttpStatusCode(id, context);
-    const serialized = this._serializeContextForId(id, context);
+    const entry = this._schema[id];
 
-    return {
-      context,
-      message,
-      httpStatusCode,
-      serialized,
-    };
+    let contextState: TContextState<any>;
+
+    if (entry?.context?.serialization != null) {
+      // Schema defines a custom serializer — build the "hydrated" state.
+      const serialized = entry.context.serialization.toJsonSerializable(context as any);
+      contextState = { kind: "hydrated", value: context, serialized };
+    } else {
+      // No custom serializer — context is plain JSON-safe; use "no_serialization".
+      contextState = { kind: "no_serialization", value: context };
+    }
+
+    return { contextState, message, httpStatusCode };
   }
 }

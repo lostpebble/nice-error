@@ -8,6 +8,8 @@ import type {
   TErrorReconciledData,
   TExtractContextType,
   TNiceErrorSchema,
+  TSerializedContextState,
+  TSerializedErrorDataMap,
   TUnknownNiceErrorDef,
 } from "./NiceError.types";
 import type { NiceErrorExtendable } from "./NiceErrorExtendable";
@@ -30,7 +32,7 @@ export interface INiceErrorOptions<
   def: Omit<ERR_DEF, "schema">;
   /** Primary id is first entry in ids. */
   ids: ID[];
-  /** All active ids with their messages, http status codes, and context values (supports multi-id). */
+  /** All active ids with their messages, http status codes, and context state. */
   errorData: TErrorDataForIdMap<ERR_DEF["schema"]>;
   message: string;
   wasntNice?: boolean;
@@ -62,7 +64,7 @@ export class NiceError<
   readonly httpStatusCode: number;
   originError?: IRegularErrorJsonObject;
 
-  /** Internal: all active id → context pairs. */
+  /** Internal: all active id → reconciled data pairs. */
   protected readonly _errorDataMap: TErrorDataForIdMap<ERR_DEF["schema"]>;
 
   // -------------------------------------------------------------------------
@@ -132,15 +134,34 @@ export class NiceError<
   // -------------------------------------------------------------------------
 
   /**
-   * Returns the context value for the given error id.
+   * Returns the typed context value for the given error id.
    *
    * TypeScript will only allow you to call this with an id that is part of
    * `ACTIVE_IDS` (i.e. an id that was confirmed via `hasId` / `hasOneOfIds`,
    * or that was passed to `fromId` / `fromContext`).
+   *
+   * @throws If the context is in the `"unhydrated"` state (the error was
+   * reconstructed from a JSON payload and has a custom serializer). In that
+   * case, call `niceErrorDefined.hydrate(error)` first.
    */
   getContext<ID extends ACTIVE_IDS>(id: ID): ContextOf<ERR_DEF["schema"], ID> {
     const errorData = this._errorDataMap[id];
-    return errorData?.context as ContextOf<ERR_DEF["schema"], ID>;
+    const state = errorData?.contextState;
+
+    if (state == null) {
+      return undefined as ContextOf<ERR_DEF["schema"], ID>;
+    }
+
+    if (state.kind === "unhydrated") {
+      throw new Error(
+        `[NiceError.getContext] Context for id "${String(id)}" is in the "unhydrated" state. ` +
+          `The error was reconstructed from a serialized payload but has not been deserialized yet. ` +
+          `Call \`niceErrorDefined.hydrate(error)\` to reconstruct the typed context.`,
+      );
+    }
+
+    // "no_serialization" or "hydrated" — both carry `value`
+    return state.value as ContextOf<ERR_DEF["schema"], ID>;
   }
 
   getErrorDataForId<ID extends ACTIVE_IDS>(
@@ -182,11 +203,32 @@ export class NiceError<
       def["defaultMessage"] = this.def.defaultMessage;
     }
 
+    // Downgrade "hydrated" → "unhydrated" so the serialized form never carries a
+    // stale `"hydrated"` discriminant that would survive a JSON round-trip.
+    const errorData: TSerializedErrorDataMap<ERR_DEF["schema"]> = {};
+
+    for (const rawId of Object.keys(this._errorDataMap)) {
+      const id = rawId as keyof ERR_DEF["schema"];
+      const data = this._errorDataMap[id];
+      if (data == null) continue;
+
+      let contextState: TSerializedContextState<any>;
+
+      if (data.contextState.kind === "hydrated") {
+        // Downgrade: drop `value` (may not be JSON-safe), keep `serialized`.
+        contextState = { kind: "unhydrated", serialized: data.contextState.serialized };
+      } else {
+        contextState = data.contextState;
+      }
+
+      errorData[id] = { contextState, message: data.message, httpStatusCode: data.httpStatusCode };
+    }
+
     return {
       name: "NiceError",
       def,
       ids: this.ids,
-      errorData: this._errorDataMap,
+      errorData,
       wasntNice: this.wasntNice,
       message: this.message,
       httpStatusCode: this.httpStatusCode,

@@ -53,7 +53,7 @@ export class NiceErrorExtendable<
   // -------------------------------------------------------------------------
 
   /**
-   * Returns a **new** `NiceError` with additional id+context entries merged in.
+   * Returns a **new** `NiceErrorExtendable` with additional id+context entries merged in.
    * The returned error's `ACTIVE_IDS` is the union of the original ids and the
    * newly supplied keys.
    *
@@ -84,13 +84,14 @@ export class NiceErrorExtendable<
 
     return new NiceErrorExtendable<ERR_DEF, ACTIVE_IDS | (keyof INPUT & string)>({
       def: this.def,
+      niceErrorDefined: this.niceErrorDefined,
       ids: mergedIds,
       errorData: mergedErrorData,
       message: this.message,
       wasntNice: this.wasntNice,
       httpStatusCode: this.httpStatusCode,
       originError: this.originError,
-    } as INiceErrorExtendableOptions<ERR_DEF, ACTIVE_IDS | (keyof INPUT & string)>);
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -98,7 +99,7 @@ export class NiceErrorExtendable<
   // -------------------------------------------------------------------------
 
   /**
-   * Returns a **new** `NiceError` with an additional error id (and its context,
+   * Returns a **new** `NiceErrorExtendable` with an additional error id (and its context,
    * if the schema requires one). Equivalent to `addContext({ [id]: context })`
    * but mirrors the `fromId` ergonomics for single-id additions.
    */
@@ -120,12 +121,13 @@ export class NiceErrorExtendable<
 
     return new NiceErrorExtendable<ERR_DEF, ACTIVE_IDS | K>({
       def: this.def,
+      niceErrorDefined: this.niceErrorDefined,
       ids: mergedIds,
       errorData: mergedContexts,
       message: this.message,
       wasntNice: this.wasntNice,
       httpStatusCode: this.httpStatusCode,
       originError: this.originError,
-    } as INiceErrorExtendableOptions<ERR_DEF, ACTIVE_IDS | K>);
+    });
   }
 }

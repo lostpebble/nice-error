@@ -288,7 +288,7 @@ describe("NiceError.toJsonObject", () => {
       ids: [EAuth.account_locked],
       errorData: {
         [EAuth.account_locked]: {
-          context: undefined,
+          contextState: { kind: "no_serialization", value: undefined },
           message: "Account locked",
           httpStatusCode: 403,
         },
