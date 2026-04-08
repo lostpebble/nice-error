@@ -3,7 +3,16 @@
     "allow": [
       "Read(//mnt/c/d/**)",
       "Read(//c//**)",
-      "Bash(bun run:*)"
+      "Bash(bun run:*)",
+      "Bash(bun install:*)",
+      "Bash(curl -s http://localhost:3456/)",
+      "Bash(bun -e \"process.stdout.write\\(JSON.stringify\\(JSON.parse\\(await Bun.stdin.text\\(\\)\\), null, 2\\)\\)\")",
+      "Bash(curl -s http://localhost:3456/login?user=alice\\\\&pass=wrong)",
+      "Bash(curl -s \"http://localhost:3456/login?user=alice&pass=secret\")",
+      "Bash(curl -s http://localhost:3456/expire)",
+      "Bash(curl -s http://localhost:3456/cast)",
+      "Bash(curl -s http://localhost:3456/narrow)",
+      "Bash(bun -e \"process.stdout.write\\(JSON.stringify\\(JSON.parse\\(await Bun.stdin.text\\(\\)\\), null, 2\\)\\)\" echo -e \"\\\\n\")"
     ]
   }
 }

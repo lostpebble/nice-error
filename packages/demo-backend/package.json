@@ -1,0 +1,12 @@
+{
+  "name": "@nice-error/demo-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "type-check": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@nice-error/core": "workspace:*"
+  }
+}
