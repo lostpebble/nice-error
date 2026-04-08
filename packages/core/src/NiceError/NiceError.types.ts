@@ -10,9 +10,9 @@ export interface IRegularErrorJsonObject {
 // ---------------------------------------------------------------------------
 
 /** Describes the context attached to a single error id. */
-export interface INiceErrorContextDefinition<C = unknown> {
+export interface INiceErrorContextDefinition {
   required?: boolean;
-  type: C;
+  // type: C;
 }
 
 /**
@@ -20,10 +20,10 @@ export interface INiceErrorContextDefinition<C = unknown> {
  * `C` is the context value type (defaults to `never` = no context).
  */
 export interface INiceErrorIdMetadata<C = never> {
-  context?: INiceErrorContextDefinition<C>;
+  context?: [C] extends [never] ? never : INiceErrorContextDefinition;
   /** Static message string OR a function that receives the context value and returns a string. */
   message?: [C] extends [never] ? string : string | ((context: C) => string);
-  httpStatusCode?: number;
+  httpStatusCode?: [C] extends [never] ? number : number | ((context: C) => number);
 }
 
 // ---------------------------------------------------------------------------
@@ -38,7 +38,7 @@ export type TNiceErrorSchema = Record<string, INiceErrorIdMetadata<any>>;
 // ---------------------------------------------------------------------------
 
 /** Extracts the raw context value type `C` from a single schema entry. */
-export type ExtractContextType<M> = M extends { context: { type: infer C } } ? C : never;
+export type ExtractContextType<M> = M extends INiceErrorIdMetadata<infer C> ? C : never;
 
 /**
  * Given a schema entry M, returns the context argument type expected by `fromId`:
@@ -47,9 +47,9 @@ export type ExtractContextType<M> = M extends { context: { type: infer C } } ? C
  * - If no context → `undefined`
  */
 export type ExtractFromIdContextArg<M> =
-  M extends { context: { required: true; type: infer C } }
+  M extends INiceErrorIdMetadata<infer C>
     ? C
-    : M extends { context: { type: infer C } }
+    : M extends INiceErrorIdMetadata<infer C>
       ? C | undefined
       : undefined;
 

@@ -1,7 +1,7 @@
 import { assertType, expectTypeOf, test } from "vitest";
-import { NiceError } from "./NiceError";
+import { defineNiceError, err } from "../NiceErrorDefined/defineNiceError";
 import { NiceErrorDefined } from "../NiceErrorDefined/NiceErrorDefined";
-import { defineNiceError } from "../NiceErrorDefined/defineNiceError";
+import { NiceError } from "./NiceError";
 
 test("[NiceError] bare construction works", () => {
   // No-arg and string-arg construction should both work
@@ -24,11 +24,11 @@ test("[NiceErrorDefined] fromId returns correctly typed NiceError", () => {
   const err_test = defineNiceError({
     domain: "nerr_test",
     schema: {
-      no_context_id: { message: "plain message", httpStatusCode: 400 },
-      with_context_id: {
+      no_context_id: err({ message: "plain message", httpStatusCode: 400 }),
+      with_context_id: err({
         message: (ctx: { userId: string }) => `user: ${ctx.userId}`,
-        context: { required: true, type: {} as { userId: string } },
-      },
+        context: { required: true },
+      }),
     },
   } as const);
 
@@ -47,15 +47,15 @@ test("[NiceError] hasId narrows ACTIVE_IDS", () => {
   const err_test = defineNiceError({
     domain: "nerr_test",
     schema: {
-      id_a: { message: "a", context: { required: true, type: {} as { a: number } } },
+      id_a: err<{ a: number }>({ message: "a", context: { required: true } }),
       id_b: { message: "b" },
     },
   } as const);
 
-  const err = err_test.fromId("id_a", { a: 1 });
-  if (err.hasId("id_a")) {
+  const err_cre = err_test.fromId("id_a", { a: 1 });
+  if (err_cre.hasId("id_a")) {
     // getContext should return { a: number }
-    expectTypeOf(err.getContext("id_a")).toEqualTypeOf<{ a: number }>();
+    expectTypeOf(err_cre.getContext("id_a")).toEqualTypeOf<{ a: number }>();
   }
 });
 

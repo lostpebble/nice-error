@@ -1,4 +1,4 @@
-import { defineNiceError } from "../NiceErrorDefined/defineNiceError";
+import { defineNiceError, err } from "../NiceErrorDefined/defineNiceError";
 import { castNiceError } from "../utils/castNiceError";
 import { logger_NiceError_testing } from "../utils/logger";
 
@@ -38,15 +38,14 @@ export enum EErrId_UserAuth_Registration {
 export const err_user_auth_registration = err_user_auth.createChildDomain({
   domain: "err_user_auth_registration",
   schema: {
-    [EErrId_UserAuth_Registration.password_too_short]: {
-      message: "Password is too short",
+    [EErrId_UserAuth_Registration.password_too_short]: err<{ minLength: number }>({
+      message: ({ minLength }) => `Password is too short. Minimum length is ${minLength}.`,
       httpStatusCode: 400,
       context: {
         required: true,
-        type: {} as { minLength: number },
       },
-    },
-    [EErrId_UserAuth_Registration.password_error]: {},
+    }),
+    [EErrId_UserAuth_Registration.password_error]: err(),
   },
 });
 

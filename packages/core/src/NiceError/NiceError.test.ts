@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { NiceError } from "./NiceError";
-import { defineNiceError } from "../NiceErrorDefined/defineNiceError";
+import { defineNiceError, err } from "../NiceErrorDefined/defineNiceError";
 import { castNiceError } from "../utils/castNiceError";
+import { NiceError } from "./NiceError";
 
 // ---------------------------------------------------------------------------
 // Shared test fixtures
@@ -20,16 +20,15 @@ enum EAuth {
 const err_auth = err_app.createChildDomain({
   domain: "err_auth",
   schema: {
-    [EAuth.invalid_credentials]: {
-      message: (ctx: { username: string }) =>
-        `Invalid credentials for ${ctx.username}`,
+    [EAuth.invalid_credentials]: err<{ username: string }>({
+      message: ({ username }) => `Invalid credentials for ${username}`,
       httpStatusCode: 401,
-      context: { required: true, type: {} as { username: string } },
-    },
-    [EAuth.account_locked]: {
+      context: { required: true },
+    }),
+    [EAuth.account_locked]: err({
       message: "Account locked",
       httpStatusCode: 403,
-    },
+    }),
   },
 } as const);
 
@@ -41,12 +40,12 @@ enum ERegistration {
 const err_registration = err_auth.createChildDomain({
   domain: "err_registration",
   schema: {
-    [ERegistration.password_too_short]: {
-      message: "Password is too short",
+    [ERegistration.password_too_short]: err<{ minLength: number }>({
+      message: ({ minLength }) => `Password is too short. Minimum length is ${minLength}.`,
       httpStatusCode: 400,
-      context: { required: true, type: {} as { minLength: number } },
-    },
-    [ERegistration.password_error]: {},
+      context: { required: true },
+    }),
+    [ERegistration.password_error]: err(),
   },
 });
 
@@ -56,137 +55,130 @@ const err_registration = err_auth.createChildDomain({
 
 describe("NiceError — bare construction", () => {
   it("creates a NiceError with default values when no args are provided", () => {
-    const err = new NiceError();
-    expect(err).toBeInstanceOf(NiceError);
-    expect(err).toBeInstanceOf(Error);
-    expect(err.name).toBe("NiceError");
-    expect(err.message).toBe("NiceError");
-    expect(err.wasntNice).toBe(false);
-    expect(err.httpStatusCode).toBe(500);
-    expect(err.id).toBe("unknown");
-    expect(err.def.domain).toBe("unknown");
+    const testErr = new NiceError();
+    expect(testErr).toBeInstanceOf(NiceError);
+    expect(testErr).toBeInstanceOf(Error);
+    expect(testErr.name).toBe("NiceError");
+    expect(testErr.message).toBe("NiceError");
+    expect(testErr.wasntNice).toBe(false);
+    expect(testErr.httpStatusCode).toBe(500);
+    expect(testErr.id).toBe("unknown");
+    expect(testErr.def.domain).toBe("unknown");
   });
 
   it("creates a NiceError with a custom message", () => {
-    const err = new NiceError("something broke");
-    expect(err.message).toBe("something broke");
-    expect(err.httpStatusCode).toBe(500);
+    const testErr = new NiceError("something broke");
+    expect(testErr.message).toBe("something broke");
+    expect(testErr.httpStatusCode).toBe(500);
   });
 });
 
 describe("NiceErrorDefined.fromId", () => {
   it("creates an error with the correct id and message (with context)", () => {
-    const err = err_auth.fromId(EAuth.invalid_credentials, {
+    const testErr = err_auth.fromId(EAuth.invalid_credentials, {
       username: "alice",
     });
-    expect(err).toBeInstanceOf(NiceError);
-    expect(err.id).toBe(EAuth.invalid_credentials);
-    expect(err.message).toBe("Invalid credentials for alice");
-    expect(err.httpStatusCode).toBe(401);
+    expect(testErr).toBeInstanceOf(NiceError);
+    expect(testErr.id).toBe(EAuth.invalid_credentials);
+    expect(testErr.message).toBe("Invalid credentials for alice");
+    expect(testErr.httpStatusCode).toBe(401);
   });
 
   it("creates an error with a static message (no context)", () => {
-    const err = err_auth.fromId(EAuth.account_locked);
-    expect(err.id).toBe(EAuth.account_locked);
-    expect(err.message).toBe("Account locked");
-    expect(err.httpStatusCode).toBe(403);
+    const testErr = err_auth.fromId(EAuth.account_locked);
+    expect(testErr.id).toBe(EAuth.account_locked);
+    expect(testErr.message).toBe("Account locked");
+    expect(testErr.httpStatusCode).toBe(403);
   });
 
   it("creates an error with default message when schema entry has no message", () => {
-    const err = err_registration.fromId(ERegistration.password_error);
-    expect(err.id).toBe(ERegistration.password_error);
-    expect(err.message).toBe("NiceError");
-    expect(err.httpStatusCode).toBe(500);
+    const testErr = err_registration.fromId(ERegistration.password_error);
+    expect(testErr.id).toBe(ERegistration.password_error);
+    expect(testErr.message).toBe("NiceError");
+    expect(testErr.httpStatusCode).toBe(500);
   });
 
   it("preserves the domain definition on the error", () => {
-    const err = err_auth.fromId(EAuth.account_locked);
-    expect(err.def.domain).toBe("err_auth");
-    expect(err.def.allDomains).toEqual(["err_auth", "err_app"]);
+    const testErr = err_auth.fromId(EAuth.account_locked);
+    expect(testErr.def.domain).toBe("err_auth");
+    expect(testErr.def.allDomains).toEqual(["err_auth", "err_app"]);
   });
 });
 
 describe("NiceErrorDefined.fromContext", () => {
   it("creates a multi-id error with all supplied context entries", () => {
-    const err = err_auth.fromContext({
+    const testErr = err_auth.fromContext({
       [EAuth.invalid_credentials]: { username: "bob" },
       [EAuth.account_locked]: undefined,
     });
-    expect(err.getIds()).toEqual(
-      expect.arrayContaining([
-        EAuth.invalid_credentials,
-        EAuth.account_locked,
-      ]),
+    expect(testErr.getIds()).toEqual(
+      expect.arrayContaining([EAuth.invalid_credentials, EAuth.account_locked]),
     );
-    expect(err.hasMultiple).toBe(true);
+    expect(testErr.hasMultiple).toBe(true);
   });
 
   it("uses the first entry's message and httpStatusCode", () => {
-    const err = err_auth.fromContext({
+    const testErr = err_auth.fromContext({
       [EAuth.invalid_credentials]: { username: "carol" },
     });
-    expect(err.message).toBe("Invalid credentials for carol");
-    expect(err.httpStatusCode).toBe(401);
-    expect(err.hasMultiple).toBe(false);
+    expect(testErr.message).toBe("Invalid credentials for carol");
+    expect(testErr.httpStatusCode).toBe(401);
+    expect(testErr.hasMultiple).toBe(false);
   });
 
   it("throws when given an empty context object", () => {
-    expect(() => err_auth.fromContext({} as any)).toThrow(
-      "at least one error id",
-    );
+    expect(() => err_auth.fromContext({} as any)).toThrow("at least one error id");
   });
 });
 
 describe("NiceError.hasId / hasOneOfIds", () => {
   it("hasId returns true for the active id and false for others", () => {
-    const err = err_auth.fromId(EAuth.invalid_credentials, {
+    const testErr = err_auth.fromId(EAuth.invalid_credentials, {
       username: "x",
     });
-    expect(err.hasId(EAuth.invalid_credentials)).toBe(true);
-    expect(err.hasId(EAuth.account_locked)).toBe(false);
+    expect(testErr.hasId(EAuth.invalid_credentials)).toBe(true);
+    expect(testErr.hasId(EAuth.account_locked)).toBe(false);
   });
 
   it("hasOneOfIds returns true when at least one id matches", () => {
-    const err = err_auth.fromId(EAuth.account_locked);
-    expect(
-      err.hasOneOfIds([EAuth.invalid_credentials, EAuth.account_locked]),
-    ).toBe(true);
-    expect(err.hasOneOfIds([EAuth.invalid_credentials])).toBe(false);
+    const testErr = err_auth.fromId(EAuth.account_locked);
+    expect(testErr.hasOneOfIds([EAuth.invalid_credentials, EAuth.account_locked])).toBe(true);
+    expect(testErr.hasOneOfIds([EAuth.invalid_credentials])).toBe(false);
   });
 
   it("hasOneOfIds works with multi-id errors", () => {
-    const err = err_auth.fromContext({
+    const testErr = err_auth.fromContext({
       [EAuth.invalid_credentials]: { username: "z" },
       [EAuth.account_locked]: undefined,
     });
-    expect(err.hasOneOfIds([EAuth.invalid_credentials])).toBe(true);
-    expect(err.hasOneOfIds([EAuth.account_locked])).toBe(true);
+    expect(testErr.hasOneOfIds([EAuth.invalid_credentials])).toBe(true);
+    expect(testErr.hasOneOfIds([EAuth.account_locked])).toBe(true);
   });
 });
 
 describe("NiceError.getContext", () => {
   it("returns the context value for the active id", () => {
-    const err = err_auth.fromId(EAuth.invalid_credentials, {
+    const testErr = err_auth.fromId(EAuth.invalid_credentials, {
       username: "dave",
     });
-    expect(err.getContext(EAuth.invalid_credentials)).toEqual({
+    expect(testErr.getContext(EAuth.invalid_credentials)).toEqual({
       username: "dave",
     });
   });
 
   it("returns the correct context for each id in a multi-id error", () => {
-    const err = err_auth.fromContext({
+    const testErr = err_auth.fromContext({
       [EAuth.invalid_credentials]: { username: "eve" },
       [EAuth.account_locked]: undefined,
     });
 
-    if (err.hasId(EAuth.invalid_credentials)) {
-      expect(err.getContext(EAuth.invalid_credentials)).toEqual({
+    if (testErr.hasId(EAuth.invalid_credentials)) {
+      expect(testErr.getContext(EAuth.invalid_credentials)).toEqual({
         username: "eve",
       });
     }
-    if (err.hasId(EAuth.account_locked)) {
-      expect(err.getContext(EAuth.account_locked)).toBeUndefined();
+    if (testErr.hasId(EAuth.account_locked)) {
+      expect(testErr.getContext(EAuth.account_locked)).toBeUndefined();
     }
   });
 });
@@ -206,10 +198,7 @@ describe("NiceError.addContext", () => {
 
     // Expanded has both ids
     expect(expanded.getIds()).toEqual(
-      expect.arrayContaining([
-        EAuth.invalid_credentials,
-        EAuth.account_locked,
-      ]),
+      expect.arrayContaining([EAuth.invalid_credentials, EAuth.account_locked]),
     );
     expect(expanded.hasMultiple).toBe(true);
     expect(expanded.id).toBe(EAuth.invalid_credentials); // primary unchanged
@@ -228,21 +217,16 @@ describe("NiceError.addContext", () => {
   });
 
   it("works when chained from fromId (as in example file)", () => {
-    const err = err_registration
-      .fromId(ERegistration.password_error)
-      .addContext({
-        [ERegistration.password_too_short]: { minLength: 8 },
-      });
+    const testErr = err_registration.fromId(ERegistration.password_error).addContext({
+      [ERegistration.password_too_short]: { minLength: 8 },
+    });
 
-    expect(err.getIds()).toEqual(
-      expect.arrayContaining([
-        ERegistration.password_error,
-        ERegistration.password_too_short,
-      ]),
+    expect(testErr.getIds()).toEqual(
+      expect.arrayContaining([ERegistration.password_error, ERegistration.password_too_short]),
     );
-    expect(err.hasId(ERegistration.password_too_short)).toBe(true);
-    if (err.hasId(ERegistration.password_too_short)) {
-      expect(err.getContext(ERegistration.password_too_short)).toEqual({
+    expect(testErr.hasId(ERegistration.password_too_short)).toBe(true);
+    if (testErr.hasId(ERegistration.password_too_short)) {
+      expect(testErr.getContext(ERegistration.password_too_short)).toEqual({
         minLength: 8,
       });
     }
@@ -251,17 +235,11 @@ describe("NiceError.addContext", () => {
 
 describe("NiceError.addId", () => {
   it("adds a single id without context", () => {
-    const original = err_registration.fromId(
-      ERegistration.password_too_short,
-      { minLength: 10 },
-    );
+    const original = err_registration.fromId(ERegistration.password_too_short, { minLength: 10 });
     const expanded = original.addId(ERegistration.password_error);
 
     expect(expanded.getIds()).toEqual(
-      expect.arrayContaining([
-        ERegistration.password_too_short,
-        ERegistration.password_error,
-      ]),
+      expect.arrayContaining([ERegistration.password_too_short, ERegistration.password_error]),
     );
     expect(expanded.id).toBe(ERegistration.password_too_short); // primary unchanged
   });
@@ -293,8 +271,8 @@ describe("NiceError.addId", () => {
 
 describe("NiceError.toJsonObject", () => {
   it("serializes to the correct shape", () => {
-    const err = err_auth.fromId(EAuth.account_locked);
-    const json = err.toJsonObject();
+    const testErr = err_auth.fromId(EAuth.account_locked);
+    const json = testErr.toJsonObject();
 
     expect(json).toEqual({
       name: "NiceError",
@@ -322,18 +300,18 @@ describe("NiceError.toJsonObject", () => {
 
 describe("NiceErrorDefined.is — exact domain match", () => {
   it("returns true for errors from the exact domain", () => {
-    const err = err_auth.fromId(EAuth.account_locked);
-    expect(err_auth.is(err)).toBe(true);
+    const testErr = err_auth.fromId(EAuth.account_locked);
+    expect(err_auth.is(testErr)).toBe(true);
   });
 
   it("returns false for errors from a child domain", () => {
-    const err = err_registration.fromId(ERegistration.password_error);
-    expect(err_auth.is(err)).toBe(false);
+    const testErr = err_registration.fromId(ERegistration.password_error);
+    expect(err_auth.is(testErr)).toBe(false);
   });
 
   it("returns false for errors from a parent domain", () => {
-    const err = err_auth.fromId(EAuth.account_locked);
-    expect(err_registration.is(err)).toBe(false);
+    const testErr = err_auth.fromId(EAuth.account_locked);
+    expect(err_registration.is(testErr)).toBe(false);
   });
 
   it("returns false for non-NiceError values", () => {
@@ -377,19 +355,19 @@ describe("NiceErrorDefined.isParentOf", () => {
 
   describe("with NiceError instance targets", () => {
     it("returns true when the error belongs to a child domain", () => {
-      const err = err_registration.fromId(ERegistration.password_error);
-      expect(err_auth.isParentOf(err)).toBe(true);
-      expect(err_app.isParentOf(err)).toBe(true);
+      const testErr = err_registration.fromId(ERegistration.password_error);
+      expect(err_auth.isParentOf(testErr)).toBe(true);
+      expect(err_app.isParentOf(testErr)).toBe(true);
     });
 
     it("returns true when the error belongs to this exact domain", () => {
-      const err = err_registration.fromId(ERegistration.password_error);
-      expect(err_registration.isParentOf(err)).toBe(true);
+      const testErr = err_registration.fromId(ERegistration.password_error);
+      expect(err_registration.isParentOf(testErr)).toBe(true);
     });
 
     it("returns false when the error belongs to a parent domain", () => {
-      const err = err_auth.fromId(EAuth.account_locked);
-      expect(err_registration.isParentOf(err)).toBe(false);
+      const testErr = err_auth.fromId(EAuth.account_locked);
+      expect(err_registration.isParentOf(testErr)).toBe(false);
     });
   });
 });
@@ -400,11 +378,7 @@ describe("Domain hierarchy — createChildDomain", () => {
   });
 
   it("grandchild domain has full ancestry chain", () => {
-    expect(err_registration.allDomains).toEqual([
-      "err_registration",
-      "err_auth",
-      "err_app",
-    ]);
+    expect(err_registration.allDomains).toEqual(["err_registration", "err_auth", "err_app"]);
   });
 
   it("child schema is independent of parent schema", () => {
@@ -448,11 +422,9 @@ describe("castNiceError + is() + isParentOf() integration", () => {
   });
 
   it("full example flow: fromId -> addContext -> toJsonObject -> castNiceError -> is()", () => {
-    const err = err_registration
-      .fromId(ERegistration.password_error)
-      .addContext({
-        [ERegistration.password_too_short]: { minLength: 8 },
-      });
+    const err = err_registration.fromId(ERegistration.password_error).addContext({
+      [ERegistration.password_too_short]: { minLength: 8 },
+    });
 
     const json = err.toJsonObject();
     const casted = castNiceError(json);
@@ -508,10 +480,7 @@ describe("NiceError — edge cases", () => {
       .addId(ERegistration.password_too_short, { minLength: 6 });
 
     expect(err.getIds()).toEqual(
-      expect.arrayContaining([
-        ERegistration.password_error,
-        ERegistration.password_too_short,
-      ]),
+      expect.arrayContaining([ERegistration.password_error, ERegistration.password_too_short]),
     );
     expect(err.hasMultiple).toBe(true);
   });

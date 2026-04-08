@@ -1,10 +1,11 @@
-import type { IDefineNewNiceErrorDomainOptions, TNiceErrorSchema } from "../NiceError/NiceError.types";
+import type {
+  IDefineNewNiceErrorDomainOptions,
+  INiceErrorIdMetadata,
+  TNiceErrorSchema,
+} from "../NiceError/NiceError.types";
 import { NiceErrorDefined } from "./NiceErrorDefined";
 
-export const defineNiceError = <
-  ERR_DOMAIN extends string,
-  SCHEMA extends TNiceErrorSchema,
->(
+export const defineNiceError = <ERR_DOMAIN extends string, SCHEMA extends TNiceErrorSchema>(
   definition: IDefineNewNiceErrorDomainOptions<ERR_DOMAIN, SCHEMA>,
 ) => {
   return new NiceErrorDefined<{
@@ -17,3 +18,7 @@ export const defineNiceError = <
     schema: definition.schema,
   });
 };
+
+export const err = <C = never>(
+  meta: INiceErrorIdMetadata<C> = {} as INiceErrorIdMetadata<C>,
+): INiceErrorIdMetadata<C> => meta;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { NiceError } from "../NiceError/NiceError";
-import { defineNiceError } from "../NiceErrorDefined/defineNiceError";
+import { defineNiceError, err } from "../NiceErrorDefined/defineNiceError";
 import { castNiceError } from "./castNiceError";
 
 describe("castNiceError", () => {
@@ -39,9 +39,12 @@ describe("castNiceError", () => {
   });
 
   it("should return a NiceError from a defined domain after is() narrows it", () => {
-    const err_test = defineNiceError({ domain: "err_test", schema: {
-      test_id: { message: "test message", httpStatusCode: 400 },
-    } } as const);
+    const err_test = defineNiceError({
+      domain: "err_test",
+      schema: {
+        test_id: err({ message: "test message", httpStatusCode: 400 }),
+      },
+    } as const);
 
     const original = err_test.fromId("test_id");
     const casted = castNiceError(original);
