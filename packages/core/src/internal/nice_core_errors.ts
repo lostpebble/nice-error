@@ -1,4 +1,5 @@
 import { StatusCodes } from "http-status-codes";
+import { defineNiceError } from "../NiceErrorDefined/defineNiceError";
 import { err } from "../NiceErrorDefined/err";
 import type {
   IInspectErrorResult_JsError,
@@ -7,7 +8,11 @@ import type {
   IInspectErrorResult_Nullish,
   TInspectErrorResult_JsDataType,
 } from "../utils/inspectPotentialError.types";
-import { err_nice } from "./err_nice";
+
+export const err_nice = defineNiceError({
+  domain: "err_nice",
+  schema: {},
+});
 
 export enum EErrId_CastNotNice {
   js_error = "native_error",

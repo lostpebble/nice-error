@@ -7,6 +7,7 @@ import { NiceErrorDefined } from "./NiceErrorDefined";
 export const defineNiceError = <ERR_DOMAIN extends string, SCHEMA extends TNiceErrorSchema>(
   definition: IDefineNewNiceErrorDomainOptions<ERR_DOMAIN, SCHEMA>,
 ) => {
+  // const {} = import("./NiceErrorDefined");
   return new NiceErrorDefined<{
     domain: ERR_DOMAIN;
     allDomains: [ERR_DOMAIN];

@@ -1,4 +1,4 @@
-import { EErrId_CastNotNice, err_cast_not_nice } from "../core_errors/err_not_nice";
+import { EErrId_CastNotNice, err_cast_not_nice } from "../internal/nice_core_errors";
 import { NiceError } from "../NiceError/NiceError";
 import { inspectPotentialError } from "./inspectPotentialError";
 import { EInspectErrorResultType } from "./inspectPotentialError.types";
@@ -37,20 +37,6 @@ export const castNiceError = (error: unknown): NiceError => {
           [EErrId_CastNotNice.js_error]: inspected,
         })
         .withOriginError(inspected.jsError);
-      // const err = new NiceError({
-      //   def: {
-      //     domain: "unknown",
-      //     allDomains: ["unknown"],
-      //   },
-      //   contexts: {},
-      //   wasntNice: true,
-      //   ids: [],
-      //   message: inspected.jsError.message,
-      //   httpStatusCode: 500,
-      //   originError: inspected.jsError,
-      // });
-      // err.cause = inspected.jsError;
-      // return err;
     }
 
     case EInspectErrorResultType.jsErrorObject: {

@@ -11,7 +11,8 @@ import {
   type INiceErrorExtendableOptions,
   NiceErrorExtendable,
 } from "../NiceError/NiceErrorExtendable";
-import { castNiceError } from "../utils/castNiceError";
+
+// import { castNiceError } from "../utils/castNiceError";
 
 // ---------------------------------------------------------------------------
 // Internal type helpers
@@ -130,24 +131,24 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
    * @param potentialNiceError An unknown value that may or may not be a `NiceError` instance matching this domain.
    * @returns A `NiceError` instance with this definition's `ERR_DEF` if the input was a match, otherwise `undefined`.
    */
-  cast(potentialNiceError: unknown): NiceErrorExtendable<ERR_DEF, keyof ERR_DEF["schema"]> {
-    const error = castNiceError(potentialNiceError);
+  // cast(potentialNiceError: unknown): NiceErrorExtendable<ERR_DEF, keyof ERR_DEF["schema"]> {
+  //   const error = castNiceError(potentialNiceError);
 
-    if (this.is(error)) {
-      return this.hydrate(error);
-    }
+  //   if (this.is(error)) {
+  //     return this.hydrate(error);
+  //   }
 
-    throw new Error("[cast] The provided error does not match this NiceErrorDefined's domain.");
-  }
+  //   throw new Error("[cast] The provided error does not match this NiceErrorDefined's domain.");
+  // }
 
-  hydrate<E extends NiceError<ERR_DEF>>(
-    error: E,
-  ): E extends NiceError<ERR_DEF, infer K> ? NiceErrorExtendable<ERR_DEF, K> : never {
-    throw new Error(
-      "[hydrate] Not implemented yet. This should take a NiceError that matches this domain and return a NiceErrorExtendable with the same ids/context, but typed to this ERR_DEF.",
-    );
-    // return new NiceErrorExtendable<ERR_DEF, keyof ERR_DEF["schema"]>();
-  }
+  // hydrate<E extends NiceError<ERR_DEF>>(
+  //   error: E,
+  // ): E extends NiceError<ERR_DEF, infer K> ? NiceErrorExtendable<ERR_DEF, K> : never {
+  //   throw new Error(
+  //     "[hydrate] Not implemented yet. This should take a NiceError that matches this domain and return a NiceErrorExtendable with the same ids/context, but typed to this ERR_DEF.",
+  //   );
+  //   // return new NiceErrorExtendable<ERR_DEF, keyof ERR_DEF["schema"]>();
+  // }
 
   // -------------------------------------------------------------------------
   // fromId — single-id construction
