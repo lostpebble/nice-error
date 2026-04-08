@@ -1,3 +1,4 @@
+import { EErrId_CastNotNice, err_cast_not_nice, err_not_nice } from "../core_errors/err_not_nice";
 import { NiceError } from "../NiceError/NiceError";
 import { inspectPotentialError } from "./inspectPotentialError";
 import { EInspectErrorResultType } from "./inspectPotentialError.types";
@@ -31,70 +32,49 @@ export const castNiceError = (error: unknown): NiceError => {
 
     case EInspectErrorResultType.jsError: {
       // Wrap a native JS Error, preserving the original as context.
-      const err = new NiceError({
-        def: {
-          domain: "unknown",
-          allDomains: ["unknown"],
-        },
-        contexts: {},
-        wasntNice: true,
-        ids: [],
-        message: inspected.jsError.message,
-        httpStatusCode: 500,
-        originError: inspected.jsError,
-      });
-      err.cause = inspected.jsError;
-      return err;
+      return err_cast_not_nice
+        .fromContext({
+          [EErrId_CastNotNice.js_error]: inspected,
+        })
+        .withOriginError(inspected.jsError);
+      // const err = new NiceError({
+      //   def: {
+      //     domain: "unknown",
+      //     allDomains: ["unknown"],
+      //   },
+      //   contexts: {},
+      //   wasntNice: true,
+      //   ids: [],
+      //   message: inspected.jsError.message,
+      //   httpStatusCode: 500,
+      //   originError: inspected.jsError,
+      // });
+      // err.cause = inspected.jsError;
+      // return err;
     }
 
     case EInspectErrorResultType.jsErrorObject: {
-      const err = new NiceError({
-        def: {
-          domain: "unknown",
-          allDomains: ["unknown"],
-        },
-        contexts: {},
-        wasntNice: true,
-        ids: [],
-        message: inspected.jsErrorObject.message,
-        httpStatusCode: 500,
-        originError: Object.assign(
-          new Error(inspected.jsErrorObject.message),
-          inspected.jsErrorObject,
-        ),
+      const err = err_cast_not_nice.fromContext({
+        [EErrId_CastNotNice.js_error_like_object]: inspected,
       });
       err.cause = inspected.jsErrorObject;
       return err;
     }
 
     case EInspectErrorResultType.nullish:
-      return new NiceError({
-        def: {
-          domain: "unknown",
-          allDomains: ["unknown"],
-        },
-        contexts: {},
-        wasntNice: true,
-        ids: [],
-        message: "Received null or undefined where an error was expected",
-        httpStatusCode: 500,
+      return err_cast_not_nice.fromContext({
+        [EErrId_CastNotNice.nullish_value]: inspected,
       });
 
     case EInspectErrorResultType.jsDataType: {
-      const value = inspected.jsDataValue;
-
-      if (inspected.jsDataType === "string") {
-      }
-      const message =
-        typeof value === "string"
-          ? value
-          : typeof value === "object"
-            ? JSON.stringify(value)
-            : String(value);
-      return new NiceError(message);
+      return err_cast_not_nice.fromContext({
+        [EErrId_CastNotNice.js_data_type]: inspected,
+      });
     }
 
     default:
-      return new NiceError("Unknown error");
+      return err_cast_not_nice.fromContext({
+        [EErrId_CastNotNice.js_other]: inspected,
+      });
   }
 };

@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { NiceError } from "../NiceError/NiceError";
 import { defineNiceError, err } from "../NiceErrorDefined/defineNiceError";
+import { nice_error_test_options } from "../test/nice_error_testing.static";
 import { castNiceError } from "./castNiceError";
 
 describe("castNiceError", () => {
   it("should correctly cast: NiceError instance -> NiceError instance (same reference)", () => {
-    const error = new NiceError("Test error");
+    const error = new NiceError(nice_error_test_options);
     const casted = castNiceError(error);
     expect(casted).toBeInstanceOf(NiceError);
     expect(casted).toBe(error); // same reference returned

@@ -40,6 +40,10 @@ export interface IInspectErrorResult_JsErrorObject
   jsErrorObject: IRegularErrorJsonObject;
 }
 
+/**
+ * JS DATA TYPES
+ */
+
 export interface IInspectErrorResult_JsDataType_String
   extends IInspectErrorResult_Base<EInspectErrorResultType.jsDataType> {
   jsDataType: "string";
@@ -64,10 +68,24 @@ export interface IInspectErrorResult_JsDataType_Object
   jsDataValue: object;
 }
 
+export type TInspectErrorResult_JsDataType =
+  | IInspectErrorResult_JsDataType_String
+  | IInspectErrorResult_JsDataType_Number
+  | IInspectErrorResult_JsDataType_Boolean
+  | IInspectErrorResult_JsDataType_Object;
+
+/**
+ * Catch-all for any other JS data type that doesn't fit the above categories (e.g. symbol, bigint, function, etc.)
+ */
+
 export interface IInspectErrorResult_JsOther
   extends IInspectErrorResult_Base<EInspectErrorResultType.jsOther> {
   jsDataValue: unknown;
 }
+
+/**
+ * Union of all possible results from inspectPotentialError
+ */
 
 export type TInspectErrorResult =
   | IInspectErrorResult_Nullish
@@ -75,8 +93,5 @@ export type TInspectErrorResult =
   | IInspectErrorResult_NiceError
   | IInspectErrorResult_JsError
   | IInspectErrorResult_JsErrorObject
-  | IInspectErrorResult_JsDataType_String
-  | IInspectErrorResult_JsDataType_Number
-  | IInspectErrorResult_JsDataType_Boolean
-  | IInspectErrorResult_JsDataType_Object
+  | TInspectErrorResult_JsDataType
   | IInspectErrorResult_JsOther;

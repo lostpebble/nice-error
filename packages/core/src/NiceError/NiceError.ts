@@ -1,3 +1,4 @@
+import { jsErrorOrCastJsError } from "../utils/jsErrorOrCastJsError";
 import type {
   ExtractContextType,
   INiceErrorDefinedProps,
@@ -57,7 +58,7 @@ export class NiceError<
   readonly ids: ACTIVE_IDS[];
   readonly wasntNice: boolean;
   readonly httpStatusCode: number;
-  readonly originError?: IRegularErrorJsonObject;
+  originError?: IRegularErrorJsonObject;
 
   /** Internal: all active id → context pairs. */
   protected readonly _contexts: TErrorDataForIdMap<ERR_DEF["schema"]>;
@@ -140,6 +141,11 @@ export class NiceError<
       ERR_DEF["schema"],
       ID
     >;
+  }
+
+  withOriginError(error: unknown): this {
+    this.originError = jsErrorOrCastJsError(error);
+    return this;
   }
 
   // -------------------------------------------------------------------------

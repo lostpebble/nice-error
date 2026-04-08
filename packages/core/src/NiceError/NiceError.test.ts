@@ -1,26 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { defineNiceError, err } from "../NiceErrorDefined/defineNiceError";
+import { nice_error_test_options } from "../test/nice_error_testing.static";
 import { castNiceError } from "../utils/castNiceError";
-import { type INiceErrorOptions, NiceError } from "./NiceError";
-import type { INiceErrorDefinedProps } from "./NiceError.types";
+import { NiceError } from "./NiceError";
 
 // ---------------------------------------------------------------------------
 // Shared test fixtures
 // ---------------------------------------------------------------------------
-
-const testNiceErrorOptions: INiceErrorOptions<
-  INiceErrorDefinedProps,
-  keyof INiceErrorDefinedProps["schema"]
-> = {
-  def: {
-    domain: "TEST_DOMAIN",
-    allDomains: ["TEST_DOMAIN"],
-  },
-  message: "Test error",
-  contexts: {},
-  ids: [],
-  wasntNice: false,
-};
 
 const err_app = defineNiceError({
   domain: "err_app",
@@ -70,7 +56,7 @@ const err_registration = err_auth.createChildDomain({
 
 describe("NiceError — bare construction", () => {
   it("creates a NiceError with default values when no args are provided", () => {
-    const testErr = new NiceError(testNiceErrorOptions);
+    const testErr = new NiceError(nice_error_test_options);
     expect(testErr).toBeInstanceOf(NiceError);
     expect(testErr).toBeInstanceOf(Error);
     expect(testErr.name).toBe("NiceError");
@@ -83,7 +69,7 @@ describe("NiceError — bare construction", () => {
 
   it("creates a NiceError with a custom message", () => {
     const testErr = new NiceError({
-      ...testNiceErrorOptions,
+      ...nice_error_test_options,
       message: "something broke",
     });
     expect(testErr.message).toBe("something broke");
@@ -456,7 +442,7 @@ describe("castNiceError + is() + isParentOf() integration", () => {
 
 describe("NiceError — edge cases", () => {
   it("getIds returns empty-like array for bare construction", () => {
-    const err = new NiceError(testNiceErrorOptions);
+    const err = new NiceError(nice_error_test_options);
     expect(err.getIds()).toEqual([]);
   });
 

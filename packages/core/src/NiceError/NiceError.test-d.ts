@@ -1,28 +1,14 @@
 import { assertType, expectTypeOf, test } from "vitest";
 import { defineNiceError, err } from "../NiceErrorDefined/defineNiceError";
 import { NiceErrorDefined } from "../NiceErrorDefined/NiceErrorDefined";
-import { type INiceErrorOptions, NiceError } from "./NiceError";
-import type { INiceErrorDefinedProps } from "./NiceError.types";
-
-const testNiceErrorOptions: INiceErrorOptions<
-  INiceErrorDefinedProps,
-  keyof INiceErrorDefinedProps["schema"]
-> = {
-  def: {
-    domain: "TEST_DOMAIN",
-    allDomains: ["TEST_DOMAIN"],
-  },
-  message: "Test error",
-  contexts: {},
-  ids: [],
-  wasntNice: false,
-};
+import { nice_error_test_options } from "../test/nice_error_testing.static";
+import { NiceError } from "./NiceError";
 
 test("[NiceError] bare construction works", () => {
   // No-arg and string-arg construction should both work
-  assertType<InstanceType<typeof Error>>(new NiceError(testNiceErrorOptions));
-  assertType<InstanceType<typeof NiceError>>(new NiceError(testNiceErrorOptions));
-  assertType<InstanceType<typeof NiceError>>(new NiceError(testNiceErrorOptions));
+  assertType<InstanceType<typeof Error>>(new NiceError(nice_error_test_options));
+  assertType<InstanceType<typeof NiceError>>(new NiceError(nice_error_test_options));
+  assertType<InstanceType<typeof NiceError>>(new NiceError(nice_error_test_options));
 });
 
 test("[defineNiceError] returns a NiceErrorDefined with correct domain type", () => {
