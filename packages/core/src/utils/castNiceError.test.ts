@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { NiceError } from "../NiceError/NiceError";
 import { defineNiceError } from "../NiceErrorDefined/defineNiceError";
 import { err } from "../NiceErrorDefined/err";
-import { nice_error_test_options } from "../test/nice_error_testing.static";
+import { nice_error_test_options } from "../test/helpers/nice_error_testing.static";
 import { castNiceError } from "./castNiceError";
 
 describe("castNiceError", () => {

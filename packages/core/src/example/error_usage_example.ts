@@ -1,6 +1,6 @@
 import { defineNiceError } from "../NiceErrorDefined/defineNiceError";
 import { err } from "../NiceErrorDefined/err";
-import { isVal } from "../test/test_utils";
+import { isVal } from "../test/helpers/test_utils";
 import { castNiceError } from "../utils/castNiceError";
 import { logger_NiceError_testing } from "../utils/logger";
 

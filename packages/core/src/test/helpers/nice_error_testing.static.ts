@@ -1,5 +1,5 @@
-import type { INiceErrorOptions } from "../NiceError/NiceError";
-import type { INiceErrorDefinedProps } from "../NiceError/NiceError.types";
+import type { INiceErrorOptions } from "../../NiceError/NiceError";
+import type { INiceErrorDefinedProps } from "../../NiceError/NiceError.types";
 
 export const nice_error_test_options: INiceErrorOptions<
   INiceErrorDefinedProps,
