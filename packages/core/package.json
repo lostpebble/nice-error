@@ -3,6 +3,14 @@
   "module": "build/index.js",
   "types": "src/index.ts",
   "type": "module",
+  "version": "0.0.1",
+  "files": [
+    "build",
+    "src",
+    "package.json",
+    "README.md",
+    "tsconfig.json"
+  ],
   "scripts": {
     "type-check": "bunx tsc --noEmit",
     "type-check-watch": "bunx tsc --noEmit --watch",
