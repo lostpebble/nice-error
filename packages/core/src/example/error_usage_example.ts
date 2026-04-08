@@ -40,18 +40,20 @@ function throwUserAuthError() {
     logger_NiceError_testing.debug("Error context (username):", username);
   }
 
-  // Should not work
-  const authErrorFromContext = err_example_app.fromContext({
-    [EErrId_UserAuth.invalid_credentials]: {},
-  });
+  // @ts-expect-error — error IDs from child domain are not valid for parent domain (empty schema)
+  err_example_app.fromContext({ [EErrId_UserAuth.invalid_credentials]: {} });
 
   // Working as intended
-  const authErrorFromContext2 = err_user_auth.fromContext({
+  const authErrorFromContext = err_user_auth.fromContext({
     [EErrId_UserAuth.invalid_credentials]: { username: "another_user" },
   });
 
-  const invalidContext = authErrorFromContext.getContext(EErrId_UserAuth.invalid_credentials);
-  const validContext = authErrorFromContext2.getContext(EErrId_UserAuth.invalid_credentials);
+  const validContext = authErrorFromContext.getContext(EErrId_UserAuth.invalid_credentials);
+
+  if (err_user_auth.is(authErrorFromContext)) {
+    // This block will run because authErrorFromContext is an instance of the child domain
+    authErrorFromContext.getContext(EErrId_UserAuth.invalid_credentials).username; // string
+  }
 
   validContext.username; // string
 

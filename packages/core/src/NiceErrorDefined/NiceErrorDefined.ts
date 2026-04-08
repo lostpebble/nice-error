@@ -136,7 +136,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
    * supplied keys, so every subsequent `getContext` call is strongly typed.
    */
   fromContext<INPUT extends TFromContextInput<ERR_DEF["schema"]>>(
-    context: INPUT,
+    context: INPUT & Record<Exclude<keyof INPUT, keyof ERR_DEF["schema"]>, never>,
   ): NiceError<ERR_DEF, KeysOfContextInput<INPUT>> {
     const ids = Object.keys(context) as Array<KeysOfContextInput<INPUT>>;
     if (ids.length === 0) {
@@ -183,7 +183,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
    * }
    * ```
    */
-  is(error: unknown): error is NiceError<ERR_DEF> {
+  is(error: unknown): error is NiceError<ERR_DEF, keyof ERR_DEF["schema"] & string> {
     if (!(error instanceof NiceError)) return false;
     const errDef = error.def as INiceErrorDefinedProps;
     // Match if the error's primary domain or any of its ancestor domains equals
