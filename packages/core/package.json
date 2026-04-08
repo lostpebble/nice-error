@@ -4,7 +4,7 @@
   "module": "build/index.js",
   "types": "build/types/index.d.ts",
   "type": "module",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "exports": {
     ".": {
       "types": "./build/types/index.d.ts",
@@ -22,7 +22,7 @@
     "vitest": "vitest --typecheck",
     "vitest-agent": "vitest --typecheck --reporter=agent",
     "clean-build": "bunx rimraf build",
-    "build-bun": "bun run clean-build && bun run build && bun run build-types",
+    "build": "bun run clean-build && bun run build.ts && bun run build-types",
     "build-types": "tsc --project tsconfig.build.json"
   },
   "dependencies": {

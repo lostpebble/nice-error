@@ -4,7 +4,7 @@ import type {
   INiceErrorDefinedProps,
   INiceErrorJsonObject,
   IRegularErrorJsonObject,
-  TContextMap,
+  TErrorDataForIdMap,
   TFromContextInput,
   TNiceErrorSchema,
   TUnknownNiceErrorDef,
@@ -22,10 +22,7 @@ type ContextOf<S extends TNiceErrorSchema, K extends keyof S> = ExtractContextTy
  * - No context defined on the entry → `[id]`
  * - Context defined → `[id, context]`
  */
-type AddIdArgs<
-  ERR_DEF extends INiceErrorDefinedProps,
-  K extends keyof ERR_DEF["schema"] & string,
-> =
+type AddIdArgs<ERR_DEF extends INiceErrorDefinedProps, K extends keyof ERR_DEF["schema"] & string> =
   ExtractFromIdContextArg<ERR_DEF["schema"][K]> extends undefined
     ? [id: K]
     : [id: K, context: ExtractFromIdContextArg<ERR_DEF["schema"][K]>];
@@ -46,15 +43,15 @@ export interface INiceErrorOptions<
   ERR_DEF extends INiceErrorDefinedProps,
   ID extends keyof ERR_DEF["schema"],
 > {
-  def: ERR_DEF;
+  def: Omit<ERR_DEF, "schema">;
   /** Primary id — also the first entry in ids. */
-  id: ID;
+  ids: ID[];
   /** All active ids with their context values (supports multi-id). */
-  contexts: TContextMap<ERR_DEF["schema"]>;
+  contexts: TErrorDataForIdMap<ERR_DEF["schema"]>;
   message: string;
   wasntNice?: boolean;
   httpStatusCode?: number;
-  originError?: Error | undefined;
+  originError?: IRegularErrorJsonObject;
 }
 
 // ---------------------------------------------------------------------------
@@ -74,43 +71,31 @@ export class NiceError<
 > extends Error {
   override readonly name = "NiceError" as const;
 
-  readonly def: ERR_DEF;
+  readonly def: Omit<ERR_DEF, "schema">;
   /** Primary / first id. */
-  readonly id: ACTIVE_IDS;
+  readonly ids: ACTIVE_IDS[];
   readonly wasntNice: boolean;
   readonly httpStatusCode: number;
-  readonly originError?: Error | undefined;
+  readonly originError?: IRegularErrorJsonObject;
 
   /** Internal: all active id → context pairs. */
-  private readonly _contexts: TContextMap<ERR_DEF["schema"]>;
+  private readonly _contexts: TErrorDataForIdMap<ERR_DEF["schema"]>;
 
   // -------------------------------------------------------------------------
   // Constructors
   // -------------------------------------------------------------------------
-
-  /** Bare construction: `new NiceError()` or `new NiceError("message")` */
-  constructor(message?: string);
   /** Full construction via NiceErrorDefined helpers. */
-  constructor(options: INiceErrorOptions<ERR_DEF, ACTIVE_IDS>);
-  constructor(
-    messageOrOptions?: string | INiceErrorOptions<ERR_DEF, ACTIVE_IDS>,
-  ) {
-    const isBare = messageOrOptions === undefined || typeof messageOrOptions === "string";
-    super(isBare ? (messageOrOptions ?? "NiceError") : messageOrOptions.message);
+  constructor(options: INiceErrorOptions<ERR_DEF, ACTIVE_IDS>) {
+    super(options.message);
 
-    if (isBare) {
-      this.def = UNKNOWN_DEF as unknown as ERR_DEF;
-      this.id = "unknown" as unknown as ACTIVE_IDS;
-      this._contexts = {} as TContextMap<ERR_DEF["schema"]>;
-      this.wasntNice = false;
-      this.httpStatusCode = 500;
-    } else {
-      this.def = messageOrOptions.def;
-      this.id = messageOrOptions.id;
-      this._contexts = messageOrOptions.contexts;
-      this.wasntNice = messageOrOptions.wasntNice ?? false;
-      this.httpStatusCode = messageOrOptions.httpStatusCode ?? 500;
-      this.originError = messageOrOptions.originError;
+    this.def = options.def;
+    this.ids = options.ids;
+    this._contexts = options.contexts;
+    this.wasntNice = options.wasntNice ?? false;
+    this.httpStatusCode = options.httpStatusCode ?? 500;
+
+    if (options.originError != null) {
+      this.originError = options.originError;
     }
   }
 
@@ -122,9 +107,7 @@ export class NiceError<
    * Type guard: returns `true` if this error was created with (or contains) the
    * given `id`. After the guard, `getContext(id)` will be strongly typed.
    */
-  hasId<ID extends keyof ERR_DEF["schema"]>(
-    id: ID,
-  ): this is NiceError<ERR_DEF, ID> {
+  hasId<ID extends keyof ERR_DEF["schema"]>(id: ID): this is NiceError<ERR_DEF, ID> {
     return id in this._contexts;
   }
 
@@ -171,9 +154,7 @@ export class NiceError<
    * `ACTIVE_IDS` (i.e. an id that was confirmed via `hasId` / `hasOneOfIds`,
    * or that was passed to `fromId` / `fromContext`).
    */
-  getContext<ID extends ACTIVE_IDS>(
-    id: ID,
-  ): ContextOf<ERR_DEF["schema"], ID> {
+  getContext<ID extends ACTIVE_IDS>(id: ID): ContextOf<ERR_DEF["schema"], ID> {
     return (this._contexts as Record<string, unknown>)[id as string] as ContextOf<
       ERR_DEF["schema"],
       ID
@@ -198,10 +179,16 @@ export class NiceError<
   addContext<INPUT extends TFromContextInput<ERR_DEF["schema"]>>(
     context: INPUT & Record<Exclude<keyof INPUT, keyof ERR_DEF["schema"]>, never>,
   ): NiceError<ERR_DEF, ACTIVE_IDS | (keyof INPUT & string)> {
-    const mergedContexts = { ...this._contexts, ...context } as TContextMap<ERR_DEF["schema"]>;
+    const mergedContexts = { ...this._contexts, ...context } as TErrorDataForIdMap<
+      ERR_DEF["schema"]
+    >;
+    const mergedIds = Array.from(new Set([...this.getIds(), ...Object.keys(context)])) as Array<
+      ACTIVE_IDS | (keyof INPUT & string)
+    >;
+
     return new NiceError<ERR_DEF, ACTIVE_IDS | (keyof INPUT & string)>({
       def: this.def,
-      id: this.id,
+      ids: mergedIds,
       contexts: mergedContexts,
       message: this.message,
       wasntNice: this.wasntNice,
@@ -223,10 +210,14 @@ export class NiceError<
     ...args: AddIdArgs<ERR_DEF, K>
   ): NiceError<ERR_DEF, ACTIVE_IDS | K> {
     const [id, context] = args as [K, unknown];
-    const mergedContexts = { ...this._contexts, [id]: context } as TContextMap<ERR_DEF["schema"]>;
+    const mergedContexts = { ...this._contexts, [id]: context } as TErrorDataForIdMap<
+      ERR_DEF["schema"]
+    >;
+    const mergedIds = Array.from(new Set([...this.getIds(), id])) as Array<ACTIVE_IDS | K>;
+
     return new NiceError<ERR_DEF, ACTIVE_IDS | K>({
       def: this.def,
-      id: this.id,
+      ids: mergedIds,
       contexts: mergedContexts,
       message: this.message,
       wasntNice: this.wasntNice,
@@ -249,9 +240,24 @@ export class NiceError<
         }
       : undefined;
 
+    const def = {
+      domain: this.def.domain,
+      allDomains: this.def.allDomains,
+    } as Omit<ERR_DEF, "schema">;
+
+    if (this.def.defaultHttpStatusCode != null) {
+      def["defaultHttpStatusCode"] = this.def.defaultHttpStatusCode;
+    }
+
+    if (this.def.defaultMessage != null) {
+      def["defaultMessage"] = this.def.defaultMessage;
+    }
+
     return {
       name: "NiceError",
-      def: this.def,
+      def,
+      ids: this.ids,
+      contexts: this._contexts,
       wasntNice: this.wasntNice,
       message: this.message,
       httpStatusCode: this.httpStatusCode,

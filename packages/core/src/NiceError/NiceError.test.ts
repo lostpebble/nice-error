@@ -1,11 +1,26 @@
 import { describe, expect, it } from "vitest";
 import { defineNiceError, err } from "../NiceErrorDefined/defineNiceError";
 import { castNiceError } from "../utils/castNiceError";
-import { NiceError } from "./NiceError";
+import { type INiceErrorOptions, NiceError } from "./NiceError";
+import type { INiceErrorDefinedProps } from "./NiceError.types";
 
 // ---------------------------------------------------------------------------
 // Shared test fixtures
 // ---------------------------------------------------------------------------
+
+const testNiceErrorOptions: INiceErrorOptions<
+  INiceErrorDefinedProps,
+  keyof INiceErrorDefinedProps["schema"]
+> = {
+  def: {
+    domain: "TEST_DOMAIN",
+    allDomains: ["TEST_DOMAIN"],
+  },
+  message: "Test error",
+  contexts: {},
+  ids: [],
+  wasntNice: false,
+};
 
 const err_app = defineNiceError({
   domain: "err_app",
@@ -55,19 +70,22 @@ const err_registration = err_auth.createChildDomain({
 
 describe("NiceError — bare construction", () => {
   it("creates a NiceError with default values when no args are provided", () => {
-    const testErr = new NiceError();
+    const testErr = new NiceError(testNiceErrorOptions);
     expect(testErr).toBeInstanceOf(NiceError);
     expect(testErr).toBeInstanceOf(Error);
     expect(testErr.name).toBe("NiceError");
     expect(testErr.message).toBe("NiceError");
     expect(testErr.wasntNice).toBe(false);
     expect(testErr.httpStatusCode).toBe(500);
-    expect(testErr.id).toBe("unknown");
+    expect(testErr.ids).toBe("unknown");
     expect(testErr.def.domain).toBe("unknown");
   });
 
   it("creates a NiceError with a custom message", () => {
-    const testErr = new NiceError("something broke");
+    const testErr = new NiceError({
+      ...testNiceErrorOptions,
+      message: "something broke",
+    });
     expect(testErr.message).toBe("something broke");
     expect(testErr.httpStatusCode).toBe(500);
   });
@@ -79,21 +97,21 @@ describe("NiceErrorDefined.fromId", () => {
       username: "alice",
     });
     expect(testErr).toBeInstanceOf(NiceError);
-    expect(testErr.id).toBe(EAuth.invalid_credentials);
+    expect(testErr.ids).toBe(EAuth.invalid_credentials);
     expect(testErr.message).toBe("Invalid credentials for alice");
     expect(testErr.httpStatusCode).toBe(401);
   });
 
   it("creates an error with a static message (no context)", () => {
     const testErr = err_auth.fromId(EAuth.account_locked);
-    expect(testErr.id).toBe(EAuth.account_locked);
+    expect(testErr.ids).toBe(EAuth.account_locked);
     expect(testErr.message).toBe("Account locked");
     expect(testErr.httpStatusCode).toBe(403);
   });
 
   it("creates an error with default message when schema entry has no message", () => {
     const testErr = err_registration.fromId(ERegistration.password_error);
-    expect(testErr.id).toBe(ERegistration.password_error);
+    expect(testErr.ids).toBe(ERegistration.password_error);
     expect(testErr.message).toBe("NiceError");
     expect(testErr.httpStatusCode).toBe(500);
   });
@@ -201,7 +219,7 @@ describe("NiceError.addContext", () => {
       expect.arrayContaining([EAuth.invalid_credentials, EAuth.account_locked]),
     );
     expect(expanded.hasMultiple).toBe(true);
-    expect(expanded.id).toBe(EAuth.invalid_credentials); // primary unchanged
+    expect(expanded.ids).toBe(EAuth.invalid_credentials); // primary unchanged
   });
 
   it("preserves message, httpStatusCode, and wasntNice from the original", () => {
@@ -241,7 +259,7 @@ describe("NiceError.addId", () => {
     expect(expanded.getIds()).toEqual(
       expect.arrayContaining([ERegistration.password_too_short, ERegistration.password_error]),
     );
-    expect(expanded.id).toBe(ERegistration.password_too_short); // primary unchanged
+    expect(expanded.ids).toBe(ERegistration.password_too_short); // primary unchanged
   });
 
   it("adds a single id with required context", () => {
@@ -319,10 +337,6 @@ describe("NiceErrorDefined.is — exact domain match", () => {
     expect(err_auth.is(null)).toBe(false);
     expect(err_auth.is("string")).toBe(false);
     expect(err_auth.is(undefined)).toBe(false);
-  });
-
-  it("returns false for bare NiceError (unknown domain)", () => {
-    expect(err_auth.is(new NiceError("bare"))).toBe(false);
   });
 });
 
@@ -442,7 +456,7 @@ describe("castNiceError + is() + isParentOf() integration", () => {
 
 describe("NiceError — edge cases", () => {
   it("getIds returns empty-like array for bare construction", () => {
-    const err = new NiceError();
+    const err = new NiceError(testNiceErrorOptions);
     expect(err.getIds()).toEqual([]);
   });
 

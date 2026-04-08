@@ -1,4 +1,4 @@
-export interface IRegularErrorJsonObject {
+export interface IRegularErrorJsonObject extends Omit<Error, "stack"> {
   name: string;
   message: string;
   stack?: string | undefined;
@@ -47,11 +47,10 @@ export type ExtractContextType<M> = M extends INiceErrorIdMetadata<infer C> ? C 
  * - If no context → `undefined`
  */
 export type ExtractFromIdContextArg<M> =
-  M extends INiceErrorIdMetadata<infer C>
-    ? C
-    : M extends INiceErrorIdMetadata<infer C>
-      ? C | undefined
-      : undefined;
+  M extends INiceErrorIdMetadata<infer C> ? (C extends never ? undefined : C) : undefined;
+// : M extends INiceErrorIdMetadata<infer C>
+//   ? C | undefined
+//   : undefined;
 
 // ---------------------------------------------------------------------------
 // Multi-context map type (used by fromContext / getContext after hasOneOfIds)
@@ -61,8 +60,12 @@ export type ExtractFromIdContextArg<M> =
  * Maps each schema key to its context value type (or `undefined` if no context).
  * Used as the runtime context store inside a multi-id NiceError.
  */
-export type TContextMap<SCHEMA extends TNiceErrorSchema> = {
-  [K in keyof SCHEMA]?: ExtractContextType<SCHEMA[K]> | undefined;
+export type TErrorDataForIdMap<SCHEMA extends TNiceErrorSchema> = {
+  [K in keyof SCHEMA]?: {
+    context: ExtractContextType<SCHEMA[K]>;
+    message: string;
+    httpStatusCode: number;
+  };
 };
 
 /**
@@ -81,6 +84,8 @@ export interface IDefineNewNiceErrorDomainOptions<
   ERR_DOMAIN extends string = string,
   SCHEMA extends TNiceErrorSchema = TNiceErrorSchema,
 > {
+  defaultHttpStatusCode?: number;
+  defaultMessage?: string;
   domain: ERR_DOMAIN;
   schema: SCHEMA;
 }
@@ -89,6 +94,8 @@ export interface INiceErrorDefinedProps<
   ERR_DOMAINS extends string[] = string[],
   SCHEMA extends TNiceErrorSchema = TNiceErrorSchema,
 > {
+  defaultHttpStatusCode?: number;
+  defaultMessage?: string;
   domain: ERR_DOMAINS[number];
   allDomains: ERR_DOMAINS;
   schema: SCHEMA;
@@ -100,9 +107,12 @@ export interface INiceErrorDefinedProps<
 
 export interface INiceErrorJsonObject<
   ERR_DEF extends INiceErrorDefinedProps = INiceErrorDefinedProps,
+  ID extends keyof ERR_DEF["schema"] = keyof ERR_DEF["schema"],
 > {
   name: "NiceError";
-  def: ERR_DEF;
+  def: Omit<ERR_DEF, "schema">;
+  ids: ID[];
+  contexts: TErrorDataForIdMap<ERR_DEF["schema"]>;
   wasntNice: boolean;
   message: string;
   httpStatusCode: number;

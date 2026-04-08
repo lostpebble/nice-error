@@ -26,24 +26,59 @@ export const castNiceError = (error: unknown): NiceError => {
     case EInspectErrorResultType.niceErrorObject: {
       // Re-hydrate from a serialised NiceError JSON object.
       const obj = inspected.niceErrorObject;
-      return new NiceError(obj.message);
+      return new NiceError(obj);
     }
 
     case EInspectErrorResultType.jsError: {
       // Wrap a native JS Error, preserving the original as context.
-      const err = new NiceError(inspected.jsError.message);
+      const err = new NiceError({
+        def: {
+          domain: "unknown",
+          allDomains: ["unknown"],
+        },
+        contexts: {},
+        wasntNice: true,
+        ids: [],
+        message: inspected.jsError.message,
+        httpStatusCode: 500,
+        originError: inspected.jsError,
+      });
       err.cause = inspected.jsError;
       return err;
     }
 
     case EInspectErrorResultType.jsErrorObject: {
-      const err = new NiceError(inspected.jsErrorObject.message);
+      const err = new NiceError({
+        def: {
+          domain: "unknown",
+          allDomains: ["unknown"],
+        },
+        contexts: {},
+        wasntNice: true,
+        ids: [],
+        message: inspected.jsErrorObject.message,
+        httpStatusCode: 500,
+        originError: Object.assign(
+          new Error(inspected.jsErrorObject.message),
+          inspected.jsErrorObject,
+        ),
+      });
       err.cause = inspected.jsErrorObject;
       return err;
     }
 
     case EInspectErrorResultType.nullish:
-      return new NiceError("Unknown error: null or undefined");
+      return new NiceError({
+        def: {
+          domain: "unknown",
+          allDomains: ["unknown"],
+        },
+        contexts: {},
+        wasntNice: true,
+        ids: [],
+        message: "Received null or undefined where an error was expected",
+        httpStatusCode: 500,
+      });
 
     case EInspectErrorResultType.jsDataType: {
       const value = inspected.jsDataValue;

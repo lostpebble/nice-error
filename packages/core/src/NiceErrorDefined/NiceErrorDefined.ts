@@ -1,12 +1,13 @@
-import { NiceError } from "../NiceError/NiceError";
 import type { INiceErrorOptions } from "../NiceError/NiceError";
+import { NiceError } from "../NiceError/NiceError";
 import type {
   ExtractFromIdContextArg,
   IDefineNewNiceErrorDomainOptions,
   INiceErrorDefinedProps,
-  TContextMap,
+  TErrorDataForIdMap,
   TFromContextInput,
 } from "../NiceError/NiceError.types";
+import { NiceErrorExtendable } from "../NiceError/NiceErrorExtendable";
 
 // ---------------------------------------------------------------------------
 // Internal type helpers
@@ -47,6 +48,9 @@ type KeysOfContextInput<INPUT> = keyof INPUT & string;
 export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   readonly domain: ERR_DEF["domain"];
   readonly allDomains: ERR_DEF["allDomains"];
+  readonly defaultHttpStatusCode?: number;
+  readonly defaultMessage?: string;
+
   /** Kept for runtime use (message resolution, httpStatusCode, etc.). */
   private readonly _schema: ERR_DEF["schema"];
 
@@ -54,6 +58,14 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
     this.domain = definition.domain;
     this.allDomains = definition.allDomains;
     this._schema = definition.schema;
+
+    if (definition.defaultHttpStatusCode != null) {
+      this.defaultHttpStatusCode = definition.defaultHttpStatusCode;
+    }
+
+    if (definition.defaultMessage != null) {
+      this.defaultMessage = definition.defaultMessage;
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -92,18 +104,18 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
    */
   fromId<K extends keyof ERR_DEF["schema"] & string>(
     ...args: FromIdArgs<ERR_DEF, K>
-  ): NiceError<ERR_DEF, K> {
+  ): NiceErrorExtendable<ERR_DEF, K> {
     const [id, context] = args as [K, unknown];
     const entry = this._schema[id];
 
     const message = this._resolveMessage(entry, context);
-    const httpStatusCode = this._resolveHttpStatusCode(entry);
+    const httpStatusCode = this._resolveHttpStatusCode(entry, context);
 
-    const contexts = { [id]: context } as TContextMap<ERR_DEF["schema"]>;
+    const contexts = { [id]: context } as TErrorDataForIdMap<ERR_DEF["schema"]>;
 
-    return new NiceError<ERR_DEF, K>({
+    return new NiceErrorExtendable<ERR_DEF, K>({
       def: this._buildDef(),
-      id,
+      ids: [id],
       contexts,
       message,
       httpStatusCode,
@@ -137,7 +149,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
    */
   fromContext<INPUT extends TFromContextInput<ERR_DEF["schema"]>>(
     context: INPUT & Record<Exclude<keyof INPUT, keyof ERR_DEF["schema"]>, never>,
-  ): NiceError<ERR_DEF, KeysOfContextInput<INPUT>> {
+  ): NiceErrorExtendable<ERR_DEF, KeysOfContextInput<INPUT>> {
     const ids = Object.keys(context) as Array<KeysOfContextInput<INPUT>>;
     if (ids.length === 0) {
       throw new Error(
@@ -150,12 +162,12 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
     const primaryContext = context[primaryId];
 
     const message = this._resolveMessage(primaryEntry, primaryContext);
-    const httpStatusCode = this._resolveHttpStatusCode(primaryEntry);
+    const httpStatusCode = this._resolveHttpStatusCode(primaryEntry, primaryContext);
 
-    return new NiceError<ERR_DEF, KeysOfContextInput<INPUT>>({
+    return new NiceErrorExtendable<ERR_DEF, KeysOfContextInput<INPUT>>({
       def: this._buildDef(),
-      id: primaryId,
-      contexts: context as unknown as TContextMap<ERR_DEF["schema"]>,
+      ids: ids,
+      contexts: context as unknown as TErrorDataForIdMap<ERR_DEF["schema"]>,
       message,
       httpStatusCode,
     } as INiceErrorOptions<ERR_DEF, KeysOfContextInput<INPUT>>);
@@ -231,12 +243,24 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
     if (typeof entry?.message === "string") {
       return entry.message;
     }
-    return "NiceError";
+    return this.defaultMessage ?? `[${this.domain}] An error occurred.`;
   }
 
   private _resolveHttpStatusCode(
     entry: INiceErrorDefinedProps["schema"][string] | undefined,
+    context: unknown,
   ): number {
-    return typeof entry?.httpStatusCode === "number" ? entry.httpStatusCode : 500;
+    let httpStatusCode: number | undefined;
+
+    if (typeof entry?.httpStatusCode === "function") {
+      httpStatusCode = (entry.httpStatusCode as (ctx: unknown) => number)(context);
+    }
+    if (typeof entry?.httpStatusCode === "number") {
+      httpStatusCode = entry.httpStatusCode;
+    }
+
+    return typeof httpStatusCode === "number"
+      ? httpStatusCode
+      : (this.defaultHttpStatusCode ?? 500);
   }
 }

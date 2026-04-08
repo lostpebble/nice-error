@@ -1,13 +1,28 @@
 import { assertType, expectTypeOf, test } from "vitest";
 import { defineNiceError, err } from "../NiceErrorDefined/defineNiceError";
 import { NiceErrorDefined } from "../NiceErrorDefined/NiceErrorDefined";
-import { NiceError } from "./NiceError";
+import { type INiceErrorOptions, NiceError } from "./NiceError";
+import type { INiceErrorDefinedProps } from "./NiceError.types";
+
+const testNiceErrorOptions: INiceErrorOptions<
+  INiceErrorDefinedProps,
+  keyof INiceErrorDefinedProps["schema"]
+> = {
+  def: {
+    domain: "TEST_DOMAIN",
+    allDomains: ["TEST_DOMAIN"],
+  },
+  message: "Test error",
+  contexts: {},
+  ids: [],
+  wasntNice: false,
+};
 
 test("[NiceError] bare construction works", () => {
   // No-arg and string-arg construction should both work
-  assertType<InstanceType<typeof Error>>(new NiceError());
-  assertType<InstanceType<typeof NiceError>>(new NiceError());
-  assertType<InstanceType<typeof NiceError>>(new NiceError("my message"));
+  assertType<InstanceType<typeof Error>>(new NiceError(testNiceErrorOptions));
+  assertType<InstanceType<typeof NiceError>>(new NiceError(testNiceErrorOptions));
+  assertType<InstanceType<typeof NiceError>>(new NiceError(testNiceErrorOptions));
 });
 
 test("[defineNiceError] returns a NiceErrorDefined with correct domain type", () => {
@@ -35,12 +50,12 @@ test("[NiceErrorDefined] fromId returns correctly typed NiceError", () => {
   // fromId without context
   const err1 = err_test.fromId("no_context_id");
   assertType<InstanceType<typeof NiceError>>(err1);
-  expectTypeOf(err1.id).toEqualTypeOf<"no_context_id">();
+  expectTypeOf(err1.ids).toEqualTypeOf<"no_context_id"[]>();
 
   // fromId with context
   const err2 = err_test.fromId("with_context_id", { userId: "abc" });
   assertType<InstanceType<typeof NiceError>>(err2);
-  expectTypeOf(err2.id).toEqualTypeOf<"with_context_id">();
+  expectTypeOf(err2.ids).toEqualTypeOf<"with_context_id"[]>();
 });
 
 test("[NiceError] hasId narrows ACTIVE_IDS", () => {
