@@ -1,21 +1,22 @@
+import type { NiceErrorDefined } from "../NiceErrorDefined/NiceErrorDefined";
 import { jsErrorOrCastJsError } from "../utils/jsErrorOrCastJsError";
 import type {
-  ExtractContextType,
   INiceErrorDefinedProps,
   INiceErrorJsonObject,
   IRegularErrorJsonObject,
   TErrorDataForIdMap,
   TErrorReconciledData,
+  TExtractContextType,
   TNiceErrorSchema,
   TUnknownNiceErrorDef,
-  TUnknownNiceErrorId,
 } from "./NiceError.types";
+import type { NiceErrorExtendable } from "./NiceErrorExtendable";
 
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-type ContextOf<S extends TNiceErrorSchema, K extends keyof S> = ExtractContextType<S[K]>;
+type ContextOf<S extends TNiceErrorSchema, K extends keyof S> = TExtractContextType<S[K]>;
 
 // ---------------------------------------------------------------------------
 // Constructor options overloads
@@ -191,5 +192,9 @@ export class NiceError<
       httpStatusCode: this.httpStatusCode,
       originError,
     };
+  }
+
+  hydrate(definedNiceError: NiceErrorDefined<ERR_DEF>): NiceErrorExtendable<ERR_DEF, ACTIVE_IDS> {
+    return definedNiceError.hydrate(this);
   }
 }

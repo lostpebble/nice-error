@@ -141,14 +141,25 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   //   throw new Error("[cast] The provided error does not match this NiceErrorDefined's domain.");
   // }
 
-  // hydrate<E extends NiceError<ERR_DEF>>(
-  //   error: E,
-  // ): E extends NiceError<ERR_DEF, infer K> ? NiceErrorExtendable<ERR_DEF, K> : never {
-  //   throw new Error(
-  //     "[hydrate] Not implemented yet. This should take a NiceError that matches this domain and return a NiceErrorExtendable with the same ids/context, but typed to this ERR_DEF.",
-  //   );
-  //   // return new NiceErrorExtendable<ERR_DEF, keyof ERR_DEF["schema"]>();
-  // }
+  hydrate<E extends NiceError<ERR_DEF>>(
+    error: E,
+  ): E extends NiceError<ERR_DEF, infer K> ? NiceErrorExtendable<ERR_DEF, K> : never {
+    const definition =
+      this.domain === error.def.domain
+        ? this
+        : this._definedChildNiceErrors.find((linked) => linked.domain === error.def.domain)
+            ?.definedError;
+
+    if (definition == null) {
+      // throw err_nice.
+    }
+
+    console.log("[hydrate] Hydrating error with domain:", this.domain, error);
+    throw new Error(
+      `[hydrate] Not implemented yet. This should take a NiceError that matches this domain and return a NiceErrorExtendable with the same ids/context, but typed to this ERR_DEF.`,
+    );
+    // return new NiceErrorExtendable<ERR_DEF, keyof ERR_DEF["schema"]>();
+  }
 
   // -------------------------------------------------------------------------
   // fromId — single-id construction
@@ -237,7 +248,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
    * }
    * ```
    */
-  is(error: unknown): error is NiceError<ERR_DEF, keyof ERR_DEF["schema"] & string> {
+  is(error: unknown): error is NiceError<ERR_DEF, keyof ERR_DEF["schema"]> {
     if (!(error instanceof NiceError)) return false;
     const errDef = error.def as INiceErrorDefinedProps;
     // Exact domain match only — use `isParentOf` for ancestry checks.
@@ -309,16 +320,30 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
       : (this.defaultHttpStatusCode ?? 500);
   }
 
+  private _serializeContextForId<ID extends keyof ERR_DEF["schema"]>(
+    id: ID,
+    context: TFromContextInput<ERR_DEF["schema"]>[ID],
+  ): Record<string, any> | undefined {
+    const entry = this._schema[id];
+    if (entry?.context?.serialization?.toJsonSerializable) {
+      return entry.context.serialization.toJsonSerializable(context as any);
+    }
+    return undefined;
+  }
+
   reconcileErrorDataForId(
     id: keyof ERR_DEF["schema"] & string,
     context: TFromContextInput<ERR_DEF["schema"]>[typeof id],
   ): TErrorReconciledData<ERR_DEF["schema"], typeof id> {
     const message = this._resolveMessage(id, context);
     const httpStatusCode = this._resolveHttpStatusCode(id, context);
+    const serialized = this._serializeContextForId(id, context);
+
     return {
       context,
       message,
       httpStatusCode,
+      serialized,
     };
   }
 }

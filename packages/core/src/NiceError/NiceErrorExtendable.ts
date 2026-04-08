@@ -64,9 +64,9 @@ export class NiceErrorExtendable<
    * ```
    */
   addContext<INPUT extends TFromContextInput<ERR_DEF["schema"]>>(
-    context: INPUT & Record<Exclude<keyof INPUT, keyof ERR_DEF["schema"]>, never>,
+    context: INPUT & Record<Exclude<keyof INPUT, keyof ERR_DEF["schema"] & string>, never>,
   ): NiceErrorExtendable<ERR_DEF, ACTIVE_IDS | (keyof INPUT & string)> {
-    const newIds = Object.keys(context) as Array<keyof INPUT & string>;
+    const newIds = Object.keys(context) as Array<keyof ERR_DEF["schema"] & string>;
     const newErrorData: TErrorDataForIdMap<ERR_DEF["schema"]> = {};
 
     for (const id of newIds) {

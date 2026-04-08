@@ -1,5 +1,6 @@
 import { defineNiceError } from "../NiceErrorDefined/defineNiceError";
 import { err } from "../NiceErrorDefined/err";
+import { isVal } from "../test/test_utils";
 import { castNiceError } from "../utils/castNiceError";
 import { logger_NiceError_testing } from "../utils/logger";
 
@@ -16,18 +17,17 @@ export enum EErrId_UserAuth {
 export const err_user_auth = err_example_app.createChildDomain({
   domain: "err_user_auth",
   schema: {
-    [EErrId_UserAuth.invalid_credentials]: {
+    [EErrId_UserAuth.invalid_credentials]: err<{ username: string }>({
       message: (context) => `Invalid username or password for username: ${context.username}`,
       httpStatusCode: 401,
       context: {
         required: true,
-        type: {} as { username: string },
       },
-    },
-    [EErrId_UserAuth.account_locked]: {
+    }),
+    [EErrId_UserAuth.account_locked]: err({
       message: "Account is locked due to multiple failed login attempts",
       httpStatusCode: 403,
-    },
+    }),
   },
 });
 
@@ -72,11 +72,15 @@ function throwUserAuthError() {
   const validContext = authErrorFromContext.getContext(EErrId_UserAuth.invalid_credentials);
 
   if (err_user_auth.is(authErrorFromContext)) {
-    // This block will run because authErrorFromContext is an instance of the child domain
-    authErrorFromContext.getContext(EErrId_UserAuth.invalid_credentials).username; // string
+    if (authErrorFromContext.hasId(EErrId_UserAuth.invalid_credentials)) {
+      // This block will run because authErrorFromContext is an instance of the child domain
+      const context = authErrorFromContext.getContext(EErrId_UserAuth.invalid_credentials);
+
+      isVal(context.username, "another_user" as const);
+    }
   }
 
-  validContext.username; // string
+  isVal(validContext.username, "another_user" as const); // string
 
   const authRegistrationError = err_user_auth_registration
     .fromId(EErrId_UserAuth_Registration.password_error)
@@ -91,6 +95,9 @@ function throwUserAuthError() {
 
   const isParent = err_user_auth.isParentOf(err_user_auth_registration); // true
   const isGrandParent = err_example_app.isParentOf(err_user_auth_registration); // true
+
+  isVal(isParent, true);
+  isVal(isGrandParent, true);
 
   const niceErrorCast = castNiceError(authRegistrationObj);
 
@@ -109,11 +116,24 @@ function throwUserAuthError() {
     const hasIds = niceErrorCast.hasOneOfIds([EErrId_UserAuth_Registration.password_error]); // should be true
     const pwContext = niceErrorCast.getContext(EErrId_UserAuth_Registration.password_too_short); // should be { minLength: number }
 
+    isVal(isParentAfterCast, true);
+    isVal(isGrandParentAfterCast, true);
+    isVal(hasIds, true);
+    isVal(pwContext.minLength, 8);
+
     logger_NiceError_testing.debug(
       "Successfully cast auth registration error object back to NiceError instance:",
       niceErrorCast,
     );
   }
 
-  throw testAuthError;
+  logger_NiceError_testing.debug("FINISHED SUCCESSFULLY");
+}
+
+if (import.meta.main) {
+  try {
+    throwUserAuthError();
+  } catch (err) {
+    logger_NiceError_testing.error("Caught error:", err);
+  }
 }

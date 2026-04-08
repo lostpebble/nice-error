@@ -13,8 +13,8 @@ export interface IRegularErrorJsonObject extends Omit<Error, "stack"> {
 export interface INiceErrorContextDefinition<C> {
   required?: boolean;
   serialization?: {
-    toSerializable: (context: C) => Record<string, any>;
-    fromSerializable: (obj: Record<string, any>) => C;
+    toJsonSerializable: (context: C) => Record<string, any>;
+    fromJsonSerializable: (obj: Record<string, any>) => C;
   };
 }
 
@@ -41,7 +41,7 @@ export type TNiceErrorSchema = Record<string, INiceErrorIdMetadata<any>>;
 // ---------------------------------------------------------------------------
 
 /** Extracts the raw context value type `C` from a single schema entry. */
-export type ExtractContextType<M> = M extends INiceErrorIdMetadata<infer C> ? C : never;
+export type TExtractContextType<M> = M extends INiceErrorIdMetadata<infer C> ? C : never;
 
 /**
  * Given a schema entry M, returns the context argument type expected by `fromId`:
@@ -64,9 +64,10 @@ export type ExtractFromIdContextArg<M> =
  * Used as the runtime context store inside a multi-id NiceError.
  */
 export type TErrorReconciledData<SCHEMA extends TNiceErrorSchema, K extends keyof SCHEMA> = {
-  context?: ExtractContextType<SCHEMA[K]> | undefined;
+  context?: TExtractContextType<SCHEMA[K]> | undefined;
   message: string;
   httpStatusCode: number;
+  serialized: Record<string, any> | undefined;
 };
 
 export type TErrorDataForIdMap<SCHEMA extends TNiceErrorSchema> = {
@@ -78,7 +79,7 @@ export type TErrorDataForIdMap<SCHEMA extends TNiceErrorSchema> = {
  * { [errorId]: contextValue } entries and NiceError stores them all.
  */
 export type TFromContextInput<SCHEMA extends TNiceErrorSchema> = {
-  [K in keyof SCHEMA]?: ExtractContextType<SCHEMA[K]> | undefined;
+  [K in keyof SCHEMA]?: TExtractContextType<SCHEMA[K]> | undefined;
 };
 
 /**
@@ -86,10 +87,7 @@ export type TFromContextInput<SCHEMA extends TNiceErrorSchema> = {
  * - No context defined on the entry → `[id]`
  * - Context defined → `[id, context]`
  */
-export type FromIdArgs<
-  ERR_DEF extends INiceErrorDefinedProps,
-  K extends keyof ERR_DEF["schema"] & string,
-> =
+export type FromIdArgs<ERR_DEF extends INiceErrorDefinedProps, K extends keyof ERR_DEF["schema"]> =
   ExtractFromIdContextArg<ERR_DEF["schema"][K]> extends undefined
     ? [id: K]
     : [id: K, context: ExtractFromIdContextArg<ERR_DEF["schema"][K]>];

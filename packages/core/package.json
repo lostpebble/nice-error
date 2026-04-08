@@ -23,7 +23,8 @@
     "vitest-agent": "vitest --typecheck --reporter=agent",
     "clean-build": "bunx rimraf build",
     "build": "bun run clean-build && bun run build.ts && bun run build-types",
-    "build-types": "tsc --project tsconfig.build.json"
+    "build-types": "tsc --project tsconfig.build.json",
+    "example": "bun run ./src/example/error_usage_example.ts"
   },
   "dependencies": {
     "http-status-codes": "^2.3.0",
