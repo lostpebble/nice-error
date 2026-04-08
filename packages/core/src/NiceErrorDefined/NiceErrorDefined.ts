@@ -38,25 +38,43 @@ interface ILinkedNiceErrorDefined {
 }
 
 // ---------------------------------------------------------------------------
-// InferNiceError — utility type
+// InferNiceError / InferNiceErrorExtendable — utility types
 // ---------------------------------------------------------------------------
 
 /**
  * Infers the strongly-typed `NiceError` class type from a `NiceErrorDefined` instance.
  *
- * The resulting type has `ACTIVE_IDS` set to the full union of all schema keys,
- * meaning all error ids are accessible. Use `hasId` / `hasOneOfIds` to narrow further.
+ * `ACTIVE_IDS` is set to the full union of all schema keys. Use `hasId` /
+ * `hasOneOfIds` to narrow further at the call site.
  *
  * @example
  * ```ts
  * const err_user_auth = defineNiceError({ domain: "err_user_auth", schema: { ... } });
  * type TUserAuthError = InferNiceError<typeof err_user_auth>;
- * // → NiceError<{ domain: "err_user_auth"; allDomains: ["err_user_auth"]; schema: { ... } }, keyof schema>
+ * // → NiceError<{ domain: "err_user_auth"; ... }, keyof schema>
  * ```
  */
 export type InferNiceError<T extends NiceErrorDefined<any>> =
   T extends NiceErrorDefined<infer ERR_DEF>
     ? NiceError<ERR_DEF, keyof ERR_DEF["schema"]>
+    : never;
+
+/**
+ * Infers the strongly-typed `NiceErrorExtendable` class type from a `NiceErrorDefined` instance.
+ *
+ * Use this when you need the builder methods (`addId`, `addContext`) as part of
+ * the inferred type — e.g. for function return types or variable annotations.
+ *
+ * @example
+ * ```ts
+ * const err_user_auth = defineNiceError({ domain: "err_user_auth", schema: { ... } });
+ * type TUserAuthErrorExtendable = InferNiceErrorExtendable<typeof err_user_auth>;
+ * // → NiceErrorExtendable<{ domain: "err_user_auth"; ... }, keyof schema>
+ * ```
+ */
+export type InferNiceErrorExtendable<T extends NiceErrorDefined<any>> =
+  T extends NiceErrorDefined<infer ERR_DEF>
+    ? NiceErrorExtendable<ERR_DEF, keyof ERR_DEF["schema"]>
     : never;
 
 // ---------------------------------------------------------------------------
@@ -118,10 +136,8 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
     parentError: NiceErrorDefined<PARENT_DEF>,
   ) {
     if (this._definedParentNiceError?.domain === parentError.domain) {
-      // Already linked — skip to avoid circular references.
       return;
     }
-
     this._definedParentNiceError = {
       domain: parentError.domain,
       definedError: parentError,
@@ -132,7 +148,6 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
     child: NiceErrorDefined<CHILD_DEF>,
   ) {
     if (this._definedChildNiceErrors.some((linked) => linked.domain === child.domain)) {
-      // Already linked — skip to avoid circular references.
       return;
     }
 
@@ -141,7 +156,6 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
       definedError: child,
     });
 
-    // Also link the child to the parent of this (i.e. grandparent of the child), if it exists.
     if (this._definedParentNiceError) {
       this._definedParentNiceError.definedError.addChildNiceErrorDefined(child);
     }
@@ -161,6 +175,9 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
    * to `"hydrated"`. Ids already in `"hydrated"` or `"no_serialization"` state
    * are passed through unchanged.
    *
+   * @throws If `error.def.domain` does not match this definition's domain. Use
+   * `niceErrorDefined.is(error)` before calling `hydrate` to ensure compatibility.
+   *
    * ```ts
    * const raw = castNiceError(apiResponseBody);
    *
@@ -174,6 +191,15 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   hydrate<ACTIVE_IDS extends keyof ERR_DEF["schema"]>(
     error: NiceError<ERR_DEF, ACTIVE_IDS>,
   ): NiceErrorExtendable<ERR_DEF, ACTIVE_IDS> {
+    const errDef = error.def as unknown as INiceErrorDefinedProps;
+    if (errDef.domain !== this.domain) {
+      throw new Error(
+        `[NiceErrorDefined.hydrate] Domain mismatch: this definition is "${this.domain}" ` +
+          `but the error belongs to "${errDef.domain}". ` +
+          `Call \`niceErrorDefined.is(error)\` before hydrating to ensure compatibility.`,
+      );
+    }
+
     const reconciledErrorData: TErrorDataForIdMap<ERR_DEF["schema"]> = {};
 
     for (const id of error.getIds()) {
@@ -193,7 +219,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
             serialized: contextState.serialized,
           };
         }
-        // If no deserializer found (schema mismatch), leave as "unhydrated".
+        // If no deserializer is found (schema mismatch), leave as "unhydrated".
       }
 
       reconciledErrorData[id as keyof ERR_DEF["schema"]] = {
@@ -224,7 +250,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
    *
    * - `id` autocompletes to the schema keys.
    * - The second argument `context` is required / optional / absent based on
-   *   whether the schema entry declares `context.required`.
+   *   whether the schema entry declares `context.required: true`.
    * - The returned error has `ACTIVE_IDS` narrowed to exactly `K`, so
    *   `getContext(id)` is immediately strongly typed.
    */
@@ -281,12 +307,12 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   }
 
   // -------------------------------------------------------------------------
-  // is — type-narrowing guard for post-cast checks
+  // is — type-narrowing guard
   // -------------------------------------------------------------------------
 
   /**
-   * Returns `true` if `error` is a `NiceError` whose `def.domain` matches this
-   * definition's domain (or any ancestor domain in `allDomains`).
+   * Returns `true` if `error` is a `NiceError` whose `def.domain` exactly matches
+   * this definition's domain.
    *
    * Use this after `castNiceError` to narrow an unknown error to this specific
    * domain before accessing its typed ids/context:
@@ -296,16 +322,14 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
    *
    * if (err_user_auth.is(caught)) {
    *   // caught is now NiceError<typeof err_user_auth's ERR_DEF>
-   *   if (caught.hasId(EErrId_UserAuth.invalid_credentials)) {
-   *     const { username } = caught.getContext(EErrId_UserAuth.invalid_credentials);
-   *   }
+   *   const hydrated = err_user_auth.hydrate(caught);
+   *   const { username } = hydrated.getContext("invalid_credentials");
    * }
    * ```
    */
   is(error: unknown): error is NiceError<ERR_DEF, keyof ERR_DEF["schema"]> {
     if (!(error instanceof NiceError)) return false;
-    const errDef = error.def as INiceErrorDefinedProps;
-    // Exact domain match only — use `isParentOf` for ancestry checks.
+    const errDef = error.def as unknown as INiceErrorDefinedProps;
     return errDef.domain === this.domain;
   }
 
@@ -323,7 +347,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   isParentOf(target: NiceErrorDefined<any> | NiceError<any, any>): boolean {
     const allDomains: string[] =
       target instanceof NiceError
-        ? (target.def as INiceErrorDefinedProps).allDomains
+        ? (target.def as unknown as INiceErrorDefinedProps).allDomains
         : (target as NiceErrorDefined<any>).allDomains;
     return Array.isArray(allDomains) && allDomains.includes(this.domain);
   }
@@ -384,12 +408,12 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
 
     let contextState: TContextState<any>;
 
-    if (entry?.context?.serialization != null) {
-      // Schema defines a custom serializer — build the "hydrated" state.
+    if (context != null && entry?.context?.serialization != null) {
+      // Context provided and a custom serializer is defined — build "hydrated" state.
       const serialized = entry.context.serialization.toJsonSerializable(context as any);
       contextState = { kind: "hydrated", value: context, serialized };
     } else {
-      // No custom serializer — context is plain JSON-safe; use "no_serialization".
+      // No custom serializer (or context is absent for optional ids) — use "no_serialization".
       contextState = { kind: "no_serialization", value: context };
     }
 

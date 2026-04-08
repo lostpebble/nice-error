@@ -10,14 +10,19 @@ import type {
 } from "./NiceError.types";
 
 /**
- * Resolves the args tuple for `addId`:
- * - No context defined on the entry → `[id]`
- * - Context defined → `[id, context]`
+ * Resolves the args tuple for `addId` — mirrors `FromIdArgs` exactly so that
+ * optional vs required context is consistent across both `fromId` and `addId`.
+ *
+ * - No context on this id                   → `[id]`
+ * - Context defined, `required: true`       → `[id, context]`
+ * - Context defined, `required` absent/false → `[id] | [id, context]`
  */
 type AddIdArgs<ERR_DEF extends INiceErrorDefinedProps, K extends keyof ERR_DEF["schema"] & string> =
-  ExtractFromIdContextArg<ERR_DEF["schema"][K]> extends undefined
+  [ExtractFromIdContextArg<ERR_DEF["schema"][K]>] extends [undefined]
     ? [id: K]
-    : [id: K, context: ExtractFromIdContextArg<ERR_DEF["schema"][K]>];
+    : [undefined] extends [ExtractFromIdContextArg<ERR_DEF["schema"][K]>]
+      ? [id: K] | [id: K, context: NonNullable<ExtractFromIdContextArg<ERR_DEF["schema"][K]>>]
+      : [id: K, context: ExtractFromIdContextArg<ERR_DEF["schema"][K]>];
 
 /** Full-featured construction from NiceErrorDefined.fromId / fromContext. */
 export interface INiceErrorExtendableOptions<

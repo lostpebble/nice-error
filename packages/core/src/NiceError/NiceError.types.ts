@@ -45,12 +45,23 @@ export type TExtractContextType<M> = M extends INiceErrorIdMetadata<infer C> ? C
 
 /**
  * Given a schema entry M, returns the context argument type expected by `fromId`:
- * - If the entry has `context.required: true` → `C` (required, pass directly)
- * - If the entry has a context definition but not required → `C | undefined`
- * - If no context → `undefined`
+ *
+ * - `C = never`                     → `undefined`  (no context field on this id)
+ * - `C` defined, `required: true`   → `C`          (context is a required argument)
+ * - `C` defined, `required` absent/false → `C | undefined` (context is optional)
+ *
+ * Note: `required: true` must be a literal `true` for TypeScript to narrow correctly.
+ * Use the `err()` helper (which preserves literal types) rather than writing schema
+ * entries inline without `as const`.
  */
 export type ExtractFromIdContextArg<M> =
-  M extends INiceErrorIdMetadata<infer C> ? (C extends never ? undefined : C) : undefined;
+  M extends INiceErrorIdMetadata<infer C>
+    ? [C] extends [never]
+      ? undefined
+      : M extends { context: { required: true } }
+        ? C
+        : C | undefined
+    : undefined;
 
 // ---------------------------------------------------------------------------
 // Context state — discriminated union tracking the lifecycle of context data
@@ -168,14 +179,18 @@ export type TFromContextInput<SCHEMA extends TNiceErrorSchema> = {
 };
 
 /**
- * Resolves the args tuple for `fromId`:
- * - No context defined on the entry → `[id]`
- * - Context defined → `[id, context]`
+ * Resolves the args tuple for `fromId` / `addId`:
+ *
+ * - No context on this id                  → `[id]`
+ * - Context defined, `required: true`      → `[id, context]`
+ * - Context defined, `required` absent/false → `[id] | [id, context]`
  */
 export type FromIdArgs<ERR_DEF extends INiceErrorDefinedProps, K extends keyof ERR_DEF["schema"]> =
-  ExtractFromIdContextArg<ERR_DEF["schema"][K]> extends undefined
+  [ExtractFromIdContextArg<ERR_DEF["schema"][K]>] extends [undefined]
     ? [id: K]
-    : [id: K, context: ExtractFromIdContextArg<ERR_DEF["schema"][K]>];
+    : [undefined] extends [ExtractFromIdContextArg<ERR_DEF["schema"][K]>]
+      ? [id: K] | [id: K, context: NonNullable<ExtractFromIdContextArg<ERR_DEF["schema"][K]>>]
+      : [id: K, context: ExtractFromIdContextArg<ERR_DEF["schema"][K]>];
 
 // ---------------------------------------------------------------------------
 // Defined-error props (carried on NiceErrorDefined)
@@ -218,6 +233,8 @@ export interface INiceErrorJsonObject<
   wasntNice: boolean;
   message: string;
   httpStatusCode: number;
+  /** The stack trace of the NiceError at the point it was created. */
+  stack?: string;
   originError?: IRegularErrorJsonObject | undefined;
 }
 

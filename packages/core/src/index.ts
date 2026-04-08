@@ -5,6 +5,8 @@ export * from "./NiceError/NiceErrorExtendable";
 export * from "./NiceErrorDefined/defineNiceError";
 export * from "./NiceErrorDefined/err";
 export * from "./NiceErrorDefined/NiceErrorDefined";
+export * from "./utils/castAndHydrate";
 export * from "./utils/castNiceError";
 export * from "./utils/isNiceErrorObject";
 export * from "./utils/isRegularErrorObject";
+export * from "./utils/matchFirst";

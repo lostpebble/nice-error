@@ -21,7 +21,7 @@ import type { NiceErrorExtendable } from "./NiceErrorExtendable";
 type ContextOf<S extends TNiceErrorSchema, K extends keyof S> = TExtractContextType<S[K]>;
 
 // ---------------------------------------------------------------------------
-// Constructor options overloads
+// Constructor options
 // ---------------------------------------------------------------------------
 
 /** Full-featured construction from NiceErrorDefined.fromId / fromContext. */
@@ -68,9 +68,9 @@ export class NiceError<
   protected readonly _errorDataMap: TErrorDataForIdMap<ERR_DEF["schema"]>;
 
   // -------------------------------------------------------------------------
-  // Constructors
+  // Constructor
   // -------------------------------------------------------------------------
-  /** Full construction via NiceErrorDefined helpers. */
+
   constructor(options: INiceErrorOptions<ERR_DEF, ACTIVE_IDS>) {
     super(options.message);
 
@@ -137,12 +137,12 @@ export class NiceError<
    * Returns the typed context value for the given error id.
    *
    * TypeScript will only allow you to call this with an id that is part of
-   * `ACTIVE_IDS` (i.e. an id that was confirmed via `hasId` / `hasOneOfIds`,
-   * or that was passed to `fromId` / `fromContext`).
+   * `ACTIVE_IDS` (i.e. an id confirmed via `hasId` / `hasOneOfIds`, or passed
+   * to `fromId` / `fromContext`).
    *
-   * @throws If the context is in the `"unhydrated"` state (the error was
-   * reconstructed from a JSON payload and has a custom serializer). In that
-   * case, call `niceErrorDefined.hydrate(error)` first.
+   * @throws If the context is in the `"unhydrated"` state — the error was
+   * reconstructed from a JSON payload and its context has a custom serializer
+   * that hasn't been run yet. Call `niceErrorDefined.hydrate(error)` first.
    */
   getContext<ID extends ACTIVE_IDS>(id: ID): ContextOf<ERR_DEF["schema"], ID> {
     const errorData = this._errorDataMap[id];
@@ -160,9 +160,13 @@ export class NiceError<
       );
     }
 
-    // "no_serialization" or "hydrated" — both carry `value`
+    // "no_serialization" | "hydrated" — both carry `value`
     return state.value as ContextOf<ERR_DEF["schema"], ID>;
   }
+
+  // -------------------------------------------------------------------------
+  // getErrorDataForId
+  // -------------------------------------------------------------------------
 
   getErrorDataForId<ID extends ACTIVE_IDS>(
     id: ID,
@@ -170,10 +174,45 @@ export class NiceError<
     return this._errorDataMap[id] as TErrorReconciledData<ERR_DEF["schema"], ID> | undefined;
   }
 
+  // -------------------------------------------------------------------------
+  // withOriginError
+  // -------------------------------------------------------------------------
+
   withOriginError(error: unknown): this {
     this.originError = jsErrorOrCastJsError(error);
     this.cause = this.originError;
     return this;
+  }
+
+  // -------------------------------------------------------------------------
+  // matches — fingerprint comparison
+  // -------------------------------------------------------------------------
+
+  /**
+   * Returns `true` if `other` has the same domain and the exact same set of
+   * active error ids as this error (order-independent).
+   *
+   * Useful for deduplication, retry logic, and asserting that two errors
+   * represent the same "kind" of problem without comparing context values.
+   *
+   * ```ts
+   * const a = err_auth.fromId("invalid_credentials", { username: "alice" });
+   * const b = err_auth.fromId("invalid_credentials", { username: "bob" });
+   * a.matches(b); // true  — same domain + same id set
+   *
+   * const c = err_auth.fromId("account_locked");
+   * a.matches(c); // false — same domain, different id
+   * ```
+   */
+  matches(other: NiceError<any, any>): boolean {
+    const myDef = this.def as unknown as INiceErrorDefinedProps;
+    const otherDef = other.def as unknown as INiceErrorDefinedProps;
+    if (myDef.domain !== otherDef.domain) return false;
+
+    const myIds = this.getIds().map(String).sort();
+    const otherIds = other.getIds().map(String).sort();
+    if (myIds.length !== otherIds.length) return false;
+    return myIds.every((id, i) => id === otherIds[i]);
   }
 
   // -------------------------------------------------------------------------
@@ -215,7 +254,7 @@ export class NiceError<
       let contextState: TSerializedContextState<any>;
 
       if (data.contextState.kind === "hydrated") {
-        // Downgrade: drop `value` (may not be JSON-safe), keep `serialized`.
+        // Drop `value` (may not be JSON-safe); keep `serialized` for later hydration.
         contextState = { kind: "unhydrated", serialized: data.contextState.serialized };
       } else {
         contextState = data.contextState;
@@ -232,9 +271,14 @@ export class NiceError<
       wasntNice: this.wasntNice,
       message: this.message,
       httpStatusCode: this.httpStatusCode,
+      ...(this.stack !== undefined ? { stack: this.stack } : {}),
       originError,
     };
   }
+
+  // -------------------------------------------------------------------------
+  // hydrate — convenience delegation to NiceErrorDefined
+  // -------------------------------------------------------------------------
 
   hydrate(definedNiceError: NiceErrorDefined<ERR_DEF>): NiceErrorExtendable<ERR_DEF, ACTIVE_IDS> {
     return definedNiceError.hydrate(this);

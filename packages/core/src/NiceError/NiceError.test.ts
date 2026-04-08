@@ -296,6 +296,7 @@ describe("NiceError.toJsonObject", () => {
       wasntNice: false,
       message: "Account locked",
       httpStatusCode: 403,
+      stack: expect.any(String),
       originError: undefined,
     });
   });
