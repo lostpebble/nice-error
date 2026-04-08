@@ -11,7 +11,7 @@ import { castNiceError } from "./castNiceError";
  *
  * - Casts `value` to a `NiceError` using `castNiceError`.
  * - If the result belongs to `niceErrorDefined`'s domain (`is()` returns `true`),
- *   hydrates it and returns a fully-typed `NiceErrorExtendable`.
+ *   hydrates it and returns a fully-typed `NiceErrorHydrated`.
  * - Otherwise returns the raw cast `NiceError` (which may be a `wasntNice` error
  *   if `value` was not a NiceError at all).
  *
@@ -22,7 +22,7 @@ import { castNiceError } from "./castNiceError";
  *   const error = castAndHydrate(err, err_user_auth);
  *
  *   if (err_user_auth.is(error)) {
- *     // error is NiceErrorExtendable — getContext / addId available
+ *     // error is NiceErrorHydrated — getContext / addId available
  *     const result = matchFirst(error, {
  *       invalid_credentials: ({ username }) => res.status(401).json({ username }),
  *       account_locked:      ()             => res.status(403).json({ locked: true }),

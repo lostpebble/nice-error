@@ -3,7 +3,7 @@ import { defineNiceError } from "../NiceErrorDefined/defineNiceError";
 import { err } from "../NiceErrorDefined/err";
 import {
   type InferNiceError,
-  type InferNiceErrorExtendable,
+  type InferNiceErrorHydrated,
   NiceErrorDefined,
 } from "../NiceErrorDefined/NiceErrorDefined";
 import { nice_error_test_options } from "../test/helpers/nice_error_testing.static";
@@ -80,7 +80,7 @@ test("NiceError object types", () => {
 });
 
 // ---------------------------------------------------------------------------
-// InferNiceError / InferNiceErrorExtendable
+// InferNiceError / InferNiceErrorHydrated
 // ---------------------------------------------------------------------------
 
 test("[InferNiceError] resolves to a NiceError with all schema keys as ACTIVE_IDS", () => {
@@ -110,7 +110,7 @@ test("[InferNiceError] resolves to a NiceError with all schema keys as ACTIVE_ID
   expectTypeOf<_hasAccountLocked>().toEqualTypeOf<true>();
 });
 
-test("[InferNiceErrorExtendable] resolves to a NiceErrorExtendable with builder methods", () => {
+test("[InferNiceErrorHydrated] resolves to a NiceErrorHydrated with builder methods", () => {
   const err_auth = defineNiceError({
     domain: "err_auth",
     schema: {
@@ -118,12 +118,12 @@ test("[InferNiceErrorExtendable] resolves to a NiceErrorExtendable with builder 
     },
   } as const);
 
-  type TAuthExtendable = InferNiceErrorExtendable<typeof err_auth>;
+  type TAuthHydrated = InferNiceErrorHydrated<typeof err_auth>;
 
-  type _isExtendable = TAuthExtendable extends NiceErrorHydrated<any, any> ? true : false;
-  expectTypeOf<_isExtendable>().toEqualTypeOf<true>();
+  type _isHydrated = TAuthHydrated extends NiceErrorHydrated<any, any> ? true : false;
+  expectTypeOf<_isHydrated>().toEqualTypeOf<true>();
 
-  type _hasNotFound = TAuthExtendable extends NiceErrorHydrated<any, "not_found"> ? true : false;
+  type _hasNotFound = TAuthHydrated extends NiceErrorHydrated<any, "not_found"> ? true : false;
   expectTypeOf<_hasNotFound>().toEqualTypeOf<true>();
 });
 
@@ -131,7 +131,7 @@ test("[InferNiceErrorExtendable] resolves to a NiceErrorExtendable with builder 
 // hydrate return type
 // ---------------------------------------------------------------------------
 
-test("[NiceErrorDefined.hydrate] returns NiceErrorExtendable with preserved ACTIVE_IDS", () => {
+test("[NiceErrorDefined.hydrate] returns NiceErrorHydrated with preserved ACTIVE_IDS", () => {
   const err_auth = defineNiceError({
     domain: "err_auth",
     schema: {
@@ -145,9 +145,9 @@ test("[NiceErrorDefined.hydrate] returns NiceErrorExtendable with preserved ACTI
   const plain = err_auth.fromId("account_locked") as NiceError<ERR_DEF, "account_locked">;
   const hydrated = err_auth.hydrate(plain);
 
-  type _isExtendable =
+  type _isHydrated =
     typeof hydrated extends NiceErrorHydrated<any, "account_locked"> ? true : false;
-  expectTypeOf<_isExtendable>().toEqualTypeOf<true>();
+  expectTypeOf<_isHydrated>().toEqualTypeOf<true>();
 
   // Builder methods are available on the hydrated result.
   expectTypeOf(hydrated.addId).toBeFunction();

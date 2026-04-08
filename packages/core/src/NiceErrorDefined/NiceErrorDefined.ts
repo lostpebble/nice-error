@@ -8,10 +8,7 @@ import type {
   TErrorReconciledData,
   TFromContextInput,
 } from "../NiceError/NiceError.types";
-import {
-  type INiceErrorExtendableOptions,
-  NiceErrorHydrated,
-} from "../NiceError/NiceErrorHydrated";
+import { type INiceErrorHydratedOptions, NiceErrorHydrated } from "../NiceError/NiceErrorHydrated";
 
 // ---------------------------------------------------------------------------
 // Internal type helpers
@@ -38,7 +35,7 @@ interface ILinkedNiceErrorDefined {
 }
 
 // ---------------------------------------------------------------------------
-// InferNiceError / InferNiceErrorExtendable — utility types
+// InferNiceError / InferNiceErrorHydrated — utility types
 // ---------------------------------------------------------------------------
 
 /**
@@ -58,7 +55,7 @@ export type InferNiceError<T extends NiceErrorDefined<any>> =
   T extends NiceErrorDefined<infer ERR_DEF> ? NiceError<ERR_DEF, keyof ERR_DEF["schema"]> : never;
 
 /**
- * Infers the strongly-typed `NiceErrorExtendable` class type from a `NiceErrorDefined` instance.
+ * Infers the strongly-typed `NiceErrorHydrated` class type from a `NiceErrorDefined` instance.
  *
  * Use this when you need the builder methods (`addId`, `addContext`) as part of
  * the inferred type — e.g. for function return types or variable annotations.
@@ -66,11 +63,11 @@ export type InferNiceError<T extends NiceErrorDefined<any>> =
  * @example
  * ```ts
  * const err_user_auth = defineNiceError({ domain: "err_user_auth", schema: { ... } });
- * type TUserAuthErrorExtendable = InferNiceErrorExtendable<typeof err_user_auth>;
- * // → NiceErrorExtendable<{ domain: "err_user_auth"; ... }, keyof schema>
+ * type TUserAuthErrorHydrated = InferNiceErrorHydrated<typeof err_user_auth>;
+ * // → NiceErrorHydrated<{ domain: "err_user_auth"; ... }, keyof schema>
  * ```
  */
-export type InferNiceErrorExtendable<T extends NiceErrorDefined<any>> =
+export type InferNiceErrorHydrated<T extends NiceErrorDefined<any>> =
   T extends NiceErrorDefined<infer ERR_DEF>
     ? NiceErrorHydrated<ERR_DEF, keyof ERR_DEF["schema"]>
     : never;
@@ -164,7 +161,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   // -------------------------------------------------------------------------
 
   /**
-   * Promotes a plain `NiceError<ERR_DEF>` back into a `NiceErrorExtendable` so
+   * Promotes a plain `NiceError<ERR_DEF>` back into a `NiceErrorHydrated` so
    * that builder methods (`addId`, `addContext`, etc.) are available again.
    *
    * For each active id, if the context is in the `"unhydrated"` state (i.e. the
@@ -244,7 +241,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   // -------------------------------------------------------------------------
 
   /**
-   * Creates a `NiceErrorExtendable` for a single error id.
+   * Creates a `NiceErrorHydrated` for a single error id.
    *
    * - `id` autocompletes to the schema keys.
    * - The second argument `context` is required / optional / absent based on
@@ -269,7 +266,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
       errorData,
       message: reconciledData.message,
       httpStatusCode: reconciledData.httpStatusCode,
-    } as INiceErrorExtendableOptions<ERR_DEF, K>);
+    } as INiceErrorHydratedOptions<ERR_DEF, K>);
   }
 
   // -------------------------------------------------------------------------
@@ -301,7 +298,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
       errorData,
       message: errorData[primaryId]?.message,
       httpStatusCode: errorData[primaryId]?.httpStatusCode,
-    } as INiceErrorExtendableOptions<ERR_DEF, KeysOfContextInput<INPUT>>);
+    } as INiceErrorHydratedOptions<ERR_DEF, KeysOfContextInput<INPUT>>);
   }
 
   // -------------------------------------------------------------------------

@@ -27,7 +27,7 @@ type AddIdArgs<
     : [id: K, context: ExtractFromIdContextArg<ERR_DEF["schema"][K]>];
 
 /** Full-featured construction from NiceErrorDefined.fromId / fromContext. */
-export interface INiceErrorExtendableOptions<
+export interface INiceErrorHydratedOptions<
   ERR_DEF extends INiceErrorDefinedProps,
   ID extends keyof ERR_DEF["schema"],
 > extends INiceErrorOptions<ERR_DEF, ID> {
@@ -49,7 +49,7 @@ export class NiceErrorHydrated<
   override readonly def: ERR_DEF;
   private readonly niceErrorDefined: NiceErrorDefined<ERR_DEF>;
 
-  constructor(options: INiceErrorExtendableOptions<ERR_DEF, ACTIVE_IDS>) {
+  constructor(options: INiceErrorHydratedOptions<ERR_DEF, ACTIVE_IDS>) {
     super(options);
     this.def = options.def;
     this.niceErrorDefined = options.niceErrorDefined;
@@ -60,7 +60,7 @@ export class NiceErrorHydrated<
   // -------------------------------------------------------------------------
 
   /**
-   * Returns a **new** `NiceErrorExtendable` with additional id+context entries merged in.
+   * Returns a **new** `NiceErrorHydrated` with additional id+context entries merged in.
    * The returned error's `ACTIVE_IDS` is the union of the original ids and the
    * newly supplied keys.
    *
@@ -106,7 +106,7 @@ export class NiceErrorHydrated<
   // -------------------------------------------------------------------------
 
   /**
-   * Returns a **new** `NiceErrorExtendable` with an additional error id (and its context,
+   * Returns a **new** `NiceErrorHydrated` with an additional error id (and its context,
    * if the schema requires one). Equivalent to `addContext({ [id]: context })`
    * but mirrors the `fromId` ergonomics for single-id additions.
    */
