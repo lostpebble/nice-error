@@ -12,7 +12,8 @@
       "Bash(curl -s http://localhost:3456/expire)",
       "Bash(curl -s http://localhost:3456/cast)",
       "Bash(curl -s http://localhost:3456/narrow)",
-      "Bash(bun -e \"process.stdout.write\\(JSON.stringify\\(JSON.parse\\(await Bun.stdin.text\\(\\)\\), null, 2\\)\\)\" echo -e \"\\\\n\")"
+      "Bash(bun -e \"process.stdout.write\\(JSON.stringify\\(JSON.parse\\(await Bun.stdin.text\\(\\)\\), null, 2\\)\\)\" echo -e \"\\\\n\")",
+      "WebSearch"
     ]
   }
 }

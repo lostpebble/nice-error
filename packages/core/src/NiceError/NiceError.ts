@@ -54,7 +54,7 @@ export interface INiceErrorOptions<
   message: string;
   wasntNice?: boolean;
   httpStatusCode?: number;
-  originError?: Error;
+  originError?: Error | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -79,7 +79,7 @@ export class NiceError<
   readonly id: ACTIVE_IDS;
   readonly wasntNice: boolean;
   readonly httpStatusCode: number;
-  readonly originError?: Error;
+  readonly originError?: Error | undefined;
 
   /** Internal: all active id → context pairs. */
   private readonly _contexts: TContextMap<ERR_DEF["schema"]>;
@@ -95,22 +95,22 @@ export class NiceError<
   constructor(
     messageOrOptions?: string | INiceErrorOptions<ERR_DEF, ACTIVE_IDS>,
   ) {
-    if (messageOrOptions === undefined || typeof messageOrOptions === "string") {
-      super(messageOrOptions ?? "NiceError");
+    const isBare = messageOrOptions === undefined || typeof messageOrOptions === "string";
+    super(isBare ? (messageOrOptions ?? "NiceError") : messageOrOptions.message);
+
+    if (isBare) {
       this.def = UNKNOWN_DEF as unknown as ERR_DEF;
       this.id = "unknown" as unknown as ACTIVE_IDS;
       this._contexts = {} as TContextMap<ERR_DEF["schema"]>;
       this.wasntNice = false;
       this.httpStatusCode = 500;
     } else {
-      const opts = messageOrOptions;
-      super(opts.message);
-      this.def = opts.def;
-      this.id = opts.id;
-      this._contexts = opts.contexts;
-      this.wasntNice = opts.wasntNice ?? false;
-      this.httpStatusCode = opts.httpStatusCode ?? 500;
-      this.originError = opts.originError;
+      this.def = messageOrOptions.def;
+      this.id = messageOrOptions.id;
+      this._contexts = messageOrOptions.contexts;
+      this.wasntNice = messageOrOptions.wasntNice ?? false;
+      this.httpStatusCode = messageOrOptions.httpStatusCode ?? 500;
+      this.originError = messageOrOptions.originError;
     }
   }
 

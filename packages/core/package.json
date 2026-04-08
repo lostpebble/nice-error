@@ -3,7 +3,7 @@
   "module": "build/index.js",
   "types": "src/index.ts",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "files": [
     "build",
     "src",
@@ -16,7 +16,8 @@
     "type-check-watch": "bunx tsc --noEmit --watch",
     "vitest": "vitest --typecheck",
     "vitest-agent": "vitest --typecheck --reporter=agent",
-    "bundle": "bun run build"
+    "build-bun": "bun run build && bun run build-types",
+    "build-types": "tsc --declaration --emitDeclarationOnly --outDir build/types"
   },
   "dependencies": {
     "valibot": "1.3.1",

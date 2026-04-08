@@ -14,22 +14,21 @@ class NiceError extends Error {
   originError;
   _contexts;
   constructor(messageOrOptions) {
-    if (messageOrOptions === undefined || typeof messageOrOptions === "string") {
-      super(messageOrOptions ?? "NiceError");
+    const isBare = messageOrOptions === undefined || typeof messageOrOptions === "string";
+    super(isBare ? messageOrOptions ?? "NiceError" : messageOrOptions.message);
+    if (isBare) {
       this.def = UNKNOWN_DEF;
       this.id = "unknown";
       this._contexts = {};
       this.wasntNice = false;
       this.httpStatusCode = 500;
     } else {
-      const opts = messageOrOptions;
-      super(opts.message);
-      this.def = opts.def;
-      this.id = opts.id;
-      this._contexts = opts.contexts;
-      this.wasntNice = opts.wasntNice ?? false;
-      this.httpStatusCode = opts.httpStatusCode ?? 500;
-      this.originError = opts.originError;
+      this.def = messageOrOptions.def;
+      this.id = messageOrOptions.id;
+      this._contexts = messageOrOptions.contexts;
+      this.wasntNice = messageOrOptions.wasntNice ?? false;
+      this.httpStatusCode = messageOrOptions.httpStatusCode ?? 500;
+      this.originError = messageOrOptions.originError;
     }
   }
   hasId(id) {
@@ -182,14 +181,14 @@ function isNiceErrorObject(obj) {
   if (typeof obj !== "object" || obj == null)
     return false;
   const o = obj;
-  if (o.name !== "NiceError" || typeof o.message !== "string" || typeof o.wasntNice !== "boolean" || typeof o.httpStatusCode !== "number") {
+  if (o["name"] !== "NiceError" || typeof o["message"] !== "string" || typeof o["wasntNice"] !== "boolean" || typeof o["httpStatusCode"] !== "number") {
     return false;
   }
-  const def = o.def;
+  const def = o["def"];
   if (typeof def !== "object" || def == null)
     return false;
   const d = def;
-  return typeof d.domain === "string" && Array.isArray(d.allDomains);
+  return typeof d["domain"] === "string" && Array.isArray(d["allDomains"]);
 }
 
 // src/utils/isRegularErrorObject.ts
@@ -197,7 +196,7 @@ function isRegularErrorJsonObject(obj) {
   if (typeof obj !== "object" || obj == null)
     return false;
   const o = obj;
-  return typeof o.name === "string" && typeof o.message === "string";
+  return typeof o["name"] === "string" && typeof o["message"] === "string";
 }
 
 // ../../node_modules/.bun/tslog@4.10.2/node_modules/tslog/esm/urlToObj.js

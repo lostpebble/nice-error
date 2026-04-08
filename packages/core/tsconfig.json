@@ -4,6 +4,7 @@
     "lib": [
       "ESNext"
     ],
+    "outDir": "build",
     "target": "ESNext",
     "module": "Preserve",
     "moduleDetection": "force",
@@ -14,17 +15,19 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
-    // Best practices
+    // Best practices — strict
     "strict": true,
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "inlineSourceMap": true,
-    // Some stricter flags (disabled by default)
+    // Library-hardened flags — catch issues consumers would hit
+    "noPropertyAccessFromIndexSignature": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false,
     "types": [
       "bun"
     ]

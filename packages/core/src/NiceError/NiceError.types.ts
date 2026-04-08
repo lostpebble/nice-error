@@ -1,7 +1,7 @@
 export interface IRegularErrorJsonObject {
   name: string;
   message: string;
-  stack?: string;
+  stack?: string | undefined;
   cause?: unknown;
 }
 
@@ -62,7 +62,7 @@ export type ExtractFromIdContextArg<M> =
  * Used as the runtime context store inside a multi-id NiceError.
  */
 export type TContextMap<SCHEMA extends TNiceErrorSchema> = {
-  [K in keyof SCHEMA]?: ExtractContextType<SCHEMA[K]>;
+  [K in keyof SCHEMA]?: ExtractContextType<SCHEMA[K]> | undefined;
 };
 
 /**
@@ -70,7 +70,7 @@ export type TContextMap<SCHEMA extends TNiceErrorSchema> = {
  * { [errorId]: contextValue } entries and NiceError stores them all.
  */
 export type TFromContextInput<SCHEMA extends TNiceErrorSchema> = {
-  [K in keyof SCHEMA]?: ExtractContextType<SCHEMA[K]>;
+  [K in keyof SCHEMA]?: ExtractContextType<SCHEMA[K]> | undefined;
 };
 
 // ---------------------------------------------------------------------------
@@ -106,7 +106,7 @@ export interface INiceErrorJsonObject<
   wasntNice: boolean;
   message: string;
   httpStatusCode: number;
-  originError?: IRegularErrorJsonObject;
+  originError?: IRegularErrorJsonObject | undefined;
 }
 
 // ---------------------------------------------------------------------------
