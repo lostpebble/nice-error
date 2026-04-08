@@ -31,6 +31,11 @@ type ChildDef<
  */
 type KeysOfContextInput<INPUT> = keyof INPUT & string;
 
+interface ILinkedNiceErrorDefined {
+  domain: string;
+  definedError: NiceErrorDefined<any>;
+}
+
 // ---------------------------------------------------------------------------
 // NiceErrorDefined
 // ---------------------------------------------------------------------------
@@ -43,6 +48,8 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
 
   /** Kept for runtime use (message resolution, httpStatusCode, etc.). */
   private readonly _schema: ERR_DEF["schema"];
+  private _definedChildNiceErrors: ILinkedNiceErrorDefined[] = [];
+  private _definedParentNiceError?: ILinkedNiceErrorDefined;
 
   constructor(definition: ERR_DEF) {
     this.domain = definition.domain;
@@ -69,7 +76,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   createChildDomain<SUB extends IDefineNewNiceErrorDomainOptions>(
     subErrorDef: SUB,
   ): NiceErrorDefined<ChildDef<ERR_DEF, SUB>> {
-    return new NiceErrorDefined<ChildDef<ERR_DEF, SUB>>({
+    const child = new NiceErrorDefined<ChildDef<ERR_DEF, SUB>>({
       domain: subErrorDef.domain,
       allDomains: [subErrorDef.domain, ...this.allDomains] as [
         SUB["domain"],
@@ -77,6 +84,44 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
       ],
       schema: subErrorDef.schema,
     } as ChildDef<ERR_DEF, SUB>);
+
+    this.addChildNiceErrorDefined(child);
+    child.addParentNiceErrorDefined(this);
+
+    return child;
+  }
+
+  protected addParentNiceErrorDefined<PARENT_DEF extends INiceErrorDefinedProps>(
+    parentError: NiceErrorDefined<PARENT_DEF>,
+  ) {
+    if (this._definedParentNiceError?.domain === parentError.domain) {
+      // Already linked — skip to avoid circular references.
+      return;
+    }
+
+    this._definedParentNiceError = {
+      domain: parentError.domain,
+      definedError: parentError,
+    };
+  }
+
+  protected addChildNiceErrorDefined<CHILD_DEF extends INiceErrorDefinedProps>(
+    child: NiceErrorDefined<CHILD_DEF>,
+  ) {
+    if (this._definedChildNiceErrors.some((linked) => linked.domain === child.domain)) {
+      // Already linked — skip to avoid circular references.
+      return;
+    }
+
+    this._definedChildNiceErrors.push({
+      domain: child.domain,
+      definedError: child,
+    });
+
+    // Also link the child to the parent of this (i.e. grandparent of the child), if it exists.
+    if (this._definedParentNiceError) {
+      this._definedParentNiceError.definedError.addChildNiceErrorDefined(child);
+    }
   }
 
   // -------------------------------------------------------------------------

@@ -10,9 +10,12 @@ export interface IRegularErrorJsonObject extends Omit<Error, "stack"> {
 // ---------------------------------------------------------------------------
 
 /** Describes the context attached to a single error id. */
-export interface INiceErrorContextDefinition {
+export interface INiceErrorContextDefinition<C> {
   required?: boolean;
-  // type: C;
+  serialization?: {
+    toSerializable: (context: C) => Record<string, any>;
+    fromSerializable: (obj: Record<string, any>) => C;
+  };
 }
 
 /**
@@ -20,7 +23,7 @@ export interface INiceErrorContextDefinition {
  * `C` is the context value type (defaults to `never` = no context).
  */
 export interface INiceErrorIdMetadata<C = never> {
-  context?: [C] extends [never] ? never : INiceErrorContextDefinition;
+  context?: [C] extends [never] ? never : INiceErrorContextDefinition<C>;
   /** Static message string OR a function that receives the context value and returns a string. */
   message?: [C] extends [never] ? string : string | ((context: C) => string);
   httpStatusCode?: [C] extends [never] ? number : number | ((context: C) => number);
