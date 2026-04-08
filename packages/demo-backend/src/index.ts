@@ -1,9 +1,4 @@
-import {
-  defineNiceError,
-  castNiceError,
-  NiceError,
-  isNiceErrorObject,
-} from "@nice-error/core";
+import { castNiceError, defineNiceError, isNiceErrorObject, NiceError } from "@nice-error/core";
 
 // ---------------------------------------------------------------------------
 // 1. Define error domains
@@ -25,8 +20,7 @@ const err_auth = err_app.createChildDomain({
   domain: "err_auth",
   schema: {
     [EAuth.invalid_credentials]: {
-      message: (ctx: { username: string }) =>
-        `Invalid credentials for user "${ctx.username}"`,
+      message: (ctx: { username: string }) => `Invalid credentials for user "${ctx.username}"`,
       httpStatusCode: 401,
       context: { required: true, type: {} as { username: string } },
     },
@@ -89,9 +83,7 @@ const server = Bun.serve({
         "string thrown as error",
         42,
         err_auth.fromId(EAuth.token_expired),
-        err_auth
-          .fromId(EAuth.invalid_credentials, { username: "bob" })
-          .toJsonObject(),
+        err_auth.fromId(EAuth.invalid_credentials, { username: "bob" }).toJsonObject(),
       ];
 
       const results = errors.map((raw) => {
@@ -102,9 +94,7 @@ const server = Bun.serve({
           httpStatusCode: casted.httpStatusCode,
           isAuthDomain: err_auth.is(casted),
           isAppParent: err_app.isParentOf(casted),
-          isNiceErrorObj: isNiceErrorObject(
-            typeof raw === "object" && raw !== null ? raw : {},
-          ),
+          isNiceErrorObj: isNiceErrorObject(typeof raw === "object" && raw !== null ? raw : {}),
         };
       });
 
