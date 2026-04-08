@@ -106,6 +106,9 @@ function throwUserAuthError() {
     const isParentAfterCast = err_user_auth_registration.isParentOf(niceErrorCast); // true
     const isGrandParentAfterCast = err_example_app.isParentOf(niceErrorCast); // true
 
+    const hasIds = niceErrorCast.hasOneOfIds([EErrId_UserAuth_Registration.password_error]); // should be true
+    const pwContext = niceErrorCast.getContext(EErrId_UserAuth_Registration.password_too_short); // should be { minLength: number }
+
     logger_NiceError_testing.debug(
       "Successfully cast auth registration error object back to NiceError instance:",
       niceErrorCast,

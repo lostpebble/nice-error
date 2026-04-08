@@ -113,8 +113,20 @@ export interface INiceErrorJsonObject<
 // "Unknown" / bare NiceError — used when no schema is available
 // ---------------------------------------------------------------------------
 
-/** The minimal ERR_DEF used when creating a NiceError without a definition. */
-export type TUnknownNiceErrorDef = INiceErrorDefinedProps<["unknown"], TNiceErrorSchema>;
+/**
+ * The widest ERR_DEF used when creating a NiceError without a definition
+ * (bare construction, castNiceError, etc.).
+ *
+ * Uses the base `INiceErrorDefinedProps` defaults (`string[]` domains,
+ * `TNiceErrorSchema` schema) so that type-guard narrowing via `is()` works
+ * correctly — `string & "specific_domain"` narrows to `"specific_domain"`
+ * instead of collapsing the intersection to `never`.
+ */
+export type TUnknownNiceErrorDef = INiceErrorDefinedProps;
 
-/** Sentinel id used for bare / cast NiceErrors that have no schema. */
-export type TUnknownNiceErrorId = "unknown";
+/**
+ * Wide id type for bare / cast NiceErrors that have no schema.
+ * Using `string` (rather than a literal `"unknown"`) ensures that
+ * `is()` type-guard intersections narrow cleanly: `string & K` = `K`.
+ */
+export type TUnknownNiceErrorId = string;

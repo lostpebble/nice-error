@@ -186,13 +186,27 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   is(error: unknown): error is NiceError<ERR_DEF, keyof ERR_DEF["schema"] & string> {
     if (!(error instanceof NiceError)) return false;
     const errDef = error.def as INiceErrorDefinedProps;
-    // Match if the error's primary domain or any of its ancestor domains equals
-    // this definition's domain.
-    return (
-      errDef.domain === this.domain ||
-      (Array.isArray(errDef.allDomains) &&
-        (errDef.allDomains as string[]).includes(this.domain))
-    );
+    // Exact domain match only — use `isParentOf` for ancestry checks.
+    return errDef.domain === this.domain;
+  }
+
+  // -------------------------------------------------------------------------
+  // isParentOf — ancestry check
+  // -------------------------------------------------------------------------
+
+  /**
+   * Returns `true` if this domain appears anywhere in the target's ancestry
+   * chain (including an exact domain match).
+   *
+   * Accepts either a `NiceErrorDefined` (domain definition) or a `NiceError`
+   * instance (extracts the domain from its `def`).
+   */
+  isParentOf(target: NiceErrorDefined<any> | NiceError<any, any>): boolean {
+    const allDomains: string[] =
+      target instanceof NiceError
+        ? (target.def as INiceErrorDefinedProps).allDomains
+        : (target as NiceErrorDefined<any>).allDomains;
+    return Array.isArray(allDomains) && allDomains.includes(this.domain);
   }
 
   // -------------------------------------------------------------------------
