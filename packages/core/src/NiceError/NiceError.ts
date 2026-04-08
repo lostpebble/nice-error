@@ -145,6 +145,7 @@ export class NiceError<
 
   withOriginError(error: unknown): this {
     this.originError = jsErrorOrCastJsError(error);
+    this.cause = this.originError;
     return this;
   }
 

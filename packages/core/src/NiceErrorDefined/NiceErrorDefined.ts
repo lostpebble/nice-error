@@ -110,8 +110,8 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
     const [id, context] = args as [K, unknown];
     const entry = this._schema[id];
 
-    const message = this._resolveMessage(entry, context);
-    const httpStatusCode = this._resolveHttpStatusCode(entry, context);
+    const message = this._resolveMessage(id, context);
+    const httpStatusCode = this._resolveHttpStatusCode(id, context);
 
     const contexts = { [id]: context } as TErrorDataForIdMap<ERR_DEF["schema"]>;
 
@@ -163,8 +163,8 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
     const primaryEntry = this._schema[primaryId as string];
     const primaryContext = context[primaryId];
 
-    const message = this._resolveMessage(primaryEntry, primaryContext);
-    const httpStatusCode = this._resolveHttpStatusCode(primaryEntry, primaryContext);
+    const message = this._resolveMessage(primaryId, primaryContext);
+    const httpStatusCode = this._resolveHttpStatusCode(primaryId, primaryContext);
 
     return new NiceErrorExtendable<ERR_DEF, KeysOfContextInput<INPUT>>({
       def: this._buildDef(),
@@ -235,23 +235,20 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
     } as unknown as ERR_DEF;
   }
 
-  private _resolveMessage(
-    entry: INiceErrorDefinedProps["schema"][string] | undefined,
-    context: unknown,
-  ): string {
+  private _resolveMessage(id: keyof ERR_DEF["schema"] & string, context: unknown): string {
+    const entry = this._schema[id];
+
     if (typeof entry?.message === "function") {
       return (entry.message as (ctx: unknown) => string)(context);
     }
     if (typeof entry?.message === "string") {
       return entry.message;
     }
-    return this.defaultMessage ?? `[${this.domain}] An error occurred.`;
+    return this.defaultMessage ?? `[${this.domain}::${id}] An error occurred.`;
   }
 
-  private _resolveHttpStatusCode(
-    entry: INiceErrorDefinedProps["schema"][string] | undefined,
-    context: unknown,
-  ): number {
+  private _resolveHttpStatusCode(id: keyof ERR_DEF["schema"] & string, context: unknown): number {
+    const entry = this._schema[id];
     let httpStatusCode: number | undefined;
 
     if (typeof entry?.httpStatusCode === "function") {

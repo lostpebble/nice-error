@@ -60,11 +60,11 @@ describe("NiceError — bare construction", () => {
     expect(testErr).toBeInstanceOf(NiceError);
     expect(testErr).toBeInstanceOf(Error);
     expect(testErr.name).toBe("NiceError");
-    expect(testErr.message).toBe("NiceError");
+    expect(testErr.message).toBe("Test error");
     expect(testErr.wasntNice).toBe(false);
     expect(testErr.httpStatusCode).toBe(500);
-    expect(testErr.ids).toBe("unknown");
-    expect(testErr.def.domain).toBe("unknown");
+    expect(testErr.ids).toEqual([]);
+    expect(testErr.def.domain).toBe("TEST_DOMAIN");
   });
 
   it("creates a NiceError with a custom message", () => {
@@ -83,22 +83,22 @@ describe("NiceErrorDefined.fromId", () => {
       username: "alice",
     });
     expect(testErr).toBeInstanceOf(NiceError);
-    expect(testErr.ids).toBe(EAuth.invalid_credentials);
+    expect(testErr.ids).toEqual([EAuth.invalid_credentials]);
     expect(testErr.message).toBe("Invalid credentials for alice");
     expect(testErr.httpStatusCode).toBe(401);
   });
 
   it("creates an error with a static message (no context)", () => {
     const testErr = err_auth.fromId(EAuth.account_locked);
-    expect(testErr.ids).toBe(EAuth.account_locked);
+    expect(testErr.ids).toEqual([EAuth.account_locked]);
     expect(testErr.message).toBe("Account locked");
     expect(testErr.httpStatusCode).toBe(403);
   });
 
   it("creates an error with default message when schema entry has no message", () => {
     const testErr = err_registration.fromId(ERegistration.password_error);
-    expect(testErr.ids).toBe(ERegistration.password_error);
-    expect(testErr.message).toBe("NiceError");
+    expect(testErr.ids).toEqual([ERegistration.password_error]);
+    expect(testErr.message).toBe("[err_registration::password_error] An error occurred.");
     expect(testErr.httpStatusCode).toBe(500);
   });
 
@@ -201,11 +201,9 @@ describe("NiceError.addContext", () => {
     expect(original.hasMultiple).toBe(false);
 
     // Expanded has both ids
-    expect(expanded.getIds()).toEqual(
-      expect.arrayContaining([EAuth.invalid_credentials, EAuth.account_locked]),
-    );
+    expect(expanded.getIds()).toEqual([EAuth.invalid_credentials, EAuth.account_locked]);
     expect(expanded.hasMultiple).toBe(true);
-    expect(expanded.ids).toBe(EAuth.invalid_credentials); // primary unchanged
+    expect(expanded.ids).toEqual([EAuth.invalid_credentials]); // primary unchanged
   });
 
   it("preserves message, httpStatusCode, and wasntNice from the original", () => {
@@ -245,7 +243,7 @@ describe("NiceError.addId", () => {
     expect(expanded.getIds()).toEqual(
       expect.arrayContaining([ERegistration.password_too_short, ERegistration.password_error]),
     );
-    expect(expanded.ids).toBe(ERegistration.password_too_short); // primary unchanged
+    expect(expanded.ids).toEqual([ERegistration.password_too_short]); // primary unchanged
   });
 
   it("adds a single id with required context", () => {

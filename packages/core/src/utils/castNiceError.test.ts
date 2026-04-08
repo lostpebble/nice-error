@@ -17,26 +17,32 @@ describe("castNiceError", () => {
     const original = new Error("something broke");
     const casted = castNiceError(original);
     expect(casted).toBeInstanceOf(NiceError);
-    expect(casted.message).toBe("something broke");
-    expect(casted.cause).toBe(original);
+    expect(casted.message).toBe(
+      "A native JavaScript Error was encountered during casting: something broke",
+    );
+    expect(casted.originError).toBe(original);
   });
 
   it("should correctly cast: null -> NiceError", () => {
     const casted = castNiceError(null);
     expect(casted).toBeInstanceOf(NiceError);
-    expect(casted.message).toContain("null");
+    expect(casted.message).toBe("A nullish value [null] was encountered during casting");
   });
 
   it("should correctly cast: string -> NiceError", () => {
     const casted = castNiceError("something went wrong");
     expect(casted).toBeInstanceOf(NiceError);
-    expect(casted.message).toBe("something went wrong");
+    expect(casted.message).toBe(
+      'A value of type [string] with value ["something went wrong"] was encountered during casting, which is not a valid error type',
+    );
   });
 
   it("should correctly cast: number -> NiceError", () => {
     const casted = castNiceError(42);
     expect(casted).toBeInstanceOf(NiceError);
-    expect(casted.message).toBe("42");
+    expect(casted.message).toBe(
+      "A value of type [number] with value [42] was encountered during casting, which is not a valid error type",
+    );
   });
 
   it("should return a NiceError from a defined domain after is() narrows it", () => {

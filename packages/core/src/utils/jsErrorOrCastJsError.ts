@@ -1,10 +1,8 @@
 export function jsErrorOrCastJsError(error: unknown, logMessage = true): Error {
   if (error instanceof Error) {
-    return {
-      ...error,
-      name: error.name,
+    return Object.assign(error, {
       message: error.message,
-    };
+    });
   }
 
   const message =
