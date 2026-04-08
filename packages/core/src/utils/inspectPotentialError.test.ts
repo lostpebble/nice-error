@@ -22,7 +22,17 @@ describe("inspectPotentialError", () => {
   });
 
   it("should correctly identify a NiceError instance", () => {
-    const niceError = new NiceError("Something went wrong");
+    const niceError = new NiceError({
+      def: {
+        domain: "TEST_DOMAIN",
+        allDomains: ["TEST_DOMAIN"],
+      },
+      contexts: {},
+      ids: [],
+      message: "Something went wrong",
+      httpStatusCode: 500,
+      wasntNice: false,
+    });
 
     const result = inspectPotentialError(niceError);
 
@@ -34,6 +44,8 @@ describe("inspectPotentialError", () => {
 
   it("should correctly identify NiceError JSON objects", () => {
     const niceErrorObj: INiceErrorJsonObject = {
+      contexts: {},
+      ids: [],
       name: "NiceError",
       message: "This is a test error",
       httpStatusCode: 500,
@@ -54,6 +66,8 @@ describe("inspectPotentialError", () => {
 
   it("should correctly identify NiceError JSON objects serialized as a string", () => {
     const niceErrorObj: INiceErrorJsonObject = {
+      contexts: {},
+      ids: [],
       name: "NiceError",
       message: "Serialized nice error",
       httpStatusCode: 404,

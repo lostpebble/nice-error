@@ -1,11 +1,9 @@
 import type {
   ExtractContextType,
-  ExtractFromIdContextArg,
   INiceErrorDefinedProps,
   INiceErrorJsonObject,
   IRegularErrorJsonObject,
   TErrorDataForIdMap,
-  TFromContextInput,
   TNiceErrorSchema,
   TUnknownNiceErrorDef,
   TUnknownNiceErrorId,
@@ -16,23 +14,6 @@ import type {
 // ---------------------------------------------------------------------------
 
 type ContextOf<S extends TNiceErrorSchema, K extends keyof S> = ExtractContextType<S[K]>;
-
-/**
- * Resolves the args tuple for `addId`:
- * - No context defined on the entry → `[id]`
- * - Context defined → `[id, context]`
- */
-type AddIdArgs<ERR_DEF extends INiceErrorDefinedProps, K extends keyof ERR_DEF["schema"] & string> =
-  ExtractFromIdContextArg<ERR_DEF["schema"][K]> extends undefined
-    ? [id: K]
-    : [id: K, context: ExtractFromIdContextArg<ERR_DEF["schema"][K]>];
-
-/** The default "unknown" def used when NiceError is constructed without a definition. */
-const UNKNOWN_DEF: TUnknownNiceErrorDef = {
-  domain: "unknown",
-  allDomains: ["unknown"],
-  schema: {},
-};
 
 // ---------------------------------------------------------------------------
 // Constructor options overloads
@@ -79,7 +60,7 @@ export class NiceError<
   readonly originError?: IRegularErrorJsonObject;
 
   /** Internal: all active id → context pairs. */
-  private readonly _contexts: TErrorDataForIdMap<ERR_DEF["schema"]>;
+  protected readonly _contexts: TErrorDataForIdMap<ERR_DEF["schema"]>;
 
   // -------------------------------------------------------------------------
   // Constructors
@@ -159,71 +140,6 @@ export class NiceError<
       ERR_DEF["schema"],
       ID
     >;
-  }
-
-  // -------------------------------------------------------------------------
-  // addContext — merge additional id+context entries into this error
-  // -------------------------------------------------------------------------
-
-  /**
-   * Returns a **new** `NiceError` with additional id+context entries merged in.
-   * The returned error's `ACTIVE_IDS` is the union of the original ids and the
-   * newly supplied keys.
-   *
-   * ```ts
-   * const err = errDef.fromId("id_a", { a: 1 })
-   *   .addContext({ id_b: { b: "x" } });
-   * err.getIds(); // ["id_a", "id_b"]
-   * ```
-   */
-  addContext<INPUT extends TFromContextInput<ERR_DEF["schema"]>>(
-    context: INPUT & Record<Exclude<keyof INPUT, keyof ERR_DEF["schema"]>, never>,
-  ): NiceError<ERR_DEF, ACTIVE_IDS | (keyof INPUT & string)> {
-    const mergedContexts = { ...this._contexts, ...context } as TErrorDataForIdMap<
-      ERR_DEF["schema"]
-    >;
-    const mergedIds = Array.from(new Set([...this.getIds(), ...Object.keys(context)])) as Array<
-      ACTIVE_IDS | (keyof INPUT & string)
-    >;
-
-    return new NiceError<ERR_DEF, ACTIVE_IDS | (keyof INPUT & string)>({
-      def: this.def,
-      ids: mergedIds,
-      contexts: mergedContexts,
-      message: this.message,
-      wasntNice: this.wasntNice,
-      httpStatusCode: this.httpStatusCode,
-      originError: this.originError,
-    } as INiceErrorOptions<ERR_DEF, ACTIVE_IDS | (keyof INPUT & string)>);
-  }
-
-  // -------------------------------------------------------------------------
-  // addId — add a single id (with optional context) to this error
-  // -------------------------------------------------------------------------
-
-  /**
-   * Returns a **new** `NiceError` with an additional error id (and its context,
-   * if the schema requires one). Equivalent to `addContext({ [id]: context })`
-   * but mirrors the `fromId` ergonomics for single-id additions.
-   */
-  addId<K extends keyof ERR_DEF["schema"] & string>(
-    ...args: AddIdArgs<ERR_DEF, K>
-  ): NiceError<ERR_DEF, ACTIVE_IDS | K> {
-    const [id, context] = args as [K, unknown];
-    const mergedContexts = { ...this._contexts, [id]: context } as TErrorDataForIdMap<
-      ERR_DEF["schema"]
-    >;
-    const mergedIds = Array.from(new Set([...this.getIds(), id])) as Array<ACTIVE_IDS | K>;
-
-    return new NiceError<ERR_DEF, ACTIVE_IDS | K>({
-      def: this.def,
-      ids: mergedIds,
-      contexts: mergedContexts,
-      message: this.message,
-      wasntNice: this.wasntNice,
-      httpStatusCode: this.httpStatusCode,
-      originError: this.originError,
-    } as INiceErrorOptions<ERR_DEF, ACTIVE_IDS | K>);
   }
 
   // -------------------------------------------------------------------------
