@@ -1,4 +1,5 @@
 import type { NiceErrorDefined } from "../NiceErrorDefined/NiceErrorDefined";
+import type { IErrorCase } from "../utils/handleWith";
 import { jsErrorOrCastJsError } from "../utils/jsErrorOrCastJsError";
 import type {
   INiceErrorDefinedProps,
@@ -282,5 +283,76 @@ export class NiceError<
 
   hydrate(definedNiceError: NiceErrorDefined<ERR_DEF>): NiceErrorHydrated<ERR_DEF, ACTIVE_IDS> {
     return definedNiceError.hydrate(this);
+  }
+
+  // -------------------------------------------------------------------------
+  // handleWith — synchronous domain-dispatched error handling
+  // -------------------------------------------------------------------------
+
+  /**
+   * Iterates `cases` in order, finds the first whose domain matches this error
+   * (via `is()`), optionally further filters by active ids, hydrates the error,
+   * calls the handler, and returns `true`. Returns `false` if no case matched.
+   *
+   * Build cases with `forDomain` (any id in the domain) or `forIds` (specific
+   * id subset). Handlers are invoked synchronously — any returned Promise is
+   * not awaited. Use `handleWithAsync` when handlers are async.
+   *
+   * @example
+   * ```ts
+   * const handled = error.handleWith([
+   *   forIds(err_feature, ["not_found"], (h) => {
+   *     res.status(404).json({ missing: h.getContext("not_found").resource });
+   *   }),
+   *   forDomain(err_feature, (h) => {
+   *     matchFirst(h, {
+   *       forbidden: ({ userId }) => res.status(403).json({ userId }),
+   *       _: () => res.status(500).end(),
+   *     });
+   *   }),
+   *   forDomain(err_service, (h) => {
+   *     res.status(h.httpStatusCode).json({ error: h.message });
+   *   }),
+   * ]);
+   * if (!handled) next(error);
+   * ```
+   */
+  handleWith(cases: ReadonlyArray<IErrorCase<any, any>>): boolean {
+    for (const c of cases) {
+      if (!c._domain.is(this)) continue;
+      if (c._ids !== undefined && !this.hasOneOfIds(c._ids as any)) continue;
+      c._handler(c._domain.hydrate(this as any) as any);
+      return true;
+    }
+    return false;
+  }
+
+  // -------------------------------------------------------------------------
+  // handleWithAsync — async domain-dispatched error handling
+  // -------------------------------------------------------------------------
+
+  /**
+   * Same matching logic as `handleWith`, but `await`s the handler's returned
+   * Promise before resolving. Use this when your handlers perform async work
+   * (database writes, HTTP calls, etc.).
+   *
+   * @example
+   * ```ts
+   * const handled = await error.handleWithAsync([
+   *   forDomain(err_payments, async (h) => {
+   *     await db.logFailedPayment(h);
+   *     await notifyOps(h.message);
+   *   }),
+   * ]);
+   * ```
+   */
+  async handleWithAsync(cases: ReadonlyArray<IErrorCase<any, any>>): Promise<boolean> {
+    for (const c of cases) {
+      if (!c._domain.is(this)) continue;
+      if (c._ids !== undefined && !this.hasOneOfIds(c._ids as any)) continue;
+      await c._handler(c._domain.hydrate(this as any) as any);
+      return true;
+    }
+    return false;
   }
 }
