@@ -53,4 +53,10 @@ honoApi.get("/dur_obj/with_context", async (c) => {
   await stub.throwErrorWithContext();
 });
 
+honoApi.get("/dur_obj/with_serializable_context", async (c) => {
+  const id = env.DO_EXAMPLE_USER.idFromName("example");
+  const stub = env.DO_EXAMPLE_USER.get(id);
+  await stub.throwErrorWithSerializableContext();
+});
+
 export { honoApi };

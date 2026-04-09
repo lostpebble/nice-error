@@ -1,3 +1,5 @@
+import type { EContextSerializedState, EErrorPackType } from "./NiceError.enums";
+
 export interface IRegularErrorJsonObject extends Omit<Error, "stack"> {
   name: string;
   message: string;
@@ -79,16 +81,6 @@ export type ExtractFromIdContextArg<M> =
         : C | undefined
     : undefined;
 
-// ---------------------------------------------------------------------------
-// Context state — discriminated union tracking the lifecycle of context data
-// ---------------------------------------------------------------------------
-
-export enum EContextSerializedState {
-  raw_unset = "raw_unset",
-  unhydrated = "unhydrated",
-  hydrated = "hydrated",
-}
-
 /**
  * No custom serializer is defined for this error id's context.
  * `value` holds the typed context directly (plain JSON-safe value, or `undefined`
@@ -97,7 +89,7 @@ export enum EContextSerializedState {
  * This state is safe across a JSON round-trip because no type information is lost.
  */
 export type TContextStateNoSerialization<C> = {
-  kind: EContextSerializedState.raw_unset;
+  kind: EContextSerializedState.serde_unset;
   /** The typed context value (or `undefined` if optional and not provided). */
   value: C | undefined;
 };
@@ -218,12 +210,21 @@ export type FromIdArgs<
 // Defined-error props (carried on NiceErrorDefined)
 // ---------------------------------------------------------------------------
 
+export interface IPackErrorAs_Base {
+  packAs: EErrorPackType;
+}
+
+export interface IPackErrorAs_MatchEnvVar extends IPackErrorAs_Base {
+  matchEnvVar: string;
+}
+
 export interface IDefineNewNiceErrorDomainOptions<
   ERR_DOMAIN extends string = string,
   SCHEMA extends TNiceErrorSchema = TNiceErrorSchema,
 > {
   defaultHttpStatusCode?: number;
   defaultMessage?: string;
+  packAs?: () => EErrorPackType;
   domain: ERR_DOMAIN;
   schema: SCHEMA;
 }
@@ -250,7 +251,7 @@ export interface INiceErrorJsonObject<
   name: "NiceError";
   def: Omit<ERR_DEF, "schema">;
   ids: ID[];
-  /** Wire-safe error data — context is in `"no_serialization"` or `"unhydrated"` state only. */
+  /** Wire-safe error data — context is in `"raw_unset"` or `"unhydrated"` state only. */
   errorData: TSerializedErrorDataMap<ERR_DEF["schema"]>;
   wasntNice: boolean;
   message: string;

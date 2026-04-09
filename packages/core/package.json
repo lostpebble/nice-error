@@ -4,17 +4,11 @@
   "module": "build/index.js",
   "types": "build/types/index.d.ts",
   "type": "module",
-  "version": "0.0.5",
+  "version": "0.0.8",
   "exports": {
     ".": {
-      "types": [
-        "./build/types/index.d.ts",
-        "./src/index.ts"
-      ],
-      "import": [
-        "./build/index.js",
-        "./src/index.ts"
-      ]
+      "types": "./build/types/index.d.ts",
+      "import": "./build/index.js"
     }
   },
   "files": [

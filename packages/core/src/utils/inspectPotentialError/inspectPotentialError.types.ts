@@ -1,15 +1,9 @@
-import type { NiceError } from "../NiceError/NiceError";
-import type { INiceErrorJsonObject, IRegularErrorJsonObject } from "../NiceError/NiceError.types";
-
-export enum EInspectErrorResultType {
-  nullish = "nullish",
-  niceErrorObject = "niceErrorObject",
-  niceError = "niceError",
-  jsError = "jsError",
-  jsErrorObject = "jsErrorObject",
-  jsDataType = "jsDataType",
-  jsOther = "jsOther",
-}
+import type { NiceError } from "../../NiceError/NiceError";
+import type {
+  INiceErrorJsonObject,
+  IRegularErrorJsonObject,
+} from "../../NiceError/NiceError.types";
+import type { EInspectErrorResultType } from "./inspectPotentialError.enums";
 
 export interface IInspectErrorResult_Base<T extends EInspectErrorResultType> {
   type: T;

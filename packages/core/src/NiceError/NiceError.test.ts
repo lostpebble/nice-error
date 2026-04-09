@@ -4,6 +4,7 @@ import { err } from "../NiceErrorDefined/err";
 import { nice_error_test_options } from "../test/helpers/nice_error_testing.static";
 import { castNiceError } from "../utils/castNiceError";
 import { NiceError } from "./NiceError";
+import { EContextSerializedState } from "./NiceError.enums";
 
 // ---------------------------------------------------------------------------
 // Shared test fixtures
@@ -288,7 +289,7 @@ describe("NiceError.toJsonObject", () => {
       ids: [EAuth.account_locked],
       errorData: {
         [EAuth.account_locked]: {
-          contextState: { kind: "no_serialization", value: undefined },
+          contextState: { kind: EContextSerializedState.serde_unset, value: undefined },
           message: "Account locked",
           httpStatusCode: 403,
         },

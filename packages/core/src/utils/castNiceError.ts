@@ -1,7 +1,7 @@
 import { EErrId_CastNotNice, err_cast_not_nice } from "../internal/nice_core_errors";
 import { NiceError } from "../NiceError/NiceError";
-import { inspectPotentialError } from "./inspectPotentialError";
-import { EInspectErrorResultType } from "./inspectPotentialError.types";
+import { inspectPotentialError } from "./inspectPotentialError/inspectPotentialError";
+import { EInspectErrorResultType } from "./inspectPotentialError/inspectPotentialError.enums";
 
 /**
  * Casts any unknown value into a `NiceError`.

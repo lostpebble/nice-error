@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { NiceError } from "../NiceError/NiceError";
-import type { INiceErrorJsonObject, IRegularErrorJsonObject } from "../NiceError/NiceError.types";
+import { NiceError } from "../../NiceError/NiceError";
+import type {
+  INiceErrorJsonObject,
+  IRegularErrorJsonObject,
+} from "../../NiceError/NiceError.types";
+import { logger_NiceError } from "../logger";
 import { inspectPotentialError } from "./inspectPotentialError";
-import { logger_NiceError } from "./logger";
 
 describe("inspectPotentialError", () => {
   it("should correctly identify nullish values", () => {

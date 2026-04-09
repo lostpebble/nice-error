@@ -1,6 +1,6 @@
 import { NiceError } from "../NiceError/NiceError";
+import { EContextSerializedState, EErrorPackType } from "../NiceError/NiceError.enums";
 import {
-  EContextSerializedState,
   type FromIdArgs,
   type IDefineNewNiceErrorDomainOptions,
   type INiceErrorDefinedProps,
@@ -87,6 +87,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   private readonly _schema: ERR_DEF["schema"];
   private _definedChildNiceErrors: ILinkedNiceErrorDefined[] = [];
   private _definedParentNiceError?: ILinkedNiceErrorDefined;
+  private _pack?: EErrorPackType;
 
   constructor(definition: ERR_DEF) {
     this.domain = definition.domain;
@@ -125,6 +126,10 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
     this.addChildNiceErrorDefined(child);
     child.addParentNiceErrorDefined(this);
 
+    if (this._pack) {
+      child.packAs(this._pack);
+    }
+
     return child;
   }
 
@@ -157,6 +162,23 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
     }
   }
 
+  packAs(pack: EErrorPackType): this {
+    this._pack = pack;
+    return this;
+  }
+
+  private createError<ACTIVE_IDS extends keyof ERR_DEF["schema"]>(
+    input: INiceErrorHydratedOptions<ERR_DEF, ACTIVE_IDS>,
+  ) {
+    const err = new NiceErrorHydrated<ERR_DEF, ACTIVE_IDS>(input);
+
+    if (this._pack === EErrorPackType.msg_pack) {
+      return err.msgPack();
+    }
+
+    return err;
+  }
+
   // -------------------------------------------------------------------------
   // hydrate
   // -------------------------------------------------------------------------
@@ -168,7 +190,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
    * For each active id, if the context is in the `"unhydrated"` state (i.e. the
    * error was reconstructed from a JSON payload), `hydrate` calls
    * `fromJsonSerializable` to reconstruct the typed value and advances the state
-   * to `"hydrated"`. Ids already in `"hydrated"` or `"no_serialization"` state
+   * to `"hydrated"`. Ids already in `"hydrated"` or `"raw_unset"` state
    * are passed through unchanged.
    *
    * @throws If `error.def.domain` does not match this definition's domain. Use
@@ -260,14 +282,23 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
     const errorData: TErrorDataForIdMap<ERR_DEF["schema"]> = {};
     errorData[id] = reconciledData;
 
-    return new NiceErrorHydrated<ERR_DEF, K>({
+    return this.createError({
       def: this._buildDef(),
       niceErrorDefined: this,
       ids: [id],
       errorData,
       message: reconciledData.message,
       httpStatusCode: reconciledData.httpStatusCode,
-    } as INiceErrorHydratedOptions<ERR_DEF, K>);
+    }) as unknown as NiceErrorHydrated<ERR_DEF, K>;
+
+    // return new NiceErrorHydrated<ERR_DEF, K>({
+    //   def: this._buildDef(),
+    //   niceErrorDefined: this,
+    //   ids: [id],
+    //   errorData,
+    //   message: reconciledData.message,
+    //   httpStatusCode: reconciledData.httpStatusCode,
+    // } as INiceErrorHydratedOptions<ERR_DEF, K>);
   }
 
   // -------------------------------------------------------------------------
@@ -409,8 +440,8 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
       const serialized = entry.context.serialization.toJsonSerializable(context as any);
       contextState = { kind: EContextSerializedState.hydrated, value: context, serialized };
     } else {
-      // No custom serializer (or context is absent for optional ids) — use "no_serialization".
-      contextState = { kind: EContextSerializedState.raw_unset, value: context };
+      // No custom serializer (or context is absent for optional ids) — use "raw_unset".
+      contextState = { kind: EContextSerializedState.serde_unset, value: context };
     }
 
     return { contextState, message, httpStatusCode };

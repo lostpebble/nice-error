@@ -7,7 +7,7 @@ import type {
   IInspectErrorResult_JsOther,
   IInspectErrorResult_Nullish,
   TInspectErrorResult_JsDataType,
-} from "../utils/inspectPotentialError.types";
+} from "../utils/inspectPotentialError/inspectPotentialError.types";
 
 export const err_nice = defineNiceError({
   domain: "err_nice",

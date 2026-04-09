@@ -1,8 +1,9 @@
 import type { NiceErrorDefined } from "../NiceErrorDefined/NiceErrorDefined";
 import type { IErrorCase } from "../utils/handleWith";
 import { jsErrorOrCastJsError } from "../utils/jsErrorOrCastJsError";
+import { msgPack } from "../utils/pack_error/msgPack";
+import { EContextSerializedState } from "./NiceError.enums";
 import {
-  EContextSerializedState,
   type INiceErrorDefinedProps,
   type INiceErrorJsonObject,
   type IRegularErrorJsonObject,
@@ -162,7 +163,7 @@ export class NiceError<
       );
     }
 
-    // "no_serialization" | "hydrated" — both carry `value`
+    // "raw_unset" | "hydrated" — both carry `value`
     return state.value as ContextOf<ERR_DEF["schema"], ID>;
   }
 
@@ -358,5 +359,9 @@ export class NiceError<
       return true;
     }
     return false;
+  }
+
+  msgPack(): Error {
+    return msgPack(this);
   }
 }

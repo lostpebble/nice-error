@@ -1,4 +1,5 @@
-import type { INiceErrorJsonObject } from "../NiceError/NiceError.types";
+import { EContextSerializedState } from "../NiceError/NiceError.enums";
+import { type INiceErrorJsonObject, type TErrorDataForIdMap } from "../NiceError/NiceError.types";
 
 /**
  * Returns `true` if `obj` is a JSON-serialised `NiceError` object matching the
@@ -31,22 +32,26 @@ export function isNiceErrorObject(obj: unknown): obj is INiceErrorJsonObject {
 
   // Validate errorData entries use the current contextState format.
   // An absent / null errorData is acceptable (bare NiceErrors may have an empty map).
-  const errorData = o["errorData"];
+  const errorData = o["errorData"] as TErrorDataForIdMap<any>;
   if (errorData != null) {
     if (typeof errorData !== "object") return false;
 
-    for (const entry of Object.values(errorData as Record<string, unknown>)) {
+    for (const entry of Object.values(errorData)) {
       if (entry == null) continue;
       if (typeof entry !== "object") return false;
 
-      const e = entry as Record<string, unknown>;
+      const e = entry;
       const state = e["contextState"];
 
       // Reject old-format entries that still use the `context` / `serialized` shape.
       if (state == null || typeof state !== "object") return false;
 
-      const kind = (state as Record<string, unknown>)["kind"];
-      if (kind !== "no_serialization" && kind !== "unhydrated") return false;
+      const kind = state["kind"];
+      if (
+        kind !== EContextSerializedState.serde_unset &&
+        kind !== EContextSerializedState.unhydrated
+      )
+        return false;
     }
   }
 

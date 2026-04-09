@@ -1,18 +1,19 @@
-import { NiceError } from "../NiceError/NiceError";
-import type { IRegularErrorJsonObject } from "../NiceError/NiceError.types";
-import { DUR_OBJ_PACK_PREFIX, DUR_OBJ_PACK_SUFFIX } from "../NiceError/nice_error.static";
-import { EInspectErrorResultType, type TInspectErrorResult } from "./inspectPotentialError.types";
-import { isNiceErrorObject } from "./isNiceErrorObject";
-import { isRegularErrorJsonObject } from "./isRegularErrorObject";
-import { logger_NiceError } from "./logger";
+import { NiceError } from "../../NiceError/NiceError";
+import type { IRegularErrorJsonObject } from "../../NiceError/NiceError.types";
+import { DUR_OBJ_PACK_PREFIX, DUR_OBJ_PACK_SUFFIX } from "../../NiceError/nice_error.static";
+import { isNiceErrorObject } from "../isNiceErrorObject";
+import { isRegularErrorJsonObject } from "../isRegularErrorObject";
+import { logger_NiceError } from "../logger";
+import { EInspectErrorResultType } from "./inspectPotentialError.enums";
+import { type TInspectErrorResult } from "./inspectPotentialError.types";
 
-function interpretDurObjPackedError(
+function interpretMessagePackedError(
   parsedError: Error | IRegularErrorJsonObject,
 ): TInspectErrorResult | null {
   if (
     typeof parsedError.message === "string" &&
     parsedError.message.includes(DUR_OBJ_PACK_PREFIX) &&
-    parsedError.message.endsWith(DUR_OBJ_PACK_SUFFIX)
+    parsedError.message.includes(DUR_OBJ_PACK_SUFFIX)
   ) {
     const jsonStr = parsedError.message
       .split(DUR_OBJ_PACK_PREFIX)[1]!
@@ -108,7 +109,7 @@ export const inspectPotentialError = (potentialError: unknown): TInspectErrorRes
   }
 
   if (parsedError instanceof Error) {
-    const durObjResult = interpretDurObjPackedError(parsedError);
+    const durObjResult = interpretMessagePackedError(parsedError);
 
     if (durObjResult != null) {
       return durObjResult;
@@ -121,7 +122,7 @@ export const inspectPotentialError = (potentialError: unknown): TInspectErrorRes
   }
 
   if (isRegularErrorJsonObject(parsedError)) {
-    const durObjResult = interpretDurObjPackedError(parsedError);
+    const durObjResult = interpretMessagePackedError(parsedError);
 
     if (durObjResult != null) {
       return durObjResult;
