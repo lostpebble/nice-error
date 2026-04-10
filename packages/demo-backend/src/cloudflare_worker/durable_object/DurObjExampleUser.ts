@@ -16,8 +16,10 @@ export class DurObjExampleUser extends DurableObject {
   }
 
   async throwErrorWithSerializableContext() {
-    throw demo_err_nice.fromId(EErrId_DemoNiceBackend.error_with_serializable_context, {
-      dateNow: new Date(),
-    });
+    throw demo_err_nice
+      .fromId(EErrId_DemoNiceBackend.error_with_serializable_context, {
+        dateNow: new Date(),
+      })
+      .pack();
   }
 }

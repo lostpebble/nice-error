@@ -625,12 +625,14 @@ var DUR_OBJ_PACK_SUFFIX = "]]NE_DUROBJ";
 
 // ../core/src/utils/packError/causePack.ts
 var causePack = /* @__PURE__ */ __name((error) => {
+  error._packedState = { cause: error.cause, packedAs: "cause_pack" /* cause_pack */ };
   error.cause = `${DUR_OBJ_PACK_PREFIX}${JSON.stringify(error.toJsonObject())}${DUR_OBJ_PACK_SUFFIX}`;
   return error;
 }, "causePack");
 
 // ../core/src/utils/packError/msgPack.ts
 var msgPack = /* @__PURE__ */ __name((error) => {
+  error._packedState = { message: error.message, packedAs: "msg_pack" /* msg_pack */ };
   error.message = `${DUR_OBJ_PACK_PREFIX}${JSON.stringify(error.toJsonObject())}${DUR_OBJ_PACK_SUFFIX}`;
   return error;
 }, "msgPack");
@@ -655,7 +657,7 @@ var NiceError = class extends Error {
   wasntNice;
   httpStatusCode;
   originError;
-  _isPackedAs = "no_pack" /* no_pack */;
+  _packedState;
   /** Internal: all active id → reconciled data pairs. */
   _errorDataMap;
   // -------------------------------------------------------------------------
@@ -897,8 +899,20 @@ var NiceError = class extends Error {
     return false;
   }
   pack(packType = "msg_pack") {
-    if (this._isPackedAs !== "no_pack" /* no_pack */) return this;
+    if (this._packedState != null) return this;
     return packError(this, packType);
+  }
+  unpack() {
+    if (this._packedState == null) return this;
+    if (this._packedState.packedAs === "msg_pack" /* msg_pack */) {
+      this.message = this._packedState.message;
+    }
+    if (this._packedState.packedAs === "cause_pack" /* cause_pack */) {
+      this.cause = this._packedState.cause;
+    }
+    this._packedState = void 0;
+    delete this._packedState;
+    return this;
   }
 };
 
@@ -3269,7 +3283,7 @@ var DurObjExampleUser = class extends DurableObject {
   async throwErrorWithSerializableContext() {
     throw demo_err_nice.fromId("error_with_serializable_context" /* error_with_serializable_context */, {
       dateNow: /* @__PURE__ */ new Date()
-    });
+    }).pack();
   }
 };
 
@@ -5464,7 +5478,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env2, _ctx, middlewareCtx
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-7A1mno/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-dj3vdZ/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -5496,7 +5510,7 @@ function __facade_invoke__(request, env2, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-7A1mno/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-dj3vdZ/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

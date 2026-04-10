@@ -260,6 +260,7 @@ export interface INiceErrorJsonObject<
   httpStatusCode: number;
   /** The stack trace of the NiceError at the point it was created. */
   stack?: string;
+  cause?: unknown;
   originError?: IRegularErrorJsonObject | undefined;
 }
 

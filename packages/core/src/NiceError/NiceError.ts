@@ -68,7 +68,10 @@ export class NiceError<
   readonly httpStatusCode: number;
   originError?: IRegularErrorJsonObject;
 
-  _isPackedAs: EErrorPackType = EErrorPackType.no_pack;
+  _packedState?:
+    | { packedAs: EErrorPackType.cause_pack; cause: unknown }
+    | { packedAs: EErrorPackType.msg_pack; message: string }
+    | undefined;
 
   /** Internal: all active id → reconciled data pairs. */
   protected readonly _errorDataMap: TErrorDataForIdMap<ERR_DEF["schema"]>;
@@ -365,7 +368,24 @@ export class NiceError<
   }
 
   pack(packType: EErrorPackType = "msg_pack" as EErrorPackType): this {
-    if (this._isPackedAs !== EErrorPackType.no_pack) return this;
+    if (this._packedState != null) return this;
     return packError(this, packType);
+  }
+
+  unpack(): this {
+    if (this._packedState == null) return this;
+
+    if (this._packedState.packedAs === EErrorPackType.msg_pack) {
+      this.message = this._packedState.message;
+    }
+
+    if (this._packedState.packedAs === EErrorPackType.cause_pack) {
+      this.cause = this._packedState.cause;
+    }
+
+    this._packedState = undefined;
+    delete this._packedState;
+
+    return this;
   }
 }
