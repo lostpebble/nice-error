@@ -89,16 +89,11 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   private _definedChildNiceErrors: ILinkedNiceErrorDefined[] = [];
   private _definedParentNiceError?: ILinkedNiceErrorDefined;
   private _setPack?: EErrorPackType;
-  private _packAs?: () => EErrorPackType | void;
 
   constructor(definition: ERR_DEF) {
     this.domain = definition.domain;
     this.allDomains = definition.allDomains;
     this._schema = definition.schema;
-
-    if (definition.packAs != null) {
-      this._packAs = definition.packAs;
-    }
 
     if (definition.defaultHttpStatusCode != null) {
       this.defaultHttpStatusCode = definition.defaultHttpStatusCode;
@@ -178,7 +173,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
   ) {
     const err = new NiceErrorHydrated<any, any>(input);
 
-    if (this._setPack !== "no_pack") {
+    if (this._setPack != null && this._setPack !== "no_pack") {
       return err.pack(this._setPack) as any;
     }
 
