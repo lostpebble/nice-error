@@ -62,8 +62,8 @@
         "sharp": "^0.34.2",
       },
     },
-    "packages/nice-task": {
-      "name": "@nice-error/nice-task",
+    "packages/nice-action": {
+      "name": "@nice-error/nice-action",
       "version": "0.0.10",
       "dependencies": {
         "@nice-error/common-errors": "workspace:*",
@@ -303,7 +303,7 @@
 
     "@nice-error/core": ["@nice-error/core@workspace:packages/core"],
 
-    "@nice-error/nice-task": ["@nice-error/nice-task@workspace:packages/nice-task"],
+    "@nice-error/nice-action": ["@nice-error/nice-action@workspace:packages/nice-action"],
 
     "@oslojs/encoding": ["@oslojs/encoding@1.1.0", "", {}, "sha512-70wQhgYmndg4GCPxPPxPGevRKqTIJ2Nh4OkiMWmDAVYsTQ+Ta7Sq+rPevXyXGdzr30/qZBnyOalCszoMxlyldQ=="],
 
