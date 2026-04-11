@@ -37,7 +37,7 @@
       },
     },
     "packages/demo-backend": {
-      "name": "@nice-error/demo-backend",
+      "name": "demo-backend",
       "dependencies": {
         "@hono/standard-validator": "^0.2.2",
         "@nice-error/common-errors": "workspace:*",
@@ -288,8 +288,6 @@
     "@nice-error/common-errors": ["@nice-error/common-errors@workspace:packages/common-errors"],
 
     "@nice-error/core": ["@nice-error/core@workspace:packages/core"],
-
-    "@nice-error/demo-backend": ["@nice-error/demo-backend@workspace:packages/demo-backend"],
 
     "@oslojs/encoding": ["@oslojs/encoding@1.1.0", "", {}, "sha512-70wQhgYmndg4GCPxPPxPGevRKqTIJ2Nh4OkiMWmDAVYsTQ+Ta7Sq+rPevXyXGdzr30/qZBnyOalCszoMxlyldQ=="],
 
@@ -594,6 +592,8 @@
     "deep-is": ["deep-is@0.1.4", "", {}, "sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ=="],
 
     "defu": ["defu@6.1.7", "", {}, "sha512-7z22QmUWiQ/2d0KkdYmANbRUVABpZ9SNYyH5vx6PZ+nE5bcC0l7uFvEfHlyld/HcGBFTL536ClDt3DEcSlEJAQ=="],
+
+    "demo-backend": ["demo-backend@workspace:packages/demo-backend"],
 
     "dequal": ["dequal@2.0.3", "", {}, "sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA=="],
 
