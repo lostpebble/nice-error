@@ -1,0 +1,15 @@
+info:
+  name: Not Found Route
+  type: http
+  seq: 4
+
+http:
+  method: GET
+  url: http://192.168.3.143:8787/unknown_route
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
