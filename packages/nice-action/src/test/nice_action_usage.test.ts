@@ -23,5 +23,9 @@ describe("Nice Action Usage", () => {
         }),
       },
     });
+
+    const testAction = testActionDomain.newAction("test_action", {
+      timeStart: new Date("2024-01-01T00:00:00Z"),
+    });
   });
 });

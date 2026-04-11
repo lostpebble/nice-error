@@ -1,8 +1,18 @@
+import type { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
+import { NiceAction } from "./NiceAction";
 import type {
   INiceActionDomain,
   INiceActionDomainChildOptions,
   TNiceActionDomainChildDef,
 } from "./NiceActionDomain.types";
+
+type TInferInputFromSchema<SCH> =
+  SCH extends NiceActionSchema<infer IN, any, any>
+    ? {
+        Input: IN[0];
+        SerdeInput: IN[1];
+      }
+    : never;
 
 export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDomain> {
   readonly domain: ACT_DOM["domain"];
@@ -28,10 +38,15 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
     return child;
   }
 
-  createAction<ID extends keyof ACT_DOM["schema"]>(id: ID, input: ACT_DOM["schema"][ID]["input"]) {
+  newAction<ID extends keyof ACT_DOM["schema"]>(
+    id: ID,
+    input: TInferInputFromSchema<ACT_DOM["schema"][ID]>["Input"],
+  ) {
     const actionSchema = this.schema[id];
     if (!actionSchema) {
       throw new Error(`Action with id "${String(id)}" does not exist in domain "${this.domain}".`);
     }
+
+    return new NiceAction(actionSchema);
   }
 }
