@@ -78,7 +78,7 @@ export type InferNiceErrorHydrated<T extends NiceErrorDefined<any>> =
 // NiceErrorDefined
 // ---------------------------------------------------------------------------
 
-export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
+export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps = INiceErrorDefinedProps> {
   readonly domain: ERR_DEF["domain"];
   readonly allDomains: ERR_DEF["allDomains"];
   readonly defaultHttpStatusCode?: number;

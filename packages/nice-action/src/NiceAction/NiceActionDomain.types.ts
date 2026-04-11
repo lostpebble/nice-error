@@ -1,10 +1,10 @@
-import type { INiceActionSchema } from "./ActionSchema/NiceActionSchema.types";
+import type { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
 
 export type TNiceActionDomainId = string;
 
 export type TNiceActionDomainIds = [TNiceActionDomainId, ...TNiceActionDomainId[]];
 
-export type TNiceActionDomainSchema = Record<string, INiceActionSchema>;
+export type TNiceActionDomainSchema = Record<string, NiceActionSchema>;
 
 export interface INiceActionDomainChildOptions<
   ERR_DOMAIN extends string = string,
