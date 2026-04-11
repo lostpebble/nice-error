@@ -27,4 +27,11 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
     });
     return child;
   }
+
+  createAction<ID extends keyof ACT_DOM["schema"]>(id: ID, input: ACT_DOM["schema"][ID]["input"]) {
+    const actionSchema = this.schema[id];
+    if (!actionSchema) {
+      throw new Error(`Action with id "${String(id)}" does not exist in domain "${this.domain}".`);
+    }
+  }
 }

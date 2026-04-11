@@ -1,6 +1,5 @@
 import type { JSONSerializableValue, NiceErrorDefined } from "@nice-error/core";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
-import { NiceAction } from "../NiceAction";
 import type {
   TNiceActionErrorDomains,
   TNiceActonSchemaInputOptions,
@@ -15,9 +14,12 @@ export class NiceActionSchema<
   private errorDomains: TNiceActionErrorDomains<ERRORS> = {} as any;
   private inputOptions: TNiceActonSchemaInputOptions<any, any> | undefined;
   private outputOptions: TNiceActonSchemaInputOptions<any, any> | undefined;
-  readonly inputSchema?: StandardSchemaV1;
+  private readonly inputSchema?: StandardSchemaV1;
 
-  input<VS extends StandardSchemaV1, SERDE_IN extends JSONSerializableValue>(
+  input<
+    VS extends StandardSchemaV1 = StandardSchemaV1,
+    SERDE_IN extends JSONSerializableValue = never,
+  >(
     options: TNiceActonSchemaInputOptions<VS, SERDE_IN>,
   ): NiceActionSchema<
     TTransportedValue<StandardSchemaV1.InferInput<VS>, SERDE_IN>,
@@ -28,7 +30,10 @@ export class NiceActionSchema<
     return this as any;
   }
 
-  output<VS extends StandardSchemaV1, SERDE_OUT extends JSONSerializableValue>(
+  output<
+    VS extends StandardSchemaV1 = StandardSchemaV1,
+    SERDE_OUT extends JSONSerializableValue = JSONSerializableValue,
+  >(
     options: TNiceActonSchemaInputOptions<VS, SERDE_OUT>,
   ): NiceActionSchema<
     INPUT,
@@ -37,9 +42,5 @@ export class NiceActionSchema<
   > {
     this.outputOptions = options;
     return this as any;
-  }
-
-  createAction() {
-    return new NiceAction();
   }
 }

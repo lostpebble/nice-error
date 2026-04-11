@@ -21,6 +21,8 @@
     "type-check": "bunx tsc --noEmit",
     "type-check-watch": "bunx tsc --noEmit --watch",
     "clean-build": "bunx rimraf build",
+    "vitest": "vitest --typecheck",
+    "vitest-agent": "vitest --typecheck --reporter=agent",
     "build": "bun run clean-build && bun run build.ts && bun run build-types",
     "build-types": "tsc --project tsconfig.build.json"
   },
