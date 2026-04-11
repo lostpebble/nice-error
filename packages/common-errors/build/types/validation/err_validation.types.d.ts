@@ -1,4 +1,5 @@
-import type { BaseIssue } from "valibot";
-export interface IErrContext_Valibot {
-    issue: BaseIssue<any>;
+import type { StandardSchemaV1 } from "@standard-schema/spec";
+export interface IErrContext_HonoStandardSchema {
+    data: any;
+    issues: readonly StandardSchemaV1.Issue[];
 }

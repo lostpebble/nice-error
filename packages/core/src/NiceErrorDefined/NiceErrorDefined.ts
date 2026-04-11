@@ -120,7 +120,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
    * The child has its own schema and its own domain string.
    */
   createChildDomain<SUB extends IDefineNewNiceErrorDomainOptions>(
-    subErrorDef: SUB,
+    subErrorDef: SUB & { [K in Exclude<keyof SUB, keyof IDefineNewNiceErrorDomainOptions>]: never },
   ): NiceErrorDefined<ChildDef<ERR_DEF, SUB>> {
     const child = new NiceErrorDefined<ChildDef<ERR_DEF, SUB>>({
       domain: subErrorDef.domain,
@@ -129,6 +129,8 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps> {
         ...ERR_DEF["allDomains"],
       ],
       schema: subErrorDef.schema,
+      defaultHttpStatusCode: subErrorDef.defaultHttpStatusCode,
+      defaultMessage: subErrorDef.defaultMessage,
     } as ChildDef<ERR_DEF, SUB>);
 
     this.addChildNiceErrorDefined(child);

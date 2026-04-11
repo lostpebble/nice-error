@@ -18,6 +18,7 @@
   "scripts": {
     "format": "biome check --write .",
     "type-check-all": "bun run --filter '*' type-check",
+    "build-all": "bun run --filter '@nice-error/*' build",
     "vitest-all": "bun run --filter '*' vitest",
     "lint": "bunx @biomejs/biome check . && eslint ."
   },

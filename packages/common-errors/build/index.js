@@ -2480,14 +2480,14 @@ var logger_NiceError_testing = logger_NiceError.getSubLogger({
 // src/validation/err_validation.ts
 var EValidator;
 ((EValidator2) => {
-  EValidator2["valibot"] = "valibot";
+  EValidator2["hono_standard_schema"] = "hono_standard_schema";
 })(EValidator ||= {});
 var err_validation = err_nice.createChildDomain({
   domain: "err_validation",
-  httpStatusCode: StatusCodes.BAD_REQUEST,
+  defaultHttpStatusCode: StatusCodes.BAD_REQUEST,
   schema: {
-    ["valibot" /* valibot */]: err({
-      message: "Validation failed: valibot"
+    ["hono_standard_schema" /* hono_standard_schema */]: err({
+      message: "Validation failed: "
     })
   }
 });

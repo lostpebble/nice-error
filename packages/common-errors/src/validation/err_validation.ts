@@ -8,7 +8,7 @@ export enum EValidator {
 
 export const err_validation = err_nice.createChildDomain({
   domain: "err_validation",
-  stat: StatusCodes.BAD_REQUEST,
+  defaultHttpStatusCode: StatusCodes.BAD_REQUEST,
   schema: {
     [EValidator.hono_standard_schema]: err<IErrContext_HonoStandardSchema>({
       message: "Validation failed: ",

@@ -1,5 +1,5 @@
 {
-  "name": "@nice-error/demo-backend",
+  "name": "demo-backend",
   "private": true,
   "scripts": {
     "cf-typegen": "wrangler types && bunx @biomejs/biome format . --write",
