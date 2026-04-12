@@ -45,6 +45,20 @@ export interface INiceActionDomain<
 > extends INiceActionDomainDef<IDS, SCH> {
   _dispatchAction(
     primed: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>,
+    envId?: string,
+  ): Promise<unknown>;
+}
+
+/**
+ * Structural interface implemented by `NiceActionDomainResolver`.
+ * Used by `NiceActionDomain` to avoid a circular import with the concrete class.
+ *
+ * `_resolvePrimed` is the inline dispatch path — calls the registered fn directly
+ * without re-serializing/deserializing. Errors from the fn propagate naturally.
+ */
+export interface INiceActionResolverLike {
+  _resolvePrimed(
+    primed: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>,
   ): Promise<unknown>;
 }
 

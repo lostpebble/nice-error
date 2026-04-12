@@ -33,11 +33,13 @@ export class NiceActionPrimed<
   }
 
   /**
-   * Re-execute this primed action through the domain handler.
+   * Re-execute this primed action through the domain handler or resolver.
    * Useful for deferred or cross-environment execution of a hydrated action.
+   *
+   * Pass `envId` to target a specific named handler/resolver on the domain.
    */
-  async execute(): Promise<TInferOutputFromSchema<SCH>["Output"]> {
-    return this.coreAction.domain._dispatchAction(this) as Promise<
+  async execute(envId?: string): Promise<TInferOutputFromSchema<SCH>["Output"]> {
+    return this.coreAction.domain._dispatchAction(this, envId) as Promise<
       TInferOutputFromSchema<SCH>["Output"]
     >;
   }
@@ -48,11 +50,11 @@ export class NiceActionPrimed<
    *
    * Mirrors `NiceAction.executeSafe` — useful when re-executing a hydrated primed action.
    */
-  async executeSafe(): Promise<
+  async executeSafe(envId?: string): Promise<
     NiceActionResult<TInferOutputFromSchema<SCH>["Output"], TInferActionError<SCH>>
   > {
     try {
-      const value = await this.execute();
+      const value = await this.execute(envId);
       return { ok: true, value };
     } catch (error) {
       return { ok: false, error: error as TInferActionError<SCH> };

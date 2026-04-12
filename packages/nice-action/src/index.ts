@@ -24,6 +24,7 @@ export type {
   INiceActionDomain,
   INiceActionDomainChildOptions,
   INiceActionDomainDef,
+  INiceActionResolverLike,
   ISerializedNiceAction,
   ISerializedNiceActionResponse,
   MaybePromise,

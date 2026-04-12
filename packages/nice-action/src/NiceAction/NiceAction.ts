@@ -38,13 +38,18 @@ export class NiceAction<
   }
 
   /**
-   * Prime this action with input and immediately execute it through the domain handler.
+   * Prime this action with input and immediately execute it through the domain handler or resolver.
+   *
+   * Pass `envId` to target a specific named handler/resolver registered on the domain via
+   * `setActionHandler(h, { envId })` or `registerResolver(r, { envId })`.
+   * Throws `action_environment_not_found` if no handler or resolver with that id exists.
    */
   async execute(
     input: TInferInputFromSchema<SCH>["Input"],
+    envId?: string,
   ): Promise<TInferOutputFromSchema<SCH>["Output"]> {
     const primed = new NiceActionPrimed(this, input);
-    return this.domain._dispatchAction(primed) as Promise<TInferOutputFromSchema<SCH>["Output"]>;
+    return this.domain._dispatchAction(primed, envId) as Promise<TInferOutputFromSchema<SCH>["Output"]>;
   }
 
   /**
@@ -68,9 +73,10 @@ export class NiceAction<
    */
   async executeSafe(
     input: TInferInputFromSchema<SCH>["Input"],
+    envId?: string,
   ): Promise<NiceActionResult<TInferOutputFromSchema<SCH>["Output"], TInferActionError<SCH>>> {
     try {
-      const value = await this.execute(input);
+      const value = await this.execute(input, envId);
       return { ok: true, value };
     } catch (error) {
       return { ok: false, error: error as TInferActionError<SCH> };
@@ -87,9 +93,10 @@ export class NiceAction<
    */
   async executeToResponse(
     input: TInferInputFromSchema<SCH>["Input"],
+    envId?: string,
   ): Promise<NiceActionResponse<DOM, SCH>> {
     const primed = new NiceActionPrimed(this, input);
-    const result = await this.executeSafe(input);
+    const result = await this.executeSafe(input, envId);
     return new NiceActionResponse(primed, result);
   }
 }

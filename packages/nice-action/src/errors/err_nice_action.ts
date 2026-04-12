@@ -8,6 +8,8 @@ export enum EErrId_NiceAction {
   hydration_action_id_not_found = "hydration_action_id_not_found",
   resolver_domain_not_registered = "resolver_domain_not_registered",
   resolver_action_not_registered = "resolver_action_not_registered",
+  action_environment_not_found = "action_environment_not_found",
+  environment_already_registered = "environment_already_registered",
 }
 
 export const err_nice_action = err_nice.createChildDomain({
@@ -50,6 +52,20 @@ export const err_nice_action = err_nice.createChildDomain({
     }>({
       message: ({ domain, actionId }) =>
         `No resolver registered for action "${actionId}" in domain "${domain}". Call .resolve("${actionId}", fn) on the domain resolver.`,
+    }),
+    [EErrId_NiceAction.action_environment_not_found]: err<{
+      domain: string;
+      envId: string;
+    }>({
+      message: ({ domain, envId }) =>
+        `No handler or resolver registered with environment id "${envId}" on domain "${domain}".`,
+    }),
+    [EErrId_NiceAction.environment_already_registered]: err<{
+      domain: string;
+      envId: string;
+    }>({
+      message: ({ domain, envId }) =>
+        `Environment "${envId}" is already registered on domain "${domain}". Each environment id may only be registered once.`,
     }),
   },
 });
