@@ -8,7 +8,10 @@ import type {
   TInferOutputFromSchema,
 } from "./NiceActionDomain.types";
 
-export class NiceActionPrimed<DOM extends INiceActionDomain, SCH extends NiceActionSchema<any, any, any>> {
+export class NiceActionPrimed<
+  DOM extends INiceActionDomain,
+  SCH extends NiceActionSchema<any, any, any>,
+> {
   readonly _isPrimed = true;
 
   constructor(
@@ -34,7 +37,9 @@ export class NiceActionPrimed<DOM extends INiceActionDomain, SCH extends NiceAct
    * Useful for deferred or cross-environment execution of a hydrated action.
    */
   async execute(): Promise<TInferOutputFromSchema<SCH>["Output"]> {
-    return this.coreAction.domain._dispatchAction(this) as Promise<TInferOutputFromSchema<SCH>["Output"]>;
+    return this.coreAction.domain._dispatchAction(this) as Promise<
+      TInferOutputFromSchema<SCH>["Output"]
+    >;
   }
 
   /**
@@ -43,7 +48,9 @@ export class NiceActionPrimed<DOM extends INiceActionDomain, SCH extends NiceAct
    *
    * Mirrors `NiceAction.executeSafe` — useful when re-executing a hydrated primed action.
    */
-  async executeSafe(): Promise<NiceActionResult<TInferOutputFromSchema<SCH>["Output"], TInferActionError<SCH>>> {
+  async executeSafe(): Promise<
+    NiceActionResult<TInferOutputFromSchema<SCH>["Output"], TInferActionError<SCH>>
+  > {
     try {
       const value = await this.execute();
       return { ok: true, value };

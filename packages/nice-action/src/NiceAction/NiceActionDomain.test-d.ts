@@ -1,9 +1,15 @@
+import {
+  defineNiceError,
+  err,
+  err_cast_not_nice,
+  type InferNiceError,
+  NiceError,
+} from "@nice-error/core";
 import * as v from "valibot";
 import { expectTypeOf, test } from "vitest";
-import { defineNiceError, err, NiceError, err_cast_not_nice, type InferNiceError } from "@nice-error/core";
 import { action } from "./ActionSchema/action";
-import { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
 import type { TInferActionError } from "./ActionSchema/NiceActionSchema";
+import { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
 import { createActionDomain } from "./createActionDomain";
 import type { INiceActionDomain, TNiceActionDomainIds } from "./NiceActionDomain.types";
 import { NiceActionPrimed } from "./NiceActionPrimed";
@@ -239,9 +245,10 @@ test("[TInferActionError] err_cast_not_nice is always present regardless of .thr
   });
 
   type NoopErr = TInferActionError<typeof dom.schema.noop>;
-  type CastIds = InferNiceError<typeof err_cast_not_nice> extends NiceError<any, infer IDS extends string>
-    ? IDS
-    : never;
+  type CastIds =
+    InferNiceError<typeof err_cast_not_nice> extends NiceError<any, infer IDS extends string>
+      ? IDS
+      : never;
   type AllIds = NoopErr extends NiceError<any, infer IDS extends string> ? IDS : never;
 
   // Every ID from err_cast_not_nice must be present even with no .throws().

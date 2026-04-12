@@ -105,69 +105,69 @@ var legacy_default = {
   UNAUTHORIZED,
   UNPROCESSABLE_ENTITY,
   UNSUPPORTED_MEDIA_TYPE,
-  USE_PROXY
+  USE_PROXY,
 };
 
 // ../../node_modules/.bun/http-status-codes@2.3.0/node_modules/http-status-codes/build/es/utils.js
 var statusCodeToReasonPhrase = {
-  "202": "Accepted",
-  "502": "Bad Gateway",
-  "400": "Bad Request",
-  "409": "Conflict",
-  "100": "Continue",
-  "201": "Created",
-  "417": "Expectation Failed",
-  "424": "Failed Dependency",
-  "403": "Forbidden",
-  "504": "Gateway Timeout",
-  "410": "Gone",
-  "505": "HTTP Version Not Supported",
-  "418": "I'm a teapot",
-  "419": "Insufficient Space on Resource",
-  "507": "Insufficient Storage",
-  "500": "Internal Server Error",
-  "411": "Length Required",
-  "423": "Locked",
-  "420": "Method Failure",
-  "405": "Method Not Allowed",
-  "301": "Moved Permanently",
-  "302": "Moved Temporarily",
-  "207": "Multi-Status",
-  "300": "Multiple Choices",
-  "511": "Network Authentication Required",
-  "204": "No Content",
-  "203": "Non Authoritative Information",
-  "406": "Not Acceptable",
-  "404": "Not Found",
-  "501": "Not Implemented",
-  "304": "Not Modified",
-  "200": "OK",
-  "206": "Partial Content",
-  "402": "Payment Required",
-  "308": "Permanent Redirect",
-  "412": "Precondition Failed",
-  "428": "Precondition Required",
-  "102": "Processing",
-  "103": "Early Hints",
-  "426": "Upgrade Required",
-  "407": "Proxy Authentication Required",
-  "431": "Request Header Fields Too Large",
-  "408": "Request Timeout",
-  "413": "Request Entity Too Large",
-  "414": "Request-URI Too Long",
-  "416": "Requested Range Not Satisfiable",
-  "205": "Reset Content",
-  "303": "See Other",
-  "503": "Service Unavailable",
-  "101": "Switching Protocols",
-  "307": "Temporary Redirect",
-  "429": "Too Many Requests",
-  "401": "Unauthorized",
-  "451": "Unavailable For Legal Reasons",
-  "422": "Unprocessable Entity",
-  "415": "Unsupported Media Type",
-  "305": "Use Proxy",
-  "421": "Misdirected Request"
+  202: "Accepted",
+  502: "Bad Gateway",
+  400: "Bad Request",
+  409: "Conflict",
+  100: "Continue",
+  201: "Created",
+  417: "Expectation Failed",
+  424: "Failed Dependency",
+  403: "Forbidden",
+  504: "Gateway Timeout",
+  410: "Gone",
+  505: "HTTP Version Not Supported",
+  418: "I'm a teapot",
+  419: "Insufficient Space on Resource",
+  507: "Insufficient Storage",
+  500: "Internal Server Error",
+  411: "Length Required",
+  423: "Locked",
+  420: "Method Failure",
+  405: "Method Not Allowed",
+  301: "Moved Permanently",
+  302: "Moved Temporarily",
+  207: "Multi-Status",
+  300: "Multiple Choices",
+  511: "Network Authentication Required",
+  204: "No Content",
+  203: "Non Authoritative Information",
+  406: "Not Acceptable",
+  404: "Not Found",
+  501: "Not Implemented",
+  304: "Not Modified",
+  200: "OK",
+  206: "Partial Content",
+  402: "Payment Required",
+  308: "Permanent Redirect",
+  412: "Precondition Failed",
+  428: "Precondition Required",
+  102: "Processing",
+  103: "Early Hints",
+  426: "Upgrade Required",
+  407: "Proxy Authentication Required",
+  431: "Request Header Fields Too Large",
+  408: "Request Timeout",
+  413: "Request Entity Too Large",
+  414: "Request-URI Too Long",
+  416: "Requested Range Not Satisfiable",
+  205: "Reset Content",
+  303: "See Other",
+  503: "Service Unavailable",
+  101: "Switching Protocols",
+  307: "Temporary Redirect",
+  429: "Too Many Requests",
+  401: "Unauthorized",
+  451: "Unavailable For Legal Reasons",
+  422: "Unprocessable Entity",
+  415: "Unsupported Media Type",
+  305: "Use Proxy",
+  421: "Misdirected Request",
 };
 var reasonPhraseToStatusCode = {
   Accepted: 202,
@@ -227,7 +227,7 @@ var reasonPhraseToStatusCode = {
   "Unprocessable Entity": 422,
   "Unsupported Media Type": 415,
   "Use Proxy": 305,
-  "Misdirected Request": 421
+  "Misdirected Request": 421,
 };
 
 // ../../node_modules/.bun/http-status-codes@2.3.0/node_modules/http-status-codes/build/es/utils-functions.js
@@ -249,89 +249,96 @@ var getStatusText = getReasonPhrase;
 
 // ../../node_modules/.bun/http-status-codes@2.3.0/node_modules/http-status-codes/build/es/status-codes.js
 var StatusCodes;
-(function(StatusCodes2) {
-  StatusCodes2[StatusCodes2["CONTINUE"] = 100] = "CONTINUE";
-  StatusCodes2[StatusCodes2["SWITCHING_PROTOCOLS"] = 101] = "SWITCHING_PROTOCOLS";
-  StatusCodes2[StatusCodes2["PROCESSING"] = 102] = "PROCESSING";
-  StatusCodes2[StatusCodes2["EARLY_HINTS"] = 103] = "EARLY_HINTS";
-  StatusCodes2[StatusCodes2["OK"] = 200] = "OK";
-  StatusCodes2[StatusCodes2["CREATED"] = 201] = "CREATED";
-  StatusCodes2[StatusCodes2["ACCEPTED"] = 202] = "ACCEPTED";
-  StatusCodes2[StatusCodes2["NON_AUTHORITATIVE_INFORMATION"] = 203] = "NON_AUTHORITATIVE_INFORMATION";
-  StatusCodes2[StatusCodes2["NO_CONTENT"] = 204] = "NO_CONTENT";
-  StatusCodes2[StatusCodes2["RESET_CONTENT"] = 205] = "RESET_CONTENT";
-  StatusCodes2[StatusCodes2["PARTIAL_CONTENT"] = 206] = "PARTIAL_CONTENT";
-  StatusCodes2[StatusCodes2["MULTI_STATUS"] = 207] = "MULTI_STATUS";
-  StatusCodes2[StatusCodes2["MULTIPLE_CHOICES"] = 300] = "MULTIPLE_CHOICES";
-  StatusCodes2[StatusCodes2["MOVED_PERMANENTLY"] = 301] = "MOVED_PERMANENTLY";
-  StatusCodes2[StatusCodes2["MOVED_TEMPORARILY"] = 302] = "MOVED_TEMPORARILY";
-  StatusCodes2[StatusCodes2["SEE_OTHER"] = 303] = "SEE_OTHER";
-  StatusCodes2[StatusCodes2["NOT_MODIFIED"] = 304] = "NOT_MODIFIED";
-  StatusCodes2[StatusCodes2["USE_PROXY"] = 305] = "USE_PROXY";
-  StatusCodes2[StatusCodes2["TEMPORARY_REDIRECT"] = 307] = "TEMPORARY_REDIRECT";
-  StatusCodes2[StatusCodes2["PERMANENT_REDIRECT"] = 308] = "PERMANENT_REDIRECT";
-  StatusCodes2[StatusCodes2["BAD_REQUEST"] = 400] = "BAD_REQUEST";
-  StatusCodes2[StatusCodes2["UNAUTHORIZED"] = 401] = "UNAUTHORIZED";
-  StatusCodes2[StatusCodes2["PAYMENT_REQUIRED"] = 402] = "PAYMENT_REQUIRED";
-  StatusCodes2[StatusCodes2["FORBIDDEN"] = 403] = "FORBIDDEN";
-  StatusCodes2[StatusCodes2["NOT_FOUND"] = 404] = "NOT_FOUND";
-  StatusCodes2[StatusCodes2["METHOD_NOT_ALLOWED"] = 405] = "METHOD_NOT_ALLOWED";
-  StatusCodes2[StatusCodes2["NOT_ACCEPTABLE"] = 406] = "NOT_ACCEPTABLE";
-  StatusCodes2[StatusCodes2["PROXY_AUTHENTICATION_REQUIRED"] = 407] = "PROXY_AUTHENTICATION_REQUIRED";
-  StatusCodes2[StatusCodes2["REQUEST_TIMEOUT"] = 408] = "REQUEST_TIMEOUT";
-  StatusCodes2[StatusCodes2["CONFLICT"] = 409] = "CONFLICT";
-  StatusCodes2[StatusCodes2["GONE"] = 410] = "GONE";
-  StatusCodes2[StatusCodes2["LENGTH_REQUIRED"] = 411] = "LENGTH_REQUIRED";
-  StatusCodes2[StatusCodes2["PRECONDITION_FAILED"] = 412] = "PRECONDITION_FAILED";
-  StatusCodes2[StatusCodes2["REQUEST_TOO_LONG"] = 413] = "REQUEST_TOO_LONG";
-  StatusCodes2[StatusCodes2["REQUEST_URI_TOO_LONG"] = 414] = "REQUEST_URI_TOO_LONG";
-  StatusCodes2[StatusCodes2["UNSUPPORTED_MEDIA_TYPE"] = 415] = "UNSUPPORTED_MEDIA_TYPE";
-  StatusCodes2[StatusCodes2["REQUESTED_RANGE_NOT_SATISFIABLE"] = 416] = "REQUESTED_RANGE_NOT_SATISFIABLE";
-  StatusCodes2[StatusCodes2["EXPECTATION_FAILED"] = 417] = "EXPECTATION_FAILED";
-  StatusCodes2[StatusCodes2["IM_A_TEAPOT"] = 418] = "IM_A_TEAPOT";
-  StatusCodes2[StatusCodes2["INSUFFICIENT_SPACE_ON_RESOURCE"] = 419] = "INSUFFICIENT_SPACE_ON_RESOURCE";
-  StatusCodes2[StatusCodes2["METHOD_FAILURE"] = 420] = "METHOD_FAILURE";
-  StatusCodes2[StatusCodes2["MISDIRECTED_REQUEST"] = 421] = "MISDIRECTED_REQUEST";
-  StatusCodes2[StatusCodes2["UNPROCESSABLE_ENTITY"] = 422] = "UNPROCESSABLE_ENTITY";
-  StatusCodes2[StatusCodes2["LOCKED"] = 423] = "LOCKED";
-  StatusCodes2[StatusCodes2["FAILED_DEPENDENCY"] = 424] = "FAILED_DEPENDENCY";
-  StatusCodes2[StatusCodes2["UPGRADE_REQUIRED"] = 426] = "UPGRADE_REQUIRED";
-  StatusCodes2[StatusCodes2["PRECONDITION_REQUIRED"] = 428] = "PRECONDITION_REQUIRED";
-  StatusCodes2[StatusCodes2["TOO_MANY_REQUESTS"] = 429] = "TOO_MANY_REQUESTS";
-  StatusCodes2[StatusCodes2["REQUEST_HEADER_FIELDS_TOO_LARGE"] = 431] = "REQUEST_HEADER_FIELDS_TOO_LARGE";
-  StatusCodes2[StatusCodes2["UNAVAILABLE_FOR_LEGAL_REASONS"] = 451] = "UNAVAILABLE_FOR_LEGAL_REASONS";
-  StatusCodes2[StatusCodes2["INTERNAL_SERVER_ERROR"] = 500] = "INTERNAL_SERVER_ERROR";
-  StatusCodes2[StatusCodes2["NOT_IMPLEMENTED"] = 501] = "NOT_IMPLEMENTED";
-  StatusCodes2[StatusCodes2["BAD_GATEWAY"] = 502] = "BAD_GATEWAY";
-  StatusCodes2[StatusCodes2["SERVICE_UNAVAILABLE"] = 503] = "SERVICE_UNAVAILABLE";
-  StatusCodes2[StatusCodes2["GATEWAY_TIMEOUT"] = 504] = "GATEWAY_TIMEOUT";
-  StatusCodes2[StatusCodes2["HTTP_VERSION_NOT_SUPPORTED"] = 505] = "HTTP_VERSION_NOT_SUPPORTED";
-  StatusCodes2[StatusCodes2["INSUFFICIENT_STORAGE"] = 507] = "INSUFFICIENT_STORAGE";
-  StatusCodes2[StatusCodes2["NETWORK_AUTHENTICATION_REQUIRED"] = 511] = "NETWORK_AUTHENTICATION_REQUIRED";
+((StatusCodes2) => {
+  StatusCodes2[(StatusCodes2["CONTINUE"] = 100)] = "CONTINUE";
+  StatusCodes2[(StatusCodes2["SWITCHING_PROTOCOLS"] = 101)] = "SWITCHING_PROTOCOLS";
+  StatusCodes2[(StatusCodes2["PROCESSING"] = 102)] = "PROCESSING";
+  StatusCodes2[(StatusCodes2["EARLY_HINTS"] = 103)] = "EARLY_HINTS";
+  StatusCodes2[(StatusCodes2["OK"] = 200)] = "OK";
+  StatusCodes2[(StatusCodes2["CREATED"] = 201)] = "CREATED";
+  StatusCodes2[(StatusCodes2["ACCEPTED"] = 202)] = "ACCEPTED";
+  StatusCodes2[(StatusCodes2["NON_AUTHORITATIVE_INFORMATION"] = 203)] =
+    "NON_AUTHORITATIVE_INFORMATION";
+  StatusCodes2[(StatusCodes2["NO_CONTENT"] = 204)] = "NO_CONTENT";
+  StatusCodes2[(StatusCodes2["RESET_CONTENT"] = 205)] = "RESET_CONTENT";
+  StatusCodes2[(StatusCodes2["PARTIAL_CONTENT"] = 206)] = "PARTIAL_CONTENT";
+  StatusCodes2[(StatusCodes2["MULTI_STATUS"] = 207)] = "MULTI_STATUS";
+  StatusCodes2[(StatusCodes2["MULTIPLE_CHOICES"] = 300)] = "MULTIPLE_CHOICES";
+  StatusCodes2[(StatusCodes2["MOVED_PERMANENTLY"] = 301)] = "MOVED_PERMANENTLY";
+  StatusCodes2[(StatusCodes2["MOVED_TEMPORARILY"] = 302)] = "MOVED_TEMPORARILY";
+  StatusCodes2[(StatusCodes2["SEE_OTHER"] = 303)] = "SEE_OTHER";
+  StatusCodes2[(StatusCodes2["NOT_MODIFIED"] = 304)] = "NOT_MODIFIED";
+  StatusCodes2[(StatusCodes2["USE_PROXY"] = 305)] = "USE_PROXY";
+  StatusCodes2[(StatusCodes2["TEMPORARY_REDIRECT"] = 307)] = "TEMPORARY_REDIRECT";
+  StatusCodes2[(StatusCodes2["PERMANENT_REDIRECT"] = 308)] = "PERMANENT_REDIRECT";
+  StatusCodes2[(StatusCodes2["BAD_REQUEST"] = 400)] = "BAD_REQUEST";
+  StatusCodes2[(StatusCodes2["UNAUTHORIZED"] = 401)] = "UNAUTHORIZED";
+  StatusCodes2[(StatusCodes2["PAYMENT_REQUIRED"] = 402)] = "PAYMENT_REQUIRED";
+  StatusCodes2[(StatusCodes2["FORBIDDEN"] = 403)] = "FORBIDDEN";
+  StatusCodes2[(StatusCodes2["NOT_FOUND"] = 404)] = "NOT_FOUND";
+  StatusCodes2[(StatusCodes2["METHOD_NOT_ALLOWED"] = 405)] = "METHOD_NOT_ALLOWED";
+  StatusCodes2[(StatusCodes2["NOT_ACCEPTABLE"] = 406)] = "NOT_ACCEPTABLE";
+  StatusCodes2[(StatusCodes2["PROXY_AUTHENTICATION_REQUIRED"] = 407)] =
+    "PROXY_AUTHENTICATION_REQUIRED";
+  StatusCodes2[(StatusCodes2["REQUEST_TIMEOUT"] = 408)] = "REQUEST_TIMEOUT";
+  StatusCodes2[(StatusCodes2["CONFLICT"] = 409)] = "CONFLICT";
+  StatusCodes2[(StatusCodes2["GONE"] = 410)] = "GONE";
+  StatusCodes2[(StatusCodes2["LENGTH_REQUIRED"] = 411)] = "LENGTH_REQUIRED";
+  StatusCodes2[(StatusCodes2["PRECONDITION_FAILED"] = 412)] = "PRECONDITION_FAILED";
+  StatusCodes2[(StatusCodes2["REQUEST_TOO_LONG"] = 413)] = "REQUEST_TOO_LONG";
+  StatusCodes2[(StatusCodes2["REQUEST_URI_TOO_LONG"] = 414)] = "REQUEST_URI_TOO_LONG";
+  StatusCodes2[(StatusCodes2["UNSUPPORTED_MEDIA_TYPE"] = 415)] = "UNSUPPORTED_MEDIA_TYPE";
+  StatusCodes2[(StatusCodes2["REQUESTED_RANGE_NOT_SATISFIABLE"] = 416)] =
+    "REQUESTED_RANGE_NOT_SATISFIABLE";
+  StatusCodes2[(StatusCodes2["EXPECTATION_FAILED"] = 417)] = "EXPECTATION_FAILED";
+  StatusCodes2[(StatusCodes2["IM_A_TEAPOT"] = 418)] = "IM_A_TEAPOT";
+  StatusCodes2[(StatusCodes2["INSUFFICIENT_SPACE_ON_RESOURCE"] = 419)] =
+    "INSUFFICIENT_SPACE_ON_RESOURCE";
+  StatusCodes2[(StatusCodes2["METHOD_FAILURE"] = 420)] = "METHOD_FAILURE";
+  StatusCodes2[(StatusCodes2["MISDIRECTED_REQUEST"] = 421)] = "MISDIRECTED_REQUEST";
+  StatusCodes2[(StatusCodes2["UNPROCESSABLE_ENTITY"] = 422)] = "UNPROCESSABLE_ENTITY";
+  StatusCodes2[(StatusCodes2["LOCKED"] = 423)] = "LOCKED";
+  StatusCodes2[(StatusCodes2["FAILED_DEPENDENCY"] = 424)] = "FAILED_DEPENDENCY";
+  StatusCodes2[(StatusCodes2["UPGRADE_REQUIRED"] = 426)] = "UPGRADE_REQUIRED";
+  StatusCodes2[(StatusCodes2["PRECONDITION_REQUIRED"] = 428)] = "PRECONDITION_REQUIRED";
+  StatusCodes2[(StatusCodes2["TOO_MANY_REQUESTS"] = 429)] = "TOO_MANY_REQUESTS";
+  StatusCodes2[(StatusCodes2["REQUEST_HEADER_FIELDS_TOO_LARGE"] = 431)] =
+    "REQUEST_HEADER_FIELDS_TOO_LARGE";
+  StatusCodes2[(StatusCodes2["UNAVAILABLE_FOR_LEGAL_REASONS"] = 451)] =
+    "UNAVAILABLE_FOR_LEGAL_REASONS";
+  StatusCodes2[(StatusCodes2["INTERNAL_SERVER_ERROR"] = 500)] = "INTERNAL_SERVER_ERROR";
+  StatusCodes2[(StatusCodes2["NOT_IMPLEMENTED"] = 501)] = "NOT_IMPLEMENTED";
+  StatusCodes2[(StatusCodes2["BAD_GATEWAY"] = 502)] = "BAD_GATEWAY";
+  StatusCodes2[(StatusCodes2["SERVICE_UNAVAILABLE"] = 503)] = "SERVICE_UNAVAILABLE";
+  StatusCodes2[(StatusCodes2["GATEWAY_TIMEOUT"] = 504)] = "GATEWAY_TIMEOUT";
+  StatusCodes2[(StatusCodes2["HTTP_VERSION_NOT_SUPPORTED"] = 505)] = "HTTP_VERSION_NOT_SUPPORTED";
+  StatusCodes2[(StatusCodes2["INSUFFICIENT_STORAGE"] = 507)] = "INSUFFICIENT_STORAGE";
+  StatusCodes2[(StatusCodes2["NETWORK_AUTHENTICATION_REQUIRED"] = 511)] =
+    "NETWORK_AUTHENTICATION_REQUIRED";
 })(StatusCodes || (StatusCodes = {}));
 // ../../node_modules/.bun/http-status-codes@2.3.0/node_modules/http-status-codes/build/es/index.js
-var __assign = function() {
-  __assign = Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length;i < n; i++) {
-      s = arguments[i];
-      for (var p in s)
-        if (Object.prototype.hasOwnProperty.call(s, p))
-          t[p] = s[p];
-    }
-    return t;
-  };
+var __assign = function () {
+  __assign =
+    Object.assign ||
+    function (t) {
+      for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.hasOwn(s, p)) t[p] = s[p];
+      }
+      return t;
+    };
   return __assign.apply(this, arguments);
 };
 var es_default = __assign(__assign({}, legacy_default), {
   getStatusCode,
-  getStatusText
+  getStatusText,
 });
 
 // ../core/src/utils/jsErrorOrCastJsError.ts
 function jsErrorOrCastJsError(error, logMessage = true) {
   if (error instanceof Error) {
     return Object.assign(error, {
-      message: error.message
+      message: error.message,
     });
   }
   const message = error?.message ?? (typeof error === "string" ? error : "No error message found");
@@ -340,7 +347,7 @@ function jsErrorOrCastJsError(error, logMessage = true) {
   }
   return {
     ...new Error(message),
-    ...error
+    ...error,
   };
 }
 
@@ -398,7 +405,7 @@ class NiceError extends Error {
     return id in this._errorDataMap;
   }
   hasOneOfIds(ids) {
-    return ids.some((id) => (id in this._errorDataMap));
+    return ids.some((id) => id in this._errorDataMap);
   }
   get hasMultiple() {
     return Object.keys(this._errorDataMap).length > 1;
@@ -413,7 +420,11 @@ class NiceError extends Error {
       return;
     }
     if (state.kind === "unhydrated") {
-      throw new Error(`[NiceError.getContext] Context for id "${String(id)}" is in the "unhydrated" state. ` + `The error was reconstructed from a serialized payload but has not been deserialized yet. ` + `Call \`niceErrorDefined.hydrate(error)\` to reconstruct the typed context.`);
+      throw new Error(
+        `[NiceError.getContext] Context for id "${String(id)}" is in the "unhydrated" state. ` +
+          `The error was reconstructed from a serialized payload but has not been deserialized yet. ` +
+          `Call \`niceErrorDefined.hydrate(error)\` to reconstruct the typed context.`,
+      );
     }
     return state.value;
   }
@@ -430,24 +441,24 @@ class NiceError extends Error {
   matches(other) {
     const myDef = this.def;
     const otherDef = other.def;
-    if (myDef.domain !== otherDef.domain)
-      return false;
+    if (myDef.domain !== otherDef.domain) return false;
     const myIds = this.getIds().map(String).sort();
     const otherIds = other.getIds().map(String).sort();
-    if (myIds.length !== otherIds.length)
-      return false;
+    if (myIds.length !== otherIds.length) return false;
     return myIds.every((id, i) => id === otherIds[i]);
   }
   toJsonObject() {
-    const originError = this.originError ? {
-      name: this.originError.name,
-      message: this.originError.message,
-      stack: this.originError.stack,
-      cause: this.originError.cause
-    } : undefined;
+    const originError = this.originError
+      ? {
+          name: this.originError.name,
+          message: this.originError.message,
+          stack: this.originError.stack,
+          cause: this.originError.cause,
+        }
+      : undefined;
     const def = {
       domain: this.def.domain,
-      allDomains: this.def.allDomains
+      allDomains: this.def.allDomains,
     };
     if (this.def.defaultHttpStatusCode != null) {
       def["defaultHttpStatusCode"] = this.def.defaultHttpStatusCode;
@@ -459,13 +470,12 @@ class NiceError extends Error {
     for (const rawId of Object.keys(this._errorDataMap)) {
       const id = rawId;
       const data = this._errorDataMap[id];
-      if (data == null)
-        continue;
+      if (data == null) continue;
       let contextState;
       if (data.contextState.kind === "hydrated" /* hydrated */) {
         contextState = {
           kind: "unhydrated" /* unhydrated */,
-          serialized: data.contextState.serialized
+          serialized: data.contextState.serialized,
         };
       } else {
         contextState = data.contextState;
@@ -480,8 +490,8 @@ class NiceError extends Error {
       wasntNice: this.wasntNice,
       message: this.message,
       httpStatusCode: this.httpStatusCode,
-      ...this.stack !== undefined ? { stack: this.stack } : {},
-      originError
+      ...(this.stack !== undefined ? { stack: this.stack } : {}),
+      originError,
     };
   }
   hydrate(definedNiceError) {
@@ -489,10 +499,8 @@ class NiceError extends Error {
   }
   handleWith(cases) {
     for (const c of cases) {
-      if (!c._domain.is(this))
-        continue;
-      if (c._ids !== undefined && !this.hasOneOfIds(c._ids))
-        continue;
+      if (!c._domain.is(this)) continue;
+      if (c._ids !== undefined && !this.hasOneOfIds(c._ids)) continue;
       c._handler(c._domain.hydrate(this));
       return true;
     }
@@ -500,10 +508,8 @@ class NiceError extends Error {
   }
   async handleWithAsync(cases) {
     for (const c of cases) {
-      if (!c._domain.is(this))
-        continue;
-      if (c._ids !== undefined && !this.hasOneOfIds(c._ids))
-        continue;
+      if (!c._domain.is(this)) continue;
+      if (c._ids !== undefined && !this.hasOneOfIds(c._ids)) continue;
       await c._handler(c._domain.hydrate(this));
       return true;
     }
@@ -513,13 +519,11 @@ class NiceError extends Error {
     return this._packedState != null;
   }
   pack(packType = "msg_pack") {
-    if (this.isPacked)
-      return this;
+    if (this.isPacked) return this;
     return packError(this, packType);
   }
   unpack() {
-    if (this._packedState == null)
-      return this;
+    if (this._packedState == null) return this;
     if (this._packedState.packedAs === "msg_pack" /* msg_pack */) {
       this.message = this._packedState.message;
     }
@@ -549,7 +553,7 @@ class NiceErrorHydrated extends NiceError {
     }
     const mergedErrorData = {
       ...this._errorDataMap,
-      ...newErrorData
+      ...newErrorData,
     };
     const mergedIds = Array.from(new Set([...this.getIds(), ...Object.keys(context)]));
     return new NiceErrorHydrated({
@@ -560,7 +564,7 @@ class NiceErrorHydrated extends NiceError {
       message: this.message,
       wasntNice: this.wasntNice,
       httpStatusCode: this.httpStatusCode,
-      originError: this.originError
+      originError: this.originError,
     });
   }
   addId(...args) {
@@ -570,7 +574,7 @@ class NiceErrorHydrated extends NiceError {
     errorDataMap[id] = reconciledData;
     const mergedContexts = {
       ...this._errorDataMap,
-      ...errorDataMap
+      ...errorDataMap,
     };
     const mergedIds = Array.from(new Set([...this.getIds(), id]));
     return new NiceErrorHydrated({
@@ -581,7 +585,7 @@ class NiceErrorHydrated extends NiceError {
       message: this.message,
       wasntNice: this.wasntNice,
       httpStatusCode: this.httpStatusCode,
-      originError: this.originError
+      originError: this.originError,
     });
   }
 }
@@ -617,7 +621,7 @@ class NiceErrorDefined {
       allDomains: [subErrorDef.domain, ...this.allDomains],
       schema: subErrorDef.schema,
       defaultHttpStatusCode: subErrorDef.defaultHttpStatusCode,
-      defaultMessage: subErrorDef.defaultMessage
+      defaultMessage: subErrorDef.defaultMessage,
     });
     this.addChildNiceErrorDefined(child);
     child.addParentNiceErrorDefined(this);
@@ -636,7 +640,7 @@ class NiceErrorDefined {
     }
     this._definedParentNiceError = {
       domain: parentError.domain,
-      definedError: parentError
+      definedError: parentError,
     };
   }
   addChildNiceErrorDefined(child) {
@@ -645,7 +649,7 @@ class NiceErrorDefined {
     }
     this._definedChildNiceErrors.push({
       domain: child.domain,
-      definedError: child
+      definedError: child,
     });
     if (this._definedParentNiceError) {
       this._definedParentNiceError.definedError.addChildNiceErrorDefined(child);
@@ -666,13 +670,16 @@ class NiceErrorDefined {
   hydrate(error) {
     const errDef = error.def;
     if (errDef.domain !== this.domain) {
-      throw new Error(`[NiceErrorDefined.hydrate] Domain mismatch: this definition is "${this.domain}" ` + `but the error belongs to "${errDef.domain}". ` + `Call \`niceErrorDefined.is(error)\` before hydrating to ensure compatibility.`);
+      throw new Error(
+        `[NiceErrorDefined.hydrate] Domain mismatch: this definition is "${this.domain}" ` +
+          `but the error belongs to "${errDef.domain}". ` +
+          `Call \`niceErrorDefined.is(error)\` before hydrating to ensure compatibility.`,
+      );
     }
     const reconciledErrorData = {};
     for (const id of error.getIds()) {
       const existingData = error.getErrorDataForId(id);
-      if (existingData == null)
-        continue;
+      if (existingData == null) continue;
       let contextState = existingData.contextState;
       if (contextState.kind === "unhydrated") {
         const entry = this._schema[id];
@@ -681,14 +688,14 @@ class NiceErrorDefined {
           contextState = {
             kind: "hydrated" /* hydrated */,
             value: deserialize(contextState.serialized),
-            serialized: contextState.serialized
+            serialized: contextState.serialized,
           };
         }
       }
       reconciledErrorData[id] = {
         contextState,
         message: existingData.message,
-        httpStatusCode: existingData.httpStatusCode
+        httpStatusCode: existingData.httpStatusCode,
       };
     }
     return new NiceErrorHydrated({
@@ -699,7 +706,7 @@ class NiceErrorDefined {
       message: error.message,
       httpStatusCode: error.httpStatusCode,
       wasntNice: error.wasntNice,
-      originError: error.originError
+      originError: error.originError,
     });
   }
   fromId(...args) {
@@ -713,13 +720,15 @@ class NiceErrorDefined {
       ids: [id],
       errorData,
       message: reconciledData.message,
-      httpStatusCode: reconciledData.httpStatusCode
+      httpStatusCode: reconciledData.httpStatusCode,
     });
   }
   fromContext(context) {
     const ids = Object.keys(context);
     if (ids.length === 0) {
-      throw new Error("[NiceErrorDefined.fromContext] context object must contain at least one error id.");
+      throw new Error(
+        "[NiceErrorDefined.fromContext] context object must contain at least one error id.",
+      );
     }
     const errorData = {};
     for (const id of ids) {
@@ -732,12 +741,11 @@ class NiceErrorDefined {
       ids,
       errorData,
       message: errorData[primaryId].message,
-      httpStatusCode: errorData[primaryId].httpStatusCode
+      httpStatusCode: errorData[primaryId].httpStatusCode,
     });
   }
   is(error) {
-    if (!(error instanceof NiceError))
-      return false;
+    if (!(error instanceof NiceError)) return false;
     const errDef = error.def;
     return errDef.domain === this.domain;
   }
@@ -749,7 +757,7 @@ class NiceErrorDefined {
     return {
       domain: this.domain,
       allDomains: this.allDomains,
-      schema: this._schema
+      schema: this._schema,
     };
   }
   _resolveMessage(id, context) {
@@ -771,7 +779,9 @@ class NiceErrorDefined {
     if (typeof entry?.httpStatusCode === "number") {
       httpStatusCode = entry.httpStatusCode;
     }
-    return typeof httpStatusCode === "number" ? httpStatusCode : this.defaultHttpStatusCode ?? 500;
+    return typeof httpStatusCode === "number"
+      ? httpStatusCode
+      : (this.defaultHttpStatusCode ?? 500);
   }
   reconcileErrorDataForId(id, context) {
     const message = this._resolveMessage(id, context);
@@ -794,7 +804,7 @@ var defineNiceError = (definition) => {
     domain: definition.domain,
     allDomains: [definition.domain],
     schema: definition.schema,
-    ...definition.packAs != null ? { packAs: definition.packAs } : {}
+    ...(definition.packAs != null ? { packAs: definition.packAs } : {}),
   });
 };
 
@@ -806,7 +816,7 @@ function err(meta) {
 // ../core/src/internal/nice_core_errors.ts
 var err_nice = defineNiceError({
   domain: "err_nice",
-  schema: {}
+  schema: {},
 });
 var err_cast_not_nice = err_nice.createChildDomain({
   domain: "err_cast_not_nice",
@@ -814,27 +824,30 @@ var err_cast_not_nice = err_nice.createChildDomain({
   schema: {
     ["native_error" /* js_error */]: err({
       context: {
-        required: true
+        required: true,
       },
-      message: ({ jsError }) => `A native JavaScript Error was encountered during casting: ${jsError.message}`,
-      httpStatusCode: StatusCodes.INTERNAL_SERVER_ERROR
+      message: ({ jsError }) =>
+        `A native JavaScript Error was encountered during casting: ${jsError.message}`,
+      httpStatusCode: StatusCodes.INTERNAL_SERVER_ERROR,
     }),
     ["js_error_like_object" /* js_error_like_object */]: err({
       context: {
-        required: true
+        required: true,
       },
-      message: ({ jsErrorObject }) => `An object resembling a JavaScript Error was encountered during casting: [${jsErrorObject.name}] ${jsErrorObject.message}`,
-      httpStatusCode: StatusCodes.INTERNAL_SERVER_ERROR
+      message: ({ jsErrorObject }) =>
+        `An object resembling a JavaScript Error was encountered during casting: [${jsErrorObject.name}] ${jsErrorObject.message}`,
+      httpStatusCode: StatusCodes.INTERNAL_SERVER_ERROR,
     }),
     ["nullish_value" /* nullish_value */]: err({
       context: {
-        required: true
+        required: true,
       },
-      message: ({ value }) => `A nullish value [${value === null ? "null" : "undefined"}] was encountered during casting`
+      message: ({ value }) =>
+        `A nullish value [${value === null ? "null" : "undefined"}] was encountered during casting`,
     }),
     ["js_data_type" /* js_data_type */]: err({
       context: {
-        required: true
+        required: true,
       },
       message: ({ jsDataType, jsDataValue }) => {
         let inspectedValue;
@@ -842,11 +855,11 @@ var err_cast_not_nice = err_nice.createChildDomain({
           inspectedValue = JSON.stringify(jsDataValue);
         } catch {}
         return `A value of type [${jsDataType}] with value [${inspectedValue ?? "UNSERIALIZABLE"}] was encountered during casting, which is not a valid error type`;
-      }
+      },
     }),
     ["js_other" /* js_other */]: err({
       context: {
-        required: true
+        required: true,
       },
       message: ({ jsDataValue }) => {
         let inspectedValue;
@@ -854,9 +867,9 @@ var err_cast_not_nice = err_nice.createChildDomain({
           inspectedValue = JSON.stringify(jsDataValue);
         } catch {}
         return `An unhandled type [${typeof jsDataValue}] with value [${inspectedValue ?? "UNSERIALIZABLE"}] was encountered during casting, which is not a valid error type`;
-      }
-    })
-  }
+      },
+    }),
+  },
 });
 // ../../node_modules/.bun/tslog@4.10.2/node_modules/tslog/esm/urlToObj.js
 function urlToObject(url) {
@@ -872,7 +885,7 @@ function urlToObject(url) {
     search: url.search,
     searchParams: [...url.searchParams].map(([key, value]) => ({ key, value })),
     hash: url.hash,
-    origin: url.origin
+    origin: url.origin,
   };
 }
 
@@ -918,13 +931,14 @@ var prettyLogStyles = {
   bgBlueBright: [104, 49],
   bgMagentaBright: [105, 49],
   bgCyanBright: [106, 49],
-  bgWhiteBright: [107, 49]
+  bgWhiteBright: [107, 49],
 };
 
 // ../../node_modules/.bun/tslog@4.10.2/node_modules/tslog/esm/formatTemplate.js
 function formatTemplate(settings, template, values, hideUnsetPlaceholder = false) {
   const templateString = String(template);
-  const ansiColorWrap = (placeholderValue, code) => `\x1B[${code[0]}m${placeholderValue}\x1B[${code[1]}m`;
+  const ansiColorWrap = (placeholderValue, code) =>
+    `\x1B[${code[0]}m${placeholderValue}\x1B[${code[1]}m`;
   const styleWrap = (value, style) => {
     if (style != null && typeof style === "string") {
       return ansiColorWrap(value, prettyLogStyles[style]);
@@ -942,8 +956,12 @@ function formatTemplate(settings, template, values, hideUnsetPlaceholder = false
   };
   const defaultStyle = null;
   return templateString.replace(/{{(.+?)}}/g, (_, placeholder) => {
-    const value = values[placeholder] != null ? String(values[placeholder]) : hideUnsetPlaceholder ? "" : _;
-    return settings.stylePrettyLogs ? styleWrap(value, settings?.prettyLogStyles?.[placeholder] ?? defaultStyle) + ansiColorWrap("", prettyLogStyles.reset) : value;
+    const value =
+      values[placeholder] != null ? String(values[placeholder]) : hideUnsetPlaceholder ? "" : _;
+    return settings.stylePrettyLogs
+      ? styleWrap(value, settings?.prettyLogStyles?.[placeholder] ?? defaultStyle) +
+          ansiColorWrap("", prettyLogStyles.reset)
+      : value;
   });
 }
 
@@ -953,7 +971,19 @@ function formatNumberAddZeros(value, digits = 2, addNumber = 0) {
     return "";
   }
   value = value != null ? value + addNumber : value;
-  return digits === 2 ? value == null ? "--" : value < 10 ? "0" + value : value.toString() : value == null ? "---" : value < 10 ? "00" + value : value < 100 ? "0" + value : value.toString();
+  return digits === 2
+    ? value == null
+      ? "--"
+      : value < 10
+        ? "0" + value
+        : value.toString()
+    : value == null
+      ? "---"
+      : value < 10
+        ? "00" + value
+        : value < 100
+          ? "0" + value
+          : value.toString();
 }
 
 // ../../node_modules/.bun/tslog@4.10.2/node_modules/tslog/esm/internal/metaFormatting.js
@@ -962,13 +992,16 @@ function buildPrettyMeta(settings, meta) {
     return {
       text: "",
       template: settings.prettyLogTemplate,
-      placeholders: {}
+      placeholders: {},
     };
   }
   let template = settings.prettyLogTemplate;
   const placeholderValues = {};
   if (template.includes("{{yyyy}}.{{mm}}.{{dd}} {{hh}}:{{MM}}:{{ss}}:{{ms}}")) {
-    template = template.replace("{{yyyy}}.{{mm}}.{{dd}} {{hh}}:{{MM}}:{{ss}}:{{ms}}", "{{dateIsoStr}}");
+    template = template.replace(
+      "{{yyyy}}.{{mm}}.{{dd}} {{hh}}:{{MM}}:{{ss}}:{{ms}}",
+      "{{dateIsoStr}}",
+    );
   } else {
     if (settings.prettyLogTimeZone === "UTC") {
       placeholderValues["yyyy"] = meta.date?.getUTCFullYear() ?? "----";
@@ -988,26 +1021,40 @@ function buildPrettyMeta(settings, meta) {
       placeholderValues["ms"] = formatNumberAddZeros(meta.date?.getMilliseconds(), 3);
     }
   }
-  const dateInSettingsTimeZone = settings.prettyLogTimeZone === "UTC" ? meta.date : meta.date != null ? new Date(meta.date.getTime() - meta.date.getTimezoneOffset() * 60000) : undefined;
+  const dateInSettingsTimeZone =
+    settings.prettyLogTimeZone === "UTC"
+      ? meta.date
+      : meta.date != null
+        ? new Date(meta.date.getTime() - meta.date.getTimezoneOffset() * 60000)
+        : undefined;
   placeholderValues["rawIsoStr"] = dateInSettingsTimeZone?.toISOString() ?? "";
-  placeholderValues["dateIsoStr"] = dateInSettingsTimeZone?.toISOString().replace("T", " ").replace("Z", "") ?? "";
+  placeholderValues["dateIsoStr"] =
+    dateInSettingsTimeZone?.toISOString().replace("T", " ").replace("Z", "") ?? "";
   placeholderValues["logLevelName"] = meta.logLevelName;
   placeholderValues["fileNameWithLine"] = meta.path?.fileNameWithLine ?? "";
   placeholderValues["filePathWithLine"] = meta.path?.filePathWithLine ?? "";
   placeholderValues["fullFilePath"] = meta.path?.fullFilePath ?? "";
   let parentNamesString = settings.parentNames?.join(settings.prettyErrorParentNamesSeparator);
-  parentNamesString = parentNamesString != null && meta.name != null ? parentNamesString + settings.prettyErrorParentNamesSeparator : undefined;
-  const combinedName = meta.name != null || parentNamesString != null ? `${parentNamesString ?? ""}${meta.name ?? ""}` : "";
+  parentNamesString =
+    parentNamesString != null && meta.name != null
+      ? parentNamesString + settings.prettyErrorParentNamesSeparator
+      : undefined;
+  const combinedName =
+    meta.name != null || parentNamesString != null
+      ? `${parentNamesString ?? ""}${meta.name ?? ""}`
+      : "";
   placeholderValues["name"] = combinedName;
-  placeholderValues["nameWithDelimiterPrefix"] = combinedName.length > 0 ? settings.prettyErrorLoggerNameDelimiter + combinedName : "";
-  placeholderValues["nameWithDelimiterSuffix"] = combinedName.length > 0 ? combinedName + settings.prettyErrorLoggerNameDelimiter : "";
+  placeholderValues["nameWithDelimiterPrefix"] =
+    combinedName.length > 0 ? settings.prettyErrorLoggerNameDelimiter + combinedName : "";
+  placeholderValues["nameWithDelimiterSuffix"] =
+    combinedName.length > 0 ? combinedName + settings.prettyErrorLoggerNameDelimiter : "";
   if (settings.overwrite?.addPlaceholders != null) {
     settings.overwrite.addPlaceholders(meta, placeholderValues);
   }
   return {
     text: formatTemplate(settings, template, placeholderValues),
     template,
-    placeholders: placeholderValues
+    placeholders: placeholderValues,
   };
 }
 
@@ -1017,15 +1064,17 @@ var DEFAULT_IGNORE_PATTERNS = [
   /(?:^|[\\/])deps[\\/].*tslog/i,
   /tslog[\\/]+src[\\/]+internal[\\/]/i,
   /tslog[\\/]+src[\\/]BaseLogger/i,
-  /tslog[\\/]+src[\\/]index/i
+  /tslog[\\/]+src[\\/]index/i,
 ];
 function splitStackLines(error) {
   const stack = typeof error?.stack === "string" ? error.stack : undefined;
   if (stack == null || stack.length === 0) {
     return [];
   }
-  return stack.split(`
-`).map((line) => line.trimEnd());
+  return stack
+    .split(`
+`)
+    .map((line) => line.trimEnd());
 }
 function sanitizeStackLines(lines) {
   return lines.filter((line) => line.length > 0 && !/^\s*Error\b/.test(line));
@@ -1041,11 +1090,15 @@ function toStackFrames(lines, parseLine) {
   return frames;
 }
 function findFirstExternalFrameIndex(frames, ignorePatterns = DEFAULT_IGNORE_PATTERNS) {
-  for (let index = 0;index < frames.length; index += 1) {
+  for (let index = 0; index < frames.length; index += 1) {
     const frame = frames[index];
     const filePathCandidate = frame.filePath ?? "";
     const fullPathCandidate = frame.fullFilePath ?? "";
-    if (!ignorePatterns.some((pattern) => pattern.test(filePathCandidate) || pattern.test(fullPathCandidate))) {
+    if (
+      !ignorePatterns.some(
+        (pattern) => pattern.test(filePathCandidate) || pattern.test(fullPathCandidate),
+      )
+    ) {
       return index;
     }
   }
@@ -1075,7 +1128,7 @@ var DEFAULT_CAUSE_DEPTH = 5;
 function collectErrorCauses(error, options = {}) {
   const maxDepth = options.maxDepth ?? DEFAULT_CAUSE_DEPTH;
   const causes = [];
-  const visited = new Set;
+  const visited = new Set();
   let current = error;
   let depth = 0;
   while (current != null && depth < maxDepth) {
@@ -1103,7 +1156,7 @@ function toError(value) {
 
 // ../../node_modules/.bun/tslog@4.10.2/node_modules/tslog/esm/internal/jsonStringifyRecursive.js
 function jsonStringifyRecursive(obj) {
-  const cache = new Set;
+  const cache = new Set();
   return JSON.stringify(obj, (key, value) => {
     if (typeof value === "object" && value !== null) {
       if (cache.has(value)) {
@@ -1125,21 +1178,16 @@ function jsonStringifyRecursive(obj) {
 function inspect(obj, opts) {
   const ctx = {
     seen: [],
-    stylize: stylizeNoColor
+    stylize: stylizeNoColor,
   };
   if (opts != null) {
     _extend(ctx, opts);
   }
-  if (isUndefined(ctx.showHidden))
-    ctx.showHidden = false;
-  if (isUndefined(ctx.depth))
-    ctx.depth = 2;
-  if (isUndefined(ctx.colors))
-    ctx.colors = true;
-  if (isUndefined(ctx.customInspect))
-    ctx.customInspect = true;
-  if (ctx.colors)
-    ctx.stylize = stylizeWithColor;
+  if (isUndefined(ctx.showHidden)) ctx.showHidden = false;
+  if (isUndefined(ctx.depth)) ctx.depth = 2;
+  if (isUndefined(ctx.colors)) ctx.colors = true;
+  if (isUndefined(ctx.customInspect)) ctx.customInspect = true;
+  if (ctx.colors) ctx.stylize = stylizeWithColor;
   return formatValue(ctx, obj, ctx.depth);
 }
 inspect.colors = prettyLogStyles;
@@ -1151,7 +1199,7 @@ inspect.styles = {
   null: "bold",
   string: "green",
   date: "magenta",
-  regexp: "red"
+  regexp: "red",
 };
 function isBoolean(arg) {
   return typeof arg === "boolean";
@@ -1164,8 +1212,14 @@ function stylizeNoColor(str) {
 }
 function stylizeWithColor(str, styleType) {
   const style = inspect.styles[styleType];
-  if (style != null && inspect?.colors?.[style]?.[0] != null && inspect?.colors?.[style]?.[1] != null) {
-    return "\x1B[" + inspect.colors[style][0] + "m" + str + "\x1B[" + inspect.colors[style][1] + "m";
+  if (
+    style != null &&
+    inspect?.colors?.[style]?.[0] != null &&
+    inspect?.colors?.[style]?.[1] != null
+  ) {
+    return (
+      "\x1B[" + inspect.colors[style][0] + "m" + str + "\x1B[" + inspect.colors[style][1] + "m"
+    );
   } else {
     return str;
   }
@@ -1183,7 +1237,7 @@ function isNull(arg) {
   return arg === null;
 }
 function hasOwn(obj, prop) {
-  return Object.prototype.hasOwnProperty.call(obj, prop);
+  return Object.hasOwn(obj, prop);
 }
 function isRegExp(re) {
   return isObject(re) && objectToString(re) === "[object RegExp]";
@@ -1209,7 +1263,7 @@ function arrayToHash(array) {
 }
 function formatArray(ctx, value, recurseTimes, visibleKeys, keys) {
   const output = [];
-  for (let i = 0, l = value.length;i < l; ++i) {
+  for (let i = 0, l = value.length; i < l; ++i) {
     if (hasOwn(value, String(i))) {
       output.push(formatProperty(ctx, value, recurseTimes, visibleKeys, String(i), true));
     } else {
@@ -1227,7 +1281,13 @@ function formatError(value) {
   return "[" + Error.prototype.toString.call(value) + "]";
 }
 function formatValue(ctx, value, recurseTimes = 0) {
-  if (ctx.customInspect && value != null && isFunction(value) && value?.inspect !== inspect && !(value?.constructor && value?.constructor.prototype === value)) {
+  if (
+    ctx.customInspect &&
+    value != null &&
+    isFunction(value) &&
+    value?.inspect !== inspect &&
+    !(value?.constructor && value?.constructor.prototype === value)
+  ) {
     if (typeof value.inspect !== "function" && value.toString != null) {
       return value.toString();
     }
@@ -1272,14 +1332,20 @@ function formatValue(ctx, value, recurseTimes = 0) {
   }
   let base = "";
   let array = false;
-  let braces = [`{
-`, `
-}`];
+  let braces = [
+    `{
+`,
+    `
+}`,
+  ];
   if (Array.isArray(value)) {
     array = true;
-    braces = [`[
-`, `
-]`];
+    braces = [
+      `[
+`,
+      `
+]`,
+    ];
   }
   if (isFunction(value)) {
     const n = value.name ? ": " + value.name : "";
@@ -1348,20 +1414,31 @@ function formatProperty(ctx, value, recurseTimes, visibleKeys, key, array) {
       } else {
         str = formatValue(ctx, desc.value, recurseTimes - 1);
       }
-      if (str.indexOf(`
-`) > -1) {
+      if (
+        str.indexOf(`
+`) > -1
+      ) {
         if (array) {
-          str = str.split(`
-`).map((line) => {
-            return "  " + line;
-          }).join(`
-`).substr(2);
+          str = str
+            .split(`
+`)
+            .map((line) => {
+              return "  " + line;
+            })
+            .join(`
+`)
+            .substr(2);
         } else {
-          str = `
-` + str.split(`
-`).map((line) => {
-            return "   " + line;
-          }).join(`
+          str =
+            `
+` +
+            str
+              .split(`
+`)
+              .map((line) => {
+                return "   " + line;
+              })
+              .join(`
 `);
         }
       }
@@ -1378,35 +1455,46 @@ function formatProperty(ctx, value, recurseTimes, visibleKeys, key, array) {
       name = name.substr(1, name.length - 2);
       name = ctx.stylize(name, "name");
     } else {
-      name = name.replace(/'/g, "\\'").replace(/\\"/g, "\\'").replace(/(^"|"$)/g, "'");
+      name = name
+        .replace(/'/g, "\\'")
+        .replace(/\\"/g, "\\'")
+        .replace(/(^"|"$)/g, "'");
       name = ctx.stylize(name, "string");
     }
   }
   return name + ": " + str;
 }
 function formatPrimitive(ctx, value) {
-  if (isUndefined(value))
-    return ctx.stylize("undefined", "undefined");
+  if (isUndefined(value)) return ctx.stylize("undefined", "undefined");
   if (isString(value)) {
-    const simple = "'" + JSON.stringify(value).replace(/^"|"$/g, "").replace(/'/g, "\\'").replace(/\\"/g, "\\'") + "'";
+    const simple =
+      "'" +
+      JSON.stringify(value).replace(/^"|"$/g, "").replace(/'/g, "\\'").replace(/\\"/g, "\\'") +
+      "'";
     return ctx.stylize(simple, "string");
   }
-  if (isNumber(value))
-    return ctx.stylize("" + value, "number");
-  if (isBoolean(value))
-    return ctx.stylize("" + value, "boolean");
-  if (isNull(value))
-    return ctx.stylize("null", "null");
+  if (isNumber(value)) return ctx.stylize("" + value, "number");
+  if (isBoolean(value)) return ctx.stylize("" + value, "boolean");
+  if (isNull(value)) return ctx.stylize("null", "null");
 }
 function reduceToSingleString(output, base, braces) {
-  return braces[0] + (base === "" ? "" : base + `
-`) + "  " + output.join(`,
-  `) + " " + braces[1];
+  return (
+    braces[0] +
+    (base === ""
+      ? ""
+      : base +
+        `
+`) +
+    "  " +
+    output.join(`,
+  `) +
+    " " +
+    braces[1]
+  );
 }
 function _extend(origin, add) {
   const typedOrigin = { ...origin };
-  if (!add || !isObject(add))
-    return origin;
+  if (!add || !isObject(add)) return origin;
   const clonedAdd = { ...add };
   const keys = Object.keys(add);
   let i = keys.length;
@@ -1418,7 +1506,7 @@ function _extend(origin, add) {
 function formatWithOptions(inspectOptions, ...args) {
   const ctx = {
     seen: [],
-    stylize: stylizeNoColor
+    stylize: stylizeNoColor,
   };
   if (inspectOptions != null) {
     _extend(ctx, inspectOptions);
@@ -1433,7 +1521,7 @@ function formatWithOptions(inspectOptions, ...args) {
     }
     let tempStr;
     let lastPos = 0;
-    for (let i = 0;i < first.length - 1; i++) {
+    for (let i = 0; i < first.length - 1; i++) {
       if (first.charCodeAt(i) === 37) {
         const nextChar = first.charCodeAt(++i);
         if (a + 1 !== args.length) {
@@ -1451,7 +1539,7 @@ function formatWithOptions(inspectOptions, ...args) {
                   ...inspectOptions,
                   compact: 3,
                   colors: false,
-                  depth: 0
+                  depth: 0,
                 });
               }
               break;
@@ -1478,7 +1566,7 @@ function formatWithOptions(inspectOptions, ...args) {
                 ...inspectOptions,
                 showHidden: true,
                 showProxy: true,
-                depth: 4
+                depth: 4,
               });
               break;
             case 105: {
@@ -1581,27 +1669,40 @@ function createLoggerEnvironment() {
   const runtimeInfo = detectRuntimeInfo();
   const meta = createRuntimeMeta(runtimeInfo);
   const usesBrowserStack = runtimeInfo.name === "browser" || runtimeInfo.name === "worker";
-  const callerIgnorePatterns = usesBrowserStack ? [...getDefaultIgnorePatterns(), /node_modules[\\/].*tslog/i] : [...getDefaultIgnorePatterns(), /node:(?:internal|vm)/i, /\binternal[\\/]/i];
+  const callerIgnorePatterns = usesBrowserStack
+    ? [...getDefaultIgnorePatterns(), /node_modules[\\/].*tslog/i]
+    : [...getDefaultIgnorePatterns(), /node:(?:internal|vm)/i, /\binternal[\\/]/i];
   let cachedCwd;
   const environment = {
-    getMeta(logLevelId, logLevelName, stackDepthLevel, hideLogPositionForPerformance, name, parentNames) {
+    getMeta(
+      logLevelId,
+      logLevelName,
+      stackDepthLevel,
+      hideLogPositionForPerformance,
+      name,
+      parentNames,
+    ) {
       return Object.assign({}, meta, {
         name,
         parentNames,
-        date: new Date,
+        date: new Date(),
         logLevelId,
         logLevelName,
-        path: !hideLogPositionForPerformance ? environment.getCallerStackFrame(stackDepthLevel) : undefined
+        path: !hideLogPositionForPerformance
+          ? environment.getCallerStackFrame(stackDepthLevel)
+          : undefined,
       });
     },
-    getCallerStackFrame(stackDepthLevel, error = new Error) {
+    getCallerStackFrame(stackDepthLevel, error = new Error()) {
       const frames = buildStackTrace(error, (line) => parseStackLine(line));
       if (frames.length === 0) {
         return {};
       }
       const autoIndex = findFirstExternalFrameIndex(frames, callerIgnorePatterns);
       const useManualIndex = Number.isFinite(stackDepthLevel) && stackDepthLevel >= 0;
-      const resolvedIndex = useManualIndex ? clampIndex(stackDepthLevel, frames.length) : clampIndex(autoIndex, frames.length);
+      const resolvedIndex = useManualIndex
+        ? clampIndex(stackDepthLevel, frames.length)
+        : clampIndex(autoIndex, frames.length);
       return frames[resolvedIndex] ?? {};
     },
     getErrorTrace(error) {
@@ -1611,23 +1712,31 @@ function createLoggerEnvironment() {
       return isNativeError(value);
     },
     isBuffer(value) {
-      return typeof Buffer !== "undefined" && typeof Buffer.isBuffer === "function" ? Buffer.isBuffer(value) : false;
+      return typeof Buffer !== "undefined" && typeof Buffer.isBuffer === "function"
+        ? Buffer.isBuffer(value)
+        : false;
     },
     prettyFormatLogObj(maskedArgs, settings) {
-      return maskedArgs.reduce((result, arg) => {
-        if (environment.isError(arg)) {
-          result.errors.push(environment.prettyFormatErrorObj(arg, settings));
-        } else {
-          result.args.push(arg);
-        }
-        return result;
-      }, { args: [], errors: [] });
+      return maskedArgs.reduce(
+        (result, arg) => {
+          if (environment.isError(arg)) {
+            result.errors.push(environment.prettyFormatErrorObj(arg, settings));
+          } else {
+            result.args.push(arg);
+          }
+          return result;
+        },
+        { args: [], errors: [] },
+      );
     },
     prettyFormatErrorObj(error, settings) {
       const stackLines = formatStackFrames(environment.getErrorTrace(error), settings);
       const causeSections = collectErrorCauses(error).map((cause, index) => {
         const header = `Caused by (${index + 1}): ${cause.name ?? "Error"}${cause.message ? `: ${cause.message}` : ""}`;
-        const frames = formatStackFrames(buildStackTrace(cause, (line) => parseStackLine(line)), settings);
+        const frames = formatStackFrames(
+          buildStackTrace(cause, (line) => parseStackLine(line)),
+          settings,
+        );
         return [header, ...frames].join(`
 `);
       });
@@ -1635,21 +1744,28 @@ function createLoggerEnvironment() {
         errorName: ` ${error.name} `,
         errorMessage: formatErrorMessage(error),
         errorStack: [...stackLines, ...causeSections].join(`
-`)
+`),
       };
       return formatTemplate(settings, settings.prettyErrorTemplate, placeholderValuesError);
     },
     transportFormatted(logMetaMarkup, logArgs, logErrors, logMeta, settings) {
       const prettyLogs = settings.stylePrettyLogs !== false;
-      const logErrorsStr = (logErrors.length > 0 && logArgs.length > 0 ? `
-` : "") + logErrors.join(`
+      const logErrorsStr =
+        (logErrors.length > 0 && logArgs.length > 0
+          ? `
+`
+          : "") +
+        logErrors.join(`
 `);
       const sanitizedMetaMarkup = stripAnsi(logMetaMarkup);
       const metaMarkupForText = prettyLogs ? logMetaMarkup : sanitizedMetaMarkup;
       if (shouldUseCss(prettyLogs)) {
         settings.prettyInspectOptions.colors = false;
         const formattedArgs2 = formatWithOptionsSafe(settings.prettyInspectOptions, logArgs);
-        const cssMeta = logMeta != null ? buildCssMetaOutput(settings, logMeta) : { text: sanitizedMetaMarkup, styles: [] };
+        const cssMeta =
+          logMeta != null
+            ? buildCssMetaOutput(settings, logMeta)
+            : { text: sanitizedMetaMarkup, styles: [] };
         const hasCssMeta = cssMeta.text.length > 0 && cssMeta.styles.length > 0;
         const metaOutput = hasCssMeta ? cssMeta.text : sanitizedMetaMarkup;
         const output = metaOutput + formattedArgs2 + logErrorsStr;
@@ -1666,7 +1782,7 @@ function createLoggerEnvironment() {
     },
     transportJSON(json) {
       console.log(jsonStringifyRecursive(json));
-    }
+    },
   };
   if (getNodeEnv() === "test") {
     environment.__resetWorkingDirectoryCacheForTests = () => {
@@ -1717,7 +1833,8 @@ function createLoggerEnvironment() {
       normalizedPath = filePathCandidate;
     }
     const normalizedPathWithoutLine = normalizeFilePath(normalizedPath);
-    const effectivePath = normalizedPathWithoutLine.length > 0 ? normalizedPathWithoutLine : normalizedPath;
+    const effectivePath =
+      normalizedPathWithoutLine.length > 0 ? normalizedPathWithoutLine : normalizedPath;
     const pathSegments = effectivePath.split(/\\|\//);
     const fileName = pathSegments[pathSegments.length - 1];
     const fileNameWithLine = fileName && fileLine ? `${fileName}:${fileLine}` : undefined;
@@ -1730,7 +1847,7 @@ function createLoggerEnvironment() {
       fileLine,
       filePath: effectivePath,
       filePathWithLine,
-      method
+      method,
     };
   }
   function parseBrowserStackLine(line) {
@@ -1758,24 +1875,33 @@ function createLoggerEnvironment() {
       fileLine,
       filePath,
       filePathWithLine: fileLine ? `${filePath}:${fileLine}` : undefined,
-      method: undefined
+      method: undefined,
     };
   }
   function formatStackFrames(frames, settings) {
-    return frames.map((stackFrame) => formatTemplate(settings, settings.prettyErrorStackTemplate, { ...stackFrame }, true));
+    return frames.map((stackFrame) =>
+      formatTemplate(settings, settings.prettyErrorStackTemplate, { ...stackFrame }, true),
+    );
   }
   function formatErrorMessage(error) {
-    return Object.getOwnPropertyNames(error).filter((key) => key !== "stack" && key !== "cause").reduce((result, key) => {
-      const value = error[key];
-      if (typeof value === "function") {
+    return Object.getOwnPropertyNames(error)
+      .filter((key) => key !== "stack" && key !== "cause")
+      .reduce((result, key) => {
+        const value = error[key];
+        if (typeof value === "function") {
+          return result;
+        }
+        result.push(String(value));
         return result;
-      }
-      result.push(String(value));
-      return result;
-    }, []).join(", ");
+      }, [])
+      .join(", ");
   }
   function shouldUseCss(prettyLogs) {
-    return prettyLogs && (runtimeInfo.name === "browser" || runtimeInfo.name === "worker") && consoleSupportsCssStyling();
+    return (
+      prettyLogs &&
+      (runtimeInfo.name === "browser" || runtimeInfo.name === "worker") &&
+      consoleSupportsCssStyling()
+    );
   }
   function stripAnsi(value) {
     return value.replace(ANSI_REGEX, "");
@@ -1811,7 +1937,7 @@ function createLoggerEnvironment() {
     }
     return {
       text: parts.join(""),
-      styles
+      styles,
     };
   }
   function collectStyleTokens(style, value) {
@@ -1835,7 +1961,7 @@ function createLoggerEnvironment() {
     return [];
   }
   function tokensToCss(tokens) {
-    const seen = new Set;
+    const seen = new Set();
     const cssParts = [];
     for (const token of tokens) {
       const css = styleTokenToCss(token);
@@ -1892,11 +2018,11 @@ function createLoggerEnvironment() {
     if (info.name === "browser" || info.name === "worker") {
       return {
         runtime: info.name,
-        browser: info.userAgent
+        browser: info.userAgent,
       };
     }
     const metaStatic = {
-      runtime: info.name
+      runtime: info.name,
     };
     if (shouldCaptureRuntimeVersion()) {
       metaStatic.runtimeVersion = info.version ?? "unknown";
@@ -1965,14 +2091,14 @@ function createLoggerEnvironment() {
       const navigatorObj = globalThis.navigator;
       return {
         name: "browser",
-        userAgent: navigatorObj?.userAgent
+        userAgent: navigatorObj?.userAgent,
       };
     }
     const globalScope = globalThis;
     if (typeof globalScope.importScripts === "function") {
       return {
         name: "worker",
-        userAgent: globalScope.navigator?.userAgent
+        userAgent: globalScope.navigator?.userAgent,
       };
     }
     const globalAny = globalThis;
@@ -1981,7 +2107,12 @@ function createLoggerEnvironment() {
       return {
         name: "bun",
         version: bunVersion != null ? `bun/${bunVersion}` : undefined,
-        hostname: getEnvironmentHostname(globalAny.process, globalAny.Deno, globalAny.Bun, globalAny.location)
+        hostname: getEnvironmentHostname(
+          globalAny.process,
+          globalAny.Deno,
+          globalAny.Bun,
+          globalAny.location,
+        ),
       };
     }
     if (globalAny.Deno != null) {
@@ -1990,29 +2121,47 @@ function createLoggerEnvironment() {
       return {
         name: "deno",
         version: denoVersion != null ? `deno/${denoVersion}` : undefined,
-        hostname: denoHostname ?? getEnvironmentHostname(globalAny.process, globalAny.Deno, globalAny.Bun, globalAny.location)
+        hostname:
+          denoHostname ??
+          getEnvironmentHostname(
+            globalAny.process,
+            globalAny.Deno,
+            globalAny.Bun,
+            globalAny.location,
+          ),
       };
     }
     if (globalAny.process?.versions?.node != null || globalAny.process?.version != null) {
       return {
         name: "node",
         version: globalAny.process?.versions?.node ?? globalAny.process?.version,
-        hostname: getEnvironmentHostname(globalAny.process, globalAny.Deno, globalAny.Bun, globalAny.location)
+        hostname: getEnvironmentHostname(
+          globalAny.process,
+          globalAny.Deno,
+          globalAny.Bun,
+          globalAny.location,
+        ),
       };
     }
     if (globalAny.process != null) {
       return {
         name: "node",
         version: "unknown",
-        hostname: getEnvironmentHostname(globalAny.process, globalAny.Deno, globalAny.Bun, globalAny.location)
+        hostname: getEnvironmentHostname(
+          globalAny.process,
+          globalAny.Deno,
+          globalAny.Bun,
+          globalAny.location,
+        ),
       };
     }
     return {
-      name: "unknown"
+      name: "unknown",
     };
   }
   function getEnvironmentHostname(nodeProcess, deno, bun, location) {
-    const processHostname = nodeProcess?.env?.HOSTNAME ?? nodeProcess?.env?.HOST ?? nodeProcess?.env?.COMPUTERNAME;
+    const processHostname =
+      nodeProcess?.env?.HOSTNAME ?? nodeProcess?.env?.HOST ?? nodeProcess?.env?.COMPUTERNAME;
     if (processHostname != null && processHostname.length > 0) {
       return processHostname;
     }
@@ -2087,7 +2236,7 @@ var COLOR_TOKENS = {
   blueBright: "#64b5f6",
   magentaBright: "#ce93d8",
   cyanBright: "#4dd0e1",
-  whiteBright: "#ffffff"
+  whiteBright: "#ffffff",
 };
 var BACKGROUND_TOKENS = {
   bgBlack: "#000000",
@@ -2105,9 +2254,10 @@ var BACKGROUND_TOKENS = {
   bgBlueBright: "#64b5f6",
   bgMagentaBright: "#ce93d8",
   bgCyanBright: "#4dd0e1",
-  bgWhiteBright: "#ffffff"
+  bgWhiteBright: "#ffffff",
 };
-var BROWSER_PATH_REGEX = /(?:(?:file|https?|global code|[^@]+)@)?(?:file:)?((?:\/[^:/]+){2,})(?::(\d+))?(?::(\d+))?/;
+var BROWSER_PATH_REGEX =
+  /(?:(?:file|https?|global code|[^@]+)@)?(?:file:)?((?:\/[^:/]+){2,})(?::(\d+))?(?::(\d+))?/;
 var runtime = createLoggerEnvironment();
 class BaseLogger {
   constructor(settings, logObj, stackDepthLevel = Number.NaN) {
@@ -2122,12 +2272,18 @@ class BaseLogger {
       minLevel: settings?.minLevel ?? 0,
       argumentsArrayName: settings?.argumentsArrayName,
       hideLogPositionForProduction: settings?.hideLogPositionForProduction ?? false,
-      prettyLogTemplate: settings?.prettyLogTemplate ?? "{{yyyy}}.{{mm}}.{{dd}} {{hh}}:{{MM}}:{{ss}}:{{ms}}\t{{logLevelName}}\t{{filePathWithLine}}{{nameWithDelimiterPrefix}}\t",
-      prettyErrorTemplate: settings?.prettyErrorTemplate ?? `
+      prettyLogTemplate:
+        settings?.prettyLogTemplate ??
+        "{{yyyy}}.{{mm}}.{{dd}} {{hh}}:{{MM}}:{{ss}}:{{ms}}\t{{logLevelName}}\t{{filePathWithLine}}{{nameWithDelimiterPrefix}}\t",
+      prettyErrorTemplate:
+        settings?.prettyErrorTemplate ??
+        `
 {{errorName}} {{errorMessage}}
 error stack:
 {{errorStack}}`,
-      prettyErrorStackTemplate: settings?.prettyErrorStackTemplate ?? `  • {{fileName}}	{{method}}
+      prettyErrorStackTemplate:
+        settings?.prettyErrorStackTemplate ??
+        `  • {{fileName}}	{{method}}
 	{{filePathWithLine}}`,
       prettyErrorParentNamesSeparator: settings?.prettyErrorParentNamesSeparator ?? ":",
       prettyErrorLoggerNameDelimiter: settings?.prettyErrorLoggerNameDelimiter ?? "\t",
@@ -2142,7 +2298,7 @@ error stack:
           INFO: ["bold", "blue"],
           WARN: ["bold", "yellow"],
           ERROR: ["bold", "red"],
-          FATAL: ["bold", "redBright"]
+          FATAL: ["bold", "redBright"],
         },
         dateIsoStr: "white",
         filePathWithLine: "white",
@@ -2151,20 +2307,20 @@ error stack:
         nameWithDelimiterSuffix: ["white", "bold"],
         errorName: ["bold", "bgRedBright", "whiteBright"],
         fileName: ["yellow"],
-        fileNameWithLine: "white"
+        fileNameWithLine: "white",
       },
       prettyInspectOptions: settings?.prettyInspectOptions ?? {
         colors: true,
         compact: false,
-        depth: Infinity
+        depth: Infinity,
       },
       metaProperty: settings?.metaProperty ?? "_meta",
       maskPlaceholder: settings?.maskPlaceholder ?? "[***]",
       maskValuesOfKeys: settings?.maskValuesOfKeys ?? ["password"],
       maskValuesOfKeysCaseInsensitive: settings?.maskValuesOfKeysCaseInsensitive ?? false,
       maskValuesRegEx: settings?.maskValuesRegEx,
-      prefix: [...settings?.prefix ?? []],
-      attachedTransports: [...settings?.attachedTransports ?? []],
+      prefix: [...(settings?.prefix ?? [])],
+      attachedTransports: [...(settings?.attachedTransports ?? [])],
       overwrite: {
         mask: settings?.overwrite?.mask,
         toLogObj: settings?.overwrite?.toLogObj,
@@ -2173,8 +2329,8 @@ error stack:
         formatMeta: settings?.overwrite?.formatMeta,
         formatLogObj: settings?.overwrite?.formatLogObj,
         transportFormatted: settings?.overwrite?.transportFormatted,
-        transportJSON: settings?.overwrite?.transportJSON
-      }
+        transportJSON: settings?.overwrite?.transportJSON,
+      },
     };
     this.captureStackForMeta = this._shouldCaptureStack();
   }
@@ -2184,22 +2340,38 @@ error stack:
     }
     const resolvedArgs = this._resolveLogArguments(args);
     const logArgs = [...this.settings.prefix, ...resolvedArgs];
-    const maskedArgs = this.settings.overwrite?.mask != null ? this.settings.overwrite?.mask(logArgs) : this.settings.maskValuesOfKeys != null && this.settings.maskValuesOfKeys.length > 0 ? this._mask(logArgs) : logArgs;
-    const thisLogObj = this.logObj != null ? this._recursiveCloneAndExecuteFunctions(this.logObj) : undefined;
-    const logObj = this.settings.overwrite?.toLogObj != null ? this.settings.overwrite?.toLogObj(maskedArgs, thisLogObj) : this._toLogObj(maskedArgs, thisLogObj);
-    const logObjWithMeta = this.settings.overwrite?.addMeta != null ? this.settings.overwrite?.addMeta(logObj, logLevelId, logLevelName) : this._addMetaToLogObj(logObj, logLevelId, logLevelName);
+    const maskedArgs =
+      this.settings.overwrite?.mask != null
+        ? this.settings.overwrite?.mask(logArgs)
+        : this.settings.maskValuesOfKeys != null && this.settings.maskValuesOfKeys.length > 0
+          ? this._mask(logArgs)
+          : logArgs;
+    const thisLogObj =
+      this.logObj != null ? this._recursiveCloneAndExecuteFunctions(this.logObj) : undefined;
+    const logObj =
+      this.settings.overwrite?.toLogObj != null
+        ? this.settings.overwrite?.toLogObj(maskedArgs, thisLogObj)
+        : this._toLogObj(maskedArgs, thisLogObj);
+    const logObjWithMeta =
+      this.settings.overwrite?.addMeta != null
+        ? this.settings.overwrite?.addMeta(logObj, logLevelId, logLevelName)
+        : this._addMetaToLogObj(logObj, logLevelId, logLevelName);
     const logMeta = logObjWithMeta?.[this.settings.metaProperty];
     let logMetaMarkup;
-    let logArgsAndErrorsMarkup = undefined;
+    let logArgsAndErrorsMarkup;
     if (this.settings.overwrite?.formatMeta != null) {
-      logMetaMarkup = this.settings.overwrite?.formatMeta(logObjWithMeta?.[this.settings.metaProperty]);
+      logMetaMarkup = this.settings.overwrite?.formatMeta(
+        logObjWithMeta?.[this.settings.metaProperty],
+      );
     }
     if (this.settings.overwrite?.formatLogObj != null) {
       logArgsAndErrorsMarkup = this.settings.overwrite?.formatLogObj(maskedArgs, this.settings);
     }
     if (this.settings.type === "pretty") {
-      logMetaMarkup = logMetaMarkup ?? this._prettyFormatLogObjMeta(logObjWithMeta?.[this.settings.metaProperty]);
-      logArgsAndErrorsMarkup = logArgsAndErrorsMarkup ?? runtime.prettyFormatLogObj(maskedArgs, this.settings);
+      logMetaMarkup =
+        logMetaMarkup ?? this._prettyFormatLogObjMeta(logObjWithMeta?.[this.settings.metaProperty]);
+      logArgsAndErrorsMarkup =
+        logArgsAndErrorsMarkup ?? runtime.prettyFormatLogObj(maskedArgs, this.settings);
     }
     if (logMetaMarkup != null && logArgsAndErrorsMarkup != null) {
       if (this.settings.overwrite?.transportFormatted != null) {
@@ -2208,12 +2380,29 @@ error stack:
         if (declaredParams < 4) {
           transport(logMetaMarkup, logArgsAndErrorsMarkup.args, logArgsAndErrorsMarkup.errors);
         } else if (declaredParams === 4) {
-          transport(logMetaMarkup, logArgsAndErrorsMarkup.args, logArgsAndErrorsMarkup.errors, logMeta);
+          transport(
+            logMetaMarkup,
+            logArgsAndErrorsMarkup.args,
+            logArgsAndErrorsMarkup.errors,
+            logMeta,
+          );
         } else {
-          transport(logMetaMarkup, logArgsAndErrorsMarkup.args, logArgsAndErrorsMarkup.errors, logMeta, this.settings);
+          transport(
+            logMetaMarkup,
+            logArgsAndErrorsMarkup.args,
+            logArgsAndErrorsMarkup.errors,
+            logMeta,
+            this.settings,
+          );
         }
       } else {
-        runtime.transportFormatted(logMetaMarkup, logArgsAndErrorsMarkup.args, logArgsAndErrorsMarkup.errors, logMeta, this.settings);
+        runtime.transportFormatted(
+          logMetaMarkup,
+          logArgsAndErrorsMarkup.args,
+          logArgsAndErrorsMarkup.errors,
+          logMeta,
+          this.settings,
+        );
       }
     } else {
       if (this.settings.overwrite?.transportJSON != null) {
@@ -2236,10 +2425,19 @@ error stack:
     const subLoggerSettings = {
       ...this.settings,
       ...settings,
-      parentNames: this.settings?.parentNames != null && this.settings?.name != null ? [...this.settings.parentNames, this.settings.name] : this.settings?.name != null ? [this.settings.name] : undefined,
-      prefix: [...this.settings.prefix, ...settings?.prefix ?? []]
+      parentNames:
+        this.settings?.parentNames != null && this.settings?.name != null
+          ? [...this.settings.parentNames, this.settings.name]
+          : this.settings?.name != null
+            ? [this.settings.name]
+            : undefined,
+      prefix: [...this.settings.prefix, ...(settings?.prefix ?? [])],
     };
-    const subLogger = new this.constructor(subLoggerSettings, logObj ?? this.logObj, this.stackDepthLevel);
+    const subLogger = new this.constructor(
+      subLoggerSettings,
+      logObj ?? this.logObj,
+      this.stackDepthLevel,
+    );
     return subLogger;
   }
   _mask(args) {
@@ -2252,15 +2450,21 @@ error stack:
     const maskKeys = this.settings.maskValuesOfKeys ?? [];
     const signature = maskKeys.map(String).join("|");
     if (this.settings.maskValuesOfKeysCaseInsensitive === true) {
-      if (this.maskKeysCache?.source === maskKeys && this.maskKeysCache.caseInsensitive === true && this.maskKeysCache.signature === signature) {
+      if (
+        this.maskKeysCache?.source === maskKeys &&
+        this.maskKeysCache.caseInsensitive === true &&
+        this.maskKeysCache.signature === signature
+      ) {
         return this.maskKeysCache.normalized;
       }
-      const normalized = maskKeys.map((key) => typeof key === "string" ? key.toLowerCase() : String(key).toLowerCase());
+      const normalized = maskKeys.map((key) =>
+        typeof key === "string" ? key.toLowerCase() : String(key).toLowerCase(),
+      );
       this.maskKeysCache = {
         source: maskKeys,
         caseInsensitive: true,
         normalized,
-        signature
+        signature,
       };
       return normalized;
     }
@@ -2268,7 +2472,7 @@ error stack:
       source: maskKeys,
       caseInsensitive: false,
       normalized: maskKeys,
-      signature
+      signature,
     };
     return maskKeys;
   }
@@ -2302,16 +2506,25 @@ error stack:
     } else if (source instanceof URL) {
       return urlToObject(source);
     } else if (source !== null && typeof source === "object") {
-      const baseObject = runtime.isError(source) ? this._cloneError(source) : Object.create(Object.getPrototypeOf(source));
+      const baseObject = runtime.isError(source)
+        ? this._cloneError(source)
+        : Object.create(Object.getPrototypeOf(source));
       return Object.getOwnPropertyNames(source).reduce((o, prop) => {
-        const lookupKey = this.settings?.maskValuesOfKeysCaseInsensitive !== true ? prop : typeof prop === "string" ? prop.toLowerCase() : String(prop).toLowerCase();
-        o[prop] = keys.includes(lookupKey) ? this.settings.maskPlaceholder : (() => {
-          try {
-            return this._recursiveCloneAndMaskValuesOfKeys(source[prop], keys, seen);
-          } catch {
-            return null;
-          }
-        })();
+        const lookupKey =
+          this.settings?.maskValuesOfKeysCaseInsensitive !== true
+            ? prop
+            : typeof prop === "string"
+              ? prop.toLowerCase()
+              : String(prop).toLowerCase();
+        o[prop] = keys.includes(lookupKey)
+          ? this.settings.maskPlaceholder
+          : (() => {
+              try {
+                return this._recursiveCloneAndMaskValuesOfKeys(source[prop], keys, seen);
+              } catch {
+                return null;
+              }
+            })();
         return o;
       }, baseObject);
     } else {
@@ -2337,15 +2550,21 @@ error stack:
     } else if (source instanceof Date) {
       return new Date(source.getTime());
     } else if (this.isObject(source)) {
-      return Object.getOwnPropertyNames(source).reduce((o, prop) => {
-        const descriptor = Object.getOwnPropertyDescriptor(source, prop);
-        if (descriptor) {
-          Object.defineProperty(o, prop, descriptor);
-          const value = source[prop];
-          o[prop] = typeof value === "function" ? value() : this._recursiveCloneAndExecuteFunctions(value, seen);
-        }
-        return o;
-      }, Object.create(Object.getPrototypeOf(source)));
+      return Object.getOwnPropertyNames(source).reduce(
+        (o, prop) => {
+          const descriptor = Object.getOwnPropertyDescriptor(source, prop);
+          if (descriptor) {
+            Object.defineProperty(o, prop, descriptor);
+            const value = source[prop];
+            o[prop] =
+              typeof value === "function"
+                ? value()
+                : this._recursiveCloneAndExecuteFunctions(value, seen);
+          }
+          return o;
+        },
+        Object.create(Object.getPrototypeOf(source)),
+      );
     } else {
       return source;
     }
@@ -2364,29 +2583,37 @@ error stack:
     }
   }
   _toLogObj(args, clonedLogObj = {}) {
-    args = args?.map((arg) => runtime.isError(arg) ? this._toErrorObject(arg) : arg);
+    args = args?.map((arg) => (runtime.isError(arg) ? this._toErrorObject(arg) : arg));
     if (this.settings.argumentsArrayName == null) {
-      if (args.length === 1 && !Array.isArray(args[0]) && runtime.isBuffer(args[0]) !== true && !(args[0] instanceof Date)) {
-        clonedLogObj = typeof args[0] === "object" && args[0] != null ? { ...args[0], ...clonedLogObj } : { 0: args[0], ...clonedLogObj };
+      if (
+        args.length === 1 &&
+        !Array.isArray(args[0]) &&
+        runtime.isBuffer(args[0]) !== true &&
+        !(args[0] instanceof Date)
+      ) {
+        clonedLogObj =
+          typeof args[0] === "object" && args[0] != null
+            ? { ...args[0], ...clonedLogObj }
+            : { 0: args[0], ...clonedLogObj };
       } else {
         clonedLogObj = { ...clonedLogObj, ...args };
       }
     } else {
       clonedLogObj = {
         ...clonedLogObj,
-        [this.settings.argumentsArrayName]: args
+        [this.settings.argumentsArrayName]: args,
       };
     }
     return clonedLogObj;
   }
   _cloneError(error) {
-    const cloned = new error.constructor;
+    const cloned = new error.constructor();
     Object.getOwnPropertyNames(error).forEach((key) => {
       cloned[key] = error[key];
     });
     return cloned;
   }
-  _toErrorObject(error, depth = 0, seen = new Set) {
+  _toErrorObject(error, depth = 0, seen = new Set()) {
     if (!seen.has(error)) {
       seen.add(error);
     }
@@ -2394,7 +2621,7 @@ error stack:
       nativeError: error,
       name: error.name ?? "Error",
       message: error.message,
-      stack: runtime.getErrorTrace(error)
+      stack: runtime.getErrorTrace(error),
     };
     if (depth >= this.maxErrorCauseDepth) {
       return errorObject;
@@ -2411,7 +2638,14 @@ error stack:
   _addMetaToLogObj(logObj, logLevelId, logLevelName) {
     return {
       ...logObj,
-      [this.settings.metaProperty]: runtime.getMeta(logLevelId, logLevelName, this.stackDepthLevel, !this.captureStackForMeta, this.settings.name, this.settings.parentNames)
+      [this.settings.metaProperty]: runtime.getMeta(
+        logLevelId,
+        logLevelName,
+        this.stackDepthLevel,
+        !this.captureStackForMeta,
+        this.settings.name,
+        this.settings.parentNames,
+      ),
     };
   }
   _shouldCaptureStack() {
@@ -2422,7 +2656,8 @@ error stack:
       return true;
     }
     const template = this.settings.prettyLogTemplate ?? "";
-    const stackPlaceholders = /{{\s*(file(Name|Path|Line|PathWithLine|NameWithLine)|fullFilePath)\s*}}/;
+    const stackPlaceholders =
+      /{{\s*(file(Name|Path|Line|PathWithLine|NameWithLine)|fullFilePath)\s*}}/;
     if (stackPlaceholders.test(template)) {
       return true;
     }
@@ -2437,7 +2672,7 @@ error stack:
 class Logger extends BaseLogger {
   constructor(settings, logObj) {
     const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
-    const normalizedSettings = { ...settings ?? {} };
+    const normalizedSettings = { ...(settings ?? {}) };
     if (isBrowser) {
       normalizedSettings.stylePrettyLogs = settings?.stylePrettyLogs ?? true;
     }
@@ -2474,10 +2709,10 @@ class Logger extends BaseLogger {
 
 // ../core/src/utils/logger.ts
 var logger_NiceError = new Logger({
-  name: "NiceErrorLogger"
+  name: "NiceErrorLogger",
 });
 var logger_NiceError_testing = logger_NiceError.getSubLogger({
-  name: "NiceErrorTestingLogger"
+  name: "NiceErrorTestingLogger",
 });
 // src/validation/standard_schema/extractMessageFromStandardSchema.ts
 function extractPathFromIssue(issue) {
@@ -2520,17 +2755,15 @@ var extractMessageFromStandardSchema = (failureResult) => {
 var EValidator;
 ((EValidator2) => {
   EValidator2["standard_schema"] = "standard_schema";
-})(EValidator ||= {});
+})((EValidator ||= {}));
 var err_validation = err_nice.createChildDomain({
   domain: "err_validation",
   defaultHttpStatusCode: StatusCodes.BAD_REQUEST,
   schema: {
     ["standard_schema" /* standard_schema */]: err({
-      message: ({ issues }) => extractMessageFromStandardSchema({ issues })
-    })
-  }
+      message: ({ issues }) => extractMessageFromStandardSchema({ issues }),
+    }),
+  },
 });
-export {
-  err_validation,
-  EValidator
-};
+
+export { EValidator, err_validation };

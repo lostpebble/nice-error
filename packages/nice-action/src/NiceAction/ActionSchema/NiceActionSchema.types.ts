@@ -1,4 +1,9 @@
-import { type JSONSerializableValue, type NiceError, type NiceErrorDefined, type INiceErrorDefinedProps } from "@nice-error/core";
+import {
+  type INiceErrorDefinedProps,
+  type JSONSerializableValue,
+  type NiceError,
+  type NiceErrorDefined,
+} from "@nice-error/core";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 
 export type TTransportedValue<
@@ -56,9 +61,7 @@ export interface INiceActionErrorDeclaration<
 
 /** @internal Maps a single INiceActionErrorDeclaration to its NiceError type. */
 type TInferErrorFromDeclaration<D> =
-  D extends INiceActionErrorDeclaration<infer DEF, infer IDS>
-    ? NiceError<DEF, IDS>
-    : never;
+  D extends INiceActionErrorDeclaration<infer DEF, infer IDS> ? NiceError<DEF, IDS> : never;
 
 /**
  * Union of all `NiceError` types that can be thrown from a tuple of error declarations.

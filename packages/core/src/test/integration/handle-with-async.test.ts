@@ -12,14 +12,7 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
-import {
-  castNiceError,
-  defineNiceError,
-  err,
-  forDomain,
-  forIds,
-  matchFirst,
-} from "../../index";
+import { castNiceError, defineNiceError, err, forDomain, forIds, matchFirst } from "../../index";
 
 // ---------------------------------------------------------------------------
 // Domain setup — includes a custom serializer to test async + hydration
@@ -171,8 +164,12 @@ describe("handleWithAsync — first-match-wins ordering", () => {
     const error = err_jobs.fromId("job_not_found", { jobId: "j-5" });
 
     await error.handleWithAsync([
-      forDomain(err_jobs, async () => { calls.push("first"); }),
-      forDomain(err_jobs, async () => { calls.push("second"); }),
+      forDomain(err_jobs, async () => {
+        calls.push("first");
+      }),
+      forDomain(err_jobs, async () => {
+        calls.push("second");
+      }),
     ]);
 
     expect(calls).toEqual(["first"]);
@@ -183,8 +180,12 @@ describe("handleWithAsync — first-match-wins ordering", () => {
     const error = err_jobs.fromId("job_failed", { jobId: "j-6", failedAt: FAIL_DATE });
 
     await error.handleWithAsync([
-      forIds(err_jobs, ["job_failed"], async () => { calls.push("specific"); }),
-      forDomain(err_jobs, async () => { calls.push("fallback"); }),
+      forIds(err_jobs, ["job_failed"], async () => {
+        calls.push("specific");
+      }),
+      forDomain(err_jobs, async () => {
+        calls.push("fallback");
+      }),
     ]);
 
     expect(calls).toEqual(["specific"]);
@@ -195,8 +196,12 @@ describe("handleWithAsync — first-match-wins ordering", () => {
     const err2 = err_workers.fromId("worker_overloaded");
 
     await err2.handleWithAsync([
-      forIds(err_jobs, ["job_failed"], async () => { calls.push("jobs"); }),
-      forDomain(err_workers, async () => { calls.push("workers"); }),
+      forIds(err_jobs, ["job_failed"], async () => {
+        calls.push("jobs");
+      }),
+      forDomain(err_workers, async () => {
+        calls.push("workers");
+      }),
     ]);
 
     expect(calls).toEqual(["workers"]);

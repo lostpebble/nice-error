@@ -67,13 +67,18 @@ export class NiceActionHandler {
    * The handler's `action.input` is narrowed to the union of those IDs' schemas.
    * First matching case wins.
    */
-  forActionIds<ACT_DOM extends INiceActionDomainDef, IDS extends ReadonlyArray<keyof ACT_DOM["schema"] & string>>(
+  forActionIds<
+    ACT_DOM extends INiceActionDomainDef,
+    IDS extends ReadonlyArray<keyof ACT_DOM["schema"] & string>,
+  >(
     domain: NiceActionDomain<ACT_DOM>,
     ids: IDS,
     handler: TActionIdHandlerForDomain<ACT_DOM, IDS[number]>,
   ): this {
     this.cases.push({
-      _matcher: (action) => domain.isExactActionDomain(action) && (ids as readonly string[]).includes(action.coreAction.id),
+      _matcher: (action) =>
+        domain.isExactActionDomain(action) &&
+        (ids as readonly string[]).includes(action.coreAction.id),
       _handler: handler as TActionHandlerForDomain<INiceActionDomainDef>,
     });
     return this;

@@ -8,7 +8,10 @@ import type {
 import { NiceActionPrimed } from "./NiceActionPrimed";
 import { NiceActionResponse } from "./NiceActionResponse";
 
-export class NiceAction<DOM extends INiceActionDomain, SCH extends NiceActionSchema<any, any, any>> {
+export class NiceAction<
+  DOM extends INiceActionDomain,
+  SCH extends NiceActionSchema<any, any, any>,
+> {
   constructor(
     readonly domain: DOM,
     readonly schema: SCH,

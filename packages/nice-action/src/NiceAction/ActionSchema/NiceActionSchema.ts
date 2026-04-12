@@ -1,9 +1,9 @@
 import {
+  err_cast_not_nice,
+  type INiceErrorDefinedProps,
   type InferNiceError,
   type JSONSerializableValue,
   type NiceErrorDefined,
-  type INiceErrorDefinedProps,
-  err_cast_not_nice,
 } from "@nice-error/core";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type {
@@ -56,7 +56,11 @@ export class NiceActionSchema<
    */
   throws<ERR_DEF extends INiceErrorDefinedProps>(
     domain: NiceErrorDefined<ERR_DEF>,
-  ): NiceActionSchema<INPUT, OUTPUT, readonly [...ERRORS, INiceActionErrorDeclaration<ERR_DEF, keyof ERR_DEF["schema"] & string>]>;
+  ): NiceActionSchema<
+    INPUT,
+    OUTPUT,
+    readonly [...ERRORS, INiceActionErrorDeclaration<ERR_DEF, keyof ERR_DEF["schema"] & string>]
+  >;
 
   /**
    * Declare that this action may throw only the listed `ids` from `domain`.
@@ -68,9 +72,16 @@ export class NiceActionSchema<
   >(
     domain: NiceErrorDefined<ERR_DEF>,
     ids: IDS,
-  ): NiceActionSchema<INPUT, OUTPUT, readonly [...ERRORS, INiceActionErrorDeclaration<ERR_DEF, IDS[number] & string>]>;
+  ): NiceActionSchema<
+    INPUT,
+    OUTPUT,
+    readonly [...ERRORS, INiceActionErrorDeclaration<ERR_DEF, IDS[number] & string>]
+  >;
 
-  throws(domain: NiceErrorDefined<any>, ids?: ReadonlyArray<string>): NiceActionSchema<any, any, any> {
+  throws(
+    domain: NiceErrorDefined<any>,
+    ids?: ReadonlyArray<string>,
+  ): NiceActionSchema<any, any, any> {
     this._errorDeclarations.push({ _domain: domain, _ids: ids });
     return this as any;
   }

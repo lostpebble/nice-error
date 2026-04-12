@@ -1,16 +1,16 @@
-import * as v from "valibot";
-import { expectTypeOf, test } from "vitest";
+import type { JSONSerializableValue } from "@nice-error/core";
 import {
   defineNiceError,
   err,
   err_cast_not_nice,
-  NiceError,
   type InferNiceError,
+  NiceError,
 } from "@nice-error/core";
-import type { JSONSerializableValue } from "@nice-error/core";
+import * as v from "valibot";
+import { expectTypeOf, test } from "vitest";
 import { action } from "./action";
-import { NiceActionSchema } from "./NiceActionSchema";
 import type { TInferActionError } from "./NiceActionSchema";
+import { NiceActionSchema } from "./NiceActionSchema";
 
 // ---------------------------------------------------------------------------
 // Input / output raw type inference
@@ -135,9 +135,8 @@ test("[TInferActionError] .throws(domain) also includes err_cast_not_nice fallba
   const sch = action().throws(err_auth);
 
   type Err = TInferActionError<typeof sch>;
-  type CastIds = InferNiceError<typeof err_cast_not_nice> extends NiceError<any, infer IDS>
-    ? IDS
-    : never;
+  type CastIds =
+    InferNiceError<typeof err_cast_not_nice> extends NiceError<any, infer IDS> ? IDS : never;
   type AllIds = Err extends NiceError<any, infer IDS> ? IDS : never;
 
   // Every cast_not_nice ID must also appear in the full union.

@@ -381,7 +381,9 @@ describe("NiceActionResponse — custom input/output serialization", () => {
     }));
 
     const requestedAt = new Date("2025-01-01T00:00:00.000Z");
-    const response = await dom.action("createUser").executeToResponse({ requestedAt, name: "Alice" });
+    const response = await dom
+      .action("createUser")
+      .executeToResponse({ requestedAt, name: "Alice" });
 
     expect(response.result.ok).toBe(true);
     if (response.result.ok) {
@@ -446,7 +448,9 @@ describe("NiceActionResponse — custom input/output serialization", () => {
 
     const requestedAt = new Date("2025-01-01T00:00:00.000Z");
     const wire = sendOverWire(
-      (await dom.action("createUser").executeToResponse({ requestedAt, name: "Dave" })).toJsonObject(),
+      (
+        await dom.action("createUser").executeToResponse({ requestedAt, name: "Dave" })
+      ).toJsonObject(),
     );
 
     // After JSON round-trip, values are plain strings — not Date instances
@@ -468,7 +472,9 @@ describe("NiceActionResponse — custom input/output serialization", () => {
 
     const requestedAt = new Date("2025-01-01T00:00:00.000Z");
     const wire = sendOverWire(
-      (await dom.action("createUser").executeToResponse({ requestedAt, name: "Eve" })).toJsonObject(),
+      (
+        await dom.action("createUser").executeToResponse({ requestedAt, name: "Eve" })
+      ).toJsonObject(),
     );
 
     const hydrated = dom.hydrateResponse(wire);
@@ -495,7 +501,9 @@ describe("NiceActionResponse — custom input/output serialization", () => {
 
     const requestedAt = new Date("2025-02-20T08:00:00.000Z");
     const wire = sendOverWire(
-      (await dom.action("createUser").executeToResponse({ requestedAt, name: "Frank" })).toJsonObject(),
+      (
+        await dom.action("createUser").executeToResponse({ requestedAt, name: "Frank" })
+      ).toJsonObject(),
     );
 
     const hydrated = dom.hydrateResponse(wire);

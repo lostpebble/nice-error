@@ -8,7 +8,9 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "@nice-error",
-      social: [{ icon: "github", label: "GitHub", href: "https://github.com/lostpebble/nice-error" }],
+      social: [
+        { icon: "github", label: "GitHub", href: "https://github.com/lostpebble/nice-error" },
+      ],
       sidebar: [
         {
           label: "Guides",

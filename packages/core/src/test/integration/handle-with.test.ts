@@ -107,8 +107,12 @@ describe("handleWith — first-match-wins ordering", () => {
     const error = err_api.fromId("unauthorized");
 
     error.handleWith([
-      forDomain(err_api, () => { calls.push("first"); }),
-      forDomain(err_api, () => { calls.push("second"); }),
+      forDomain(err_api, () => {
+        calls.push("first");
+      }),
+      forDomain(err_api, () => {
+        calls.push("second");
+      }),
     ]);
 
     expect(calls).toEqual(["first"]);
@@ -119,8 +123,12 @@ describe("handleWith — first-match-wins ordering", () => {
     const error = err_api.fromId("rate_limited", { retryAfterMs: 1000 });
 
     error.handleWith([
-      forIds(err_api, ["rate_limited"], () => { calls.push("specific"); }),
-      forDomain(err_api, () => { calls.push("fallback"); }),
+      forIds(err_api, ["rate_limited"], () => {
+        calls.push("specific");
+      }),
+      forDomain(err_api, () => {
+        calls.push("fallback");
+      }),
     ]);
 
     expect(calls).toEqual(["specific"]);
@@ -131,8 +139,12 @@ describe("handleWith — first-match-wins ordering", () => {
     const error = err_api.fromId("rate_limited", { retryAfterMs: 1000 });
 
     error.handleWith([
-      forDomain(err_api, () => { calls.push("domain"); }),
-      forIds(err_api, ["rate_limited"], () => { calls.push("ids"); }),
+      forDomain(err_api, () => {
+        calls.push("domain");
+      }),
+      forIds(err_api, ["rate_limited"], () => {
+        calls.push("ids");
+      }),
     ]);
 
     // forDomain comes first and matches — forIds is never reached
@@ -144,8 +156,12 @@ describe("handleWith — first-match-wins ordering", () => {
     const error = err_billing.fromId("payment_failed", { code: "declined" });
 
     error.handleWith([
-      forDomain(err_api, () => { calls.push("api"); }),
-      forDomain(err_billing, () => { calls.push("billing"); }),
+      forDomain(err_api, () => {
+        calls.push("api");
+      }),
+      forDomain(err_billing, () => {
+        calls.push("billing");
+      }),
     ]);
 
     expect(calls).toEqual(["billing"]);
@@ -194,8 +210,12 @@ describe("handleWith — exact domain matching", () => {
     const billingError = err_billing.fromId("payment_failed", { code: "cvc_fail" });
 
     const cases = [
-      forDomain(err_api, () => { calls.push("api"); }),
-      forDomain(err_billing, () => { calls.push("billing"); }),
+      forDomain(err_api, () => {
+        calls.push("api");
+      }),
+      forDomain(err_billing, () => {
+        calls.push("billing");
+      }),
     ];
 
     apiError.handleWith(cases);
@@ -218,7 +238,9 @@ describe("handleWith — forIds with multi-id errors", () => {
     });
 
     error.handleWith([
-      forIds(err_api, ["unauthorized"], () => { called.push("unauthorized"); }),
+      forIds(err_api, ["unauthorized"], () => {
+        called.push("unauthorized");
+      }),
     ]);
 
     expect(called).toEqual(["unauthorized"]);
@@ -298,17 +320,19 @@ describe("handleWith — implicit hydration via castNiceError", () => {
 
     const calls: string[] = [];
     casted.handleWith([
-      forDomain(err_api, () => { calls.push("api"); }),
-      forDomain(err_billing, () => { calls.push("billing"); }),
+      forDomain(err_api, () => {
+        calls.push("api");
+      }),
+      forDomain(err_billing, () => {
+        calls.push("billing");
+      }),
     ]);
 
     expect(calls).toEqual(["billing"]);
   });
 
   it("multi-id wire error: forIds still matches the active subset", () => {
-    const serverErr = err_api
-      .fromId("unauthorized")
-      .addId("rate_limited", { retryAfterMs: 60000 });
+    const serverErr = err_api.fromId("unauthorized").addId("rate_limited", { retryAfterMs: 60000 });
 
     const casted = castNiceError(wireTransit(serverErr.toJsonObject()));
 

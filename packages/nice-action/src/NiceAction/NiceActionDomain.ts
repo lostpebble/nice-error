@@ -1,7 +1,7 @@
 import { EErrId_NiceAction, err_nice_action } from "../errors/err_nice_action";
 import { NiceActionHandler } from "./ActionHandler/NiceActionHandler";
-import { NiceAction } from "./NiceAction";
 import type { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
+import { NiceAction } from "./NiceAction";
 import type {
   INiceActionDomain,
   INiceActionDomainChildOptions,
@@ -12,7 +12,7 @@ import type {
   TNiceActionDomainChildDef,
 } from "./NiceActionDomain.types";
 import { NiceActionPrimed } from "./NiceActionPrimed";
-import { NiceActionResponse, hydrateNiceActionResponse } from "./NiceActionResponse";
+import { hydrateNiceActionResponse, NiceActionResponse } from "./NiceActionResponse";
 
 export class NiceActionDomain<ACT_DOM extends INiceActionDomainDef = INiceActionDomainDef>
   implements INiceActionDomain<ACT_DOM["allDomains"], ACT_DOM["schema"]>
@@ -54,7 +54,9 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomainDef = INiceAction
     return new NiceAction(this, actionSchema, id);
   }
 
-  isExactActionDomain(action: unknown): action is NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>> {
+  isExactActionDomain(
+    action: unknown,
+  ): action is NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>> {
     return (
       action instanceof NiceActionPrimed &&
       this.allDomains.includes(action.coreAction.domain.domain)
@@ -82,7 +84,9 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomainDef = INiceAction
     };
   }
 
-  async _dispatchAction(primed: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>): Promise<unknown> {
+  async _dispatchAction(
+    primed: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>,
+  ): Promise<unknown> {
     if (!this._handler) {
       throw err_nice_action.fromId(EErrId_NiceAction.domain_no_handler, { domain: this.domain });
     }
@@ -97,7 +101,9 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomainDef = INiceAction
    * Reconstruct a NiceActionPrimed from its serialized wire format.
    * Runs the schema's deserializeInput if a custom serialization was defined.
    */
-  hydrateAction(serialized: ISerializedNiceAction): NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>> {
+  hydrateAction(
+    serialized: ISerializedNiceAction,
+  ): NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>> {
     if (serialized.domain !== this.domain) {
       throw err_nice_action.fromId(EErrId_NiceAction.hydration_domain_mismatch, {
         expected: this.domain,

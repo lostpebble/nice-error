@@ -1,7 +1,10 @@
 import type { INiceErrorJsonObject, JSONSerializableValue } from "@nice-error/core";
 import type { NiceActionHandler } from "./ActionHandler/NiceActionHandler";
 import type { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
-import type { INiceActionErrorDeclaration, TTransportedValue } from "./ActionSchema/NiceActionSchema.types";
+import type {
+  INiceActionErrorDeclaration,
+  TTransportedValue,
+} from "./ActionSchema/NiceActionSchema.types";
 import type { NiceActionPrimed } from "./NiceActionPrimed";
 
 export type MaybePromise<T> = T | Promise<T>;
@@ -12,7 +15,11 @@ export type TNiceActionDomainIds = [TNiceActionDomainId, ...TNiceActionDomainId[
 
 export type TNiceActionDomainSchema = Record<
   string,
-  NiceActionSchema<TTransportedValue<any, any>, TTransportedValue<any, any>, readonly INiceActionErrorDeclaration<any, any>[]>
+  NiceActionSchema<
+    TTransportedValue<any, any>,
+    TTransportedValue<any, any>,
+    readonly INiceActionErrorDeclaration<any, any>[]
+  >
 >;
 
 /**
@@ -36,7 +43,9 @@ export interface INiceActionDomain<
   IDS extends TNiceActionDomainIds = TNiceActionDomainIds,
   SCH extends TNiceActionDomainSchema = TNiceActionDomainSchema,
 > extends INiceActionDomainDef<IDS, SCH> {
-  _dispatchAction(primed: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>): Promise<unknown>;
+  _dispatchAction(
+    primed: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>,
+  ): Promise<unknown>;
 }
 
 export interface INiceActionDomainChildOptions<
@@ -84,9 +93,7 @@ export type TActionHandlerForDomain<ACT_DOM extends INiceActionDomainDef> = (
 export type TActionIdHandlerForDomain<
   ACT_DOM extends INiceActionDomainDef,
   ID extends keyof ACT_DOM["schema"] & string,
-> = (
-  action: NiceActionPrimed<INiceActionDomain, ACT_DOM["schema"][ID]>,
-) => MaybePromise<unknown>;
+> = (action: NiceActionPrimed<INiceActionDomain, ACT_DOM["schema"][ID]>) => MaybePromise<unknown>;
 
 /**
  * Observer called after each action is dispatched.
@@ -102,7 +109,9 @@ export type TActionListener = (
  * Construct via `forDomain` / `forActionId` / `forActionIds` — do not build directly.
  */
 export interface IActionCase {
-  readonly _matcher: (action: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>) => boolean;
+  readonly _matcher: (
+    action: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>,
+  ) => boolean;
   readonly _handler: TActionHandlerForDomain<INiceActionDomainDef>;
 }
 
@@ -138,9 +147,7 @@ export interface IActionHandlerWithId {
  * console.log(result.value); // typed as the action's OUTPUT
  * ```
  */
-export type NiceActionResult<OUT, ERR> =
-  | { ok: true; value: OUT }
-  | { ok: false; error: ERR };
+export type NiceActionResult<OUT, ERR> = { ok: true; value: OUT } | { ok: false; error: ERR };
 
 /**
  * Wire format for a serialized NiceActionResponse — safe to JSON.stringify / transmit.

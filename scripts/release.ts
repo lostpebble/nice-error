@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+
 /**
  * Release script — bumps both packages to the same version, builds, and publishes.
  *
@@ -10,9 +11,9 @@
  *   bun run release 1.2.0-beta.1 --dry-run
  */
 
+import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { execSync } from "node:child_process";
 
 // ---------------------------------------------------------------------------
 // Args
@@ -40,10 +41,7 @@ if (!/^\d+\.\d+\.\d+(-[\w.-]+)?(\+[\w.-]+)?$/.test(version)) {
 
 const REPO_ROOT = join(import.meta.dir, "..");
 
-const PACKAGES = [
-  join(REPO_ROOT, "packages/core"),
-  join(REPO_ROOT, "packages/common-errors"),
-];
+const PACKAGES = [join(REPO_ROOT, "packages/core"), join(REPO_ROOT, "packages/common-errors")];
 
 function readPkg(dir: string) {
   return JSON.parse(readFileSync(join(dir, "package.json"), "utf-8")) as Record<string, unknown>;
