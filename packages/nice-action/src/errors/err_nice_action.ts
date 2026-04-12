@@ -3,6 +3,7 @@ import { err, err_nice } from "@nice-error/core";
 export enum EErrId_NiceAction {
   action_id_not_in_domain = "action_id_not_in_domain",
   domain_action_handler_conflict = "domain_action_handler_conflict",
+  domain_no_handler = "domain_no_handler",
 }
 
 export const err_nice_action = err_nice.createChildDomain({
@@ -16,6 +17,10 @@ export const err_nice_action = err_nice.createChildDomain({
     [EErrId_NiceAction.domain_action_handler_conflict]: err<{ domain: string }>({
       message: ({ domain }) =>
         `Domain "${domain}" already has a handler set. Multiple handlers for the same domain are not allowed.`,
+    }),
+    [EErrId_NiceAction.domain_no_handler]: err<{ domain: string }>({
+      message: ({ domain }) =>
+        `Domain "${domain}" has no action handler registered. Call setActionHandler() before executing actions.`,
     }),
   },
 });

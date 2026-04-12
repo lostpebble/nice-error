@@ -1,7 +1,7 @@
 import { NiceActionDomain } from "./NiceActionDomain";
-import type { INiceActionDomain } from "./NiceActionDomain.types";
+import type { INiceActionDomainDef } from "./NiceActionDomain.types";
 
-export const createActionDomain = <ACT_DOM extends Omit<INiceActionDomain, "allDomains">>(
+export const createActionDomain = <ACT_DOM extends Omit<INiceActionDomainDef, "allDomains">>(
   definition: ACT_DOM,
 ) => {
   return new NiceActionDomain({

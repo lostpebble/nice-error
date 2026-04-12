@@ -16,15 +16,7 @@ export class NiceActionPrimed<DOM extends INiceActionDomain, SCH extends NiceAct
 
   toJsonObject() {}
 
-  async execute(
-    input: TInferInputFromSchema<SCH>["Input"],
-  ): Promise<TInferOutputFromSchema<SCH>["Output"]> {
-    const handler = this.coreAction.domain.handler;
-
-    if (handler == null) {
-      throw new Error(`No action handler registered for domain ${this.coreAction.domain.domain}`);
-    }
-
-    return await handler.handleAction(this);
+  async execute(): Promise<TInferOutputFromSchema<SCH>["Output"]> {
+    return this.coreAction.domain._dispatchAction(this) as Promise<TInferOutputFromSchema<SCH>["Output"]>;
   }
 }

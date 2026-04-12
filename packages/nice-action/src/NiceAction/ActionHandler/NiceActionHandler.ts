@@ -1,21 +1,21 @@
+import type { NiceActionSchema } from "../ActionSchema/NiceActionSchema";
 import type { NiceActionDomain } from "../NiceActionDomain";
 import type {
   IActionCase,
   INiceActionDomain,
+  INiceActionDomainDef,
   TActionHandlerForDomain,
-  TInferOutputFromSchema,
 } from "../NiceActionDomain.types";
 import type { NiceActionPrimed } from "../NiceActionPrimed";
 
-export class NiceActionHandler<ACT_DOM extends INiceActionDomain> {
-  private cases: IActionCase<INiceActionDomain>[] = [];
+export class NiceActionHandler<ACT_DOM extends INiceActionDomainDef> {
+  private cases: IActionCase<INiceActionDomainDef>[] = [];
 
   constructor(protected readonly domain: NiceActionDomain<ACT_DOM>) {}
 
-  async handleAction<
-    ID extends keyof ACT_DOM["schema"] & string,
-    ACT extends NiceActionPrimed<ACT_DOM, ACT_DOM["schema"][ID]>,
-  >(action: ACT): Promise<TInferOutputFromSchema<ACT_DOM["schema"][ID]>["Output"] | undefined> {
+  async handleAction(
+    action: NiceActionPrimed<INiceActionDomain, NiceActionSchema>,
+  ): Promise<unknown> {
     for (const actionCase of this.cases) {
       if (actionCase._domain.isExactActionDomain(action)) {
         return await actionCase._handler(action);
@@ -27,14 +27,14 @@ export class NiceActionHandler<ACT_DOM extends INiceActionDomain> {
     );
   }
 
-  forDomain<FOR_DOM extends INiceActionDomain>(
+  forDomain<FOR_DOM extends INiceActionDomainDef>(
     domain: NiceActionDomain<FOR_DOM>,
     handler: TActionHandlerForDomain<FOR_DOM>,
   ): this {
     this.cases.push({
       _domain: domain,
       _ids: undefined,
-      _handler: handler as TActionHandlerForDomain<INiceActionDomain>,
+      _handler: handler as TActionHandlerForDomain<INiceActionDomainDef>,
     });
     return this;
   }

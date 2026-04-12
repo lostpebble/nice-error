@@ -11,7 +11,6 @@ export class NiceAction<DOM extends INiceActionDomain, SCH extends NiceActionSch
     readonly domain: DOM,
     readonly schema: SCH,
     readonly id: string,
-    // readonly input: TInferInputFromSchema<SCH>["Input"],
   ) {}
 
   toJsonObject() {}
@@ -31,7 +30,7 @@ export class NiceAction<DOM extends INiceActionDomain, SCH extends NiceActionSch
   async execute(
     input: TInferInputFromSchema<SCH>["Input"],
   ): Promise<TInferOutputFromSchema<SCH>["Output"]> {
-    console.log(`Executing action ${this.domain.domain}:${this.id} with input:`, input);
-    throw new Error("Not implemented: action execution logic");
+    const primed = new NiceActionPrimed(this, input);
+    return this.domain._dispatchAction(primed) as Promise<TInferOutputFromSchema<SCH>["Output"]>;
   }
 }
