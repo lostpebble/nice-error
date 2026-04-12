@@ -1,8 +1,9 @@
-import type { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
+import type { NiceActionSchema, TInferActionError } from "./ActionSchema/NiceActionSchema";
 import type { NiceAction } from "./NiceAction";
 import type {
   INiceActionDomain,
   ISerializedNiceAction,
+  NiceActionResult,
   TInferInputFromSchema,
   TInferOutputFromSchema,
 } from "./NiceActionDomain.types";
@@ -34,5 +35,20 @@ export class NiceActionPrimed<DOM extends INiceActionDomain, SCH extends NiceAct
    */
   async execute(): Promise<TInferOutputFromSchema<SCH>["Output"]> {
     return this.coreAction.domain._dispatchAction(this) as Promise<TInferOutputFromSchema<SCH>["Output"]>;
+  }
+
+  /**
+   * Like `execute`, but catches thrown errors and returns a `NiceActionResult` discriminated union
+   * instead of propagating. On success: `{ ok: true, value }`. On failure: `{ ok: false, error }`.
+   *
+   * Mirrors `NiceAction.executeSafe` — useful when re-executing a hydrated primed action.
+   */
+  async executeSafe(): Promise<NiceActionResult<TInferOutputFromSchema<SCH>["Output"], TInferActionError<SCH>>> {
+    try {
+      const value = await this.execute();
+      return { ok: true, value };
+    } catch (error) {
+      return { ok: false, error: error as TInferActionError<SCH> };
+    }
   }
 }

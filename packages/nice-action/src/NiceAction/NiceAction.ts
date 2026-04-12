@@ -1,6 +1,7 @@
-import type { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
+import type { NiceActionSchema, TInferActionError } from "./ActionSchema/NiceActionSchema";
 import type {
   INiceActionDomain,
+  NiceActionResult,
   TInferInputFromSchema,
   TInferOutputFromSchema,
 } from "./NiceActionDomain.types";
@@ -40,5 +41,35 @@ export class NiceAction<DOM extends INiceActionDomain, SCH extends NiceActionSch
   ): Promise<TInferOutputFromSchema<SCH>["Output"]> {
     const primed = new NiceActionPrimed(this, input);
     return this.domain._dispatchAction(primed) as Promise<TInferOutputFromSchema<SCH>["Output"]>;
+  }
+
+  /**
+   * Like `execute`, but catches thrown errors and returns a `NiceActionResult` discriminated union
+   * instead of propagating. On success: `{ ok: true, value }`. On failure: `{ ok: false, error }`.
+   *
+   * The `error` type is the union of all `NiceError` types declared via `.throws()` on the schema,
+   * plus `InferNiceError<typeof err_cast_not_nice>` as the always-present fallback.
+   *
+   * @example
+   * ```ts
+   * const result = await domain.action("getUser").executeSafe({ userId: "123" });
+   * if (!result.ok) {
+   *   result.error.handleWith([
+   *     forDomain(err_auth, (h) => res.status(401).end()),
+   *   ]);
+   *   return;
+   * }
+   * console.log(result.value);
+   * ```
+   */
+  async executeSafe(
+    input: TInferInputFromSchema<SCH>["Input"],
+  ): Promise<NiceActionResult<TInferOutputFromSchema<SCH>["Output"], TInferActionError<SCH>>> {
+    try {
+      const value = await this.execute(input);
+      return { ok: true, value };
+    } catch (error) {
+      return { ok: false, error: error as TInferActionError<SCH> };
+    }
   }
 }

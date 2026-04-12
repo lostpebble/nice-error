@@ -17,3 +17,5 @@
 
 - Avoid `as` type-casting. Prefer actual inferred types. If inference fails, indicates different issue.
 - For `null` or `undefined` conditional checks- always use `!=` when expecting to check against any of them (unless there is a reason to check exactly for one or the other). This ensure we catch both of these conditions (nullish), no matter what the return value might be.
+- All "type" type definitions should start with a "T". E.g. "TNiceActionResult"
+- All "interface" type definitions should start with an "I". E.g. "IUser"

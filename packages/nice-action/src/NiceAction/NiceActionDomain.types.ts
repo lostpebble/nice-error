@@ -1,6 +1,7 @@
 import type { JSONSerializableValue } from "@nice-error/core";
 import type { NiceActionHandler } from "./ActionHandler/NiceActionHandler";
 import type { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
+import type { INiceActionErrorDeclaration, TTransportedValue } from "./ActionSchema/NiceActionSchema.types";
 import type { NiceActionPrimed } from "./NiceActionPrimed";
 
 export type MaybePromise<T> = T | Promise<T>;
@@ -9,7 +10,10 @@ export type TNiceActionDomainId = string;
 
 export type TNiceActionDomainIds = [TNiceActionDomainId, ...TNiceActionDomainId[]];
 
-export type TNiceActionDomainSchema = Record<string, NiceActionSchema>;
+export type TNiceActionDomainSchema = Record<
+  string,
+  NiceActionSchema<TTransportedValue<any, any>, TTransportedValue<any, any>, readonly INiceActionErrorDeclaration<any, any>[]>
+>;
 
 /**
  * Data shape for a domain — used for construction and as the type-level schema carrier.
@@ -115,3 +119,25 @@ export interface IActionHandlerWithId {
   id: string;
   handler: NiceActionHandler;
 }
+
+/**
+ * Return type of `executeSafe` — a discriminated union of success and failure.
+ *
+ * - `{ ok: true; value: OUT }` — the action completed and returned `OUT`
+ * - `{ ok: false; error: ERR }` — the action threw; `ERR` is the declared error union
+ *
+ * @example
+ * ```ts
+ * const result = await domain.action("getUser").executeSafe({ userId: "123" });
+ * if (!result.ok) {
+ *   result.error.handleWith([
+ *     forDomain(err_auth, (h) => res.status(401).end()),
+ *   ]);
+ *   return;
+ * }
+ * console.log(result.value); // typed as the action's OUTPUT
+ * ```
+ */
+export type NiceActionResult<OUT, ERR> =
+  | { ok: true; value: OUT }
+  | { ok: false; error: ERR };

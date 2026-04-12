@@ -1,5 +1,6 @@
 export { action } from "./NiceAction/ActionSchema/action";
 export { NiceActionSchema } from "./NiceAction/ActionSchema/NiceActionSchema";
+export type { TInferActionError } from "./NiceAction/ActionSchema/NiceActionSchema";
 export type {
   TNiceActonSchemaInputOptions,
   TNiceActionSerializationDefinition,
@@ -18,6 +19,7 @@ export type {
   INiceActionDomainChildOptions,
   ISerializedNiceAction,
   MaybePromise,
+  NiceActionResult,
   TActionHandlerForDomain,
   TActionIdHandlerForDomain,
   TActionListener,
