@@ -8,9 +8,10 @@ export type {
 } from "./NiceAction/ActionSchema/NiceActionSchema.types";
 
 export { NiceAction } from "./NiceAction/NiceAction";
-export { NiceActionPrimed } from "./NiceAction/NiceActionPrimed";
 export { NiceActionDomain } from "./NiceAction/NiceActionDomain";
 export { NiceActionHandler } from "./NiceAction/ActionHandler/NiceActionHandler";
+export { NiceActionPrimed } from "./NiceAction/NiceActionPrimed";
+export { NiceActionResponse } from "./NiceAction/NiceActionResponse";
 export { createActionDomain } from "./NiceAction/createActionDomain";
 
 export type {
@@ -18,6 +19,7 @@ export type {
   INiceActionDomainDef,
   INiceActionDomainChildOptions,
   ISerializedNiceAction,
+  ISerializedNiceActionResponse,
   MaybePromise,
   NiceActionResult,
   TActionHandlerForDomain,

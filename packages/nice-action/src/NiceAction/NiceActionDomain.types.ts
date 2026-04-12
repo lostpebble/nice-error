@@ -1,4 +1,4 @@
-import type { JSONSerializableValue } from "@nice-error/core";
+import type { INiceErrorJsonObject, JSONSerializableValue } from "@nice-error/core";
 import type { NiceActionHandler } from "./ActionHandler/NiceActionHandler";
 import type { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
 import type { INiceActionErrorDeclaration, TTransportedValue } from "./ActionSchema/NiceActionSchema.types";
@@ -141,3 +141,28 @@ export interface IActionHandlerWithId {
 export type NiceActionResult<OUT, ERR> =
   | { ok: true; value: OUT }
   | { ok: false; error: ERR };
+
+/**
+ * Wire format for a serialized NiceActionResponse — safe to JSON.stringify / transmit.
+ *
+ * Carries the original action identity (domain + actionId + serialized input) alongside
+ * either the serialized output value or a serialized NiceError.
+ *
+ * Produced by `NiceActionResponse.toJsonObject()`.
+ * Reconstructed by `NiceActionDomain.hydrateResponse()`.
+ */
+export type ISerializedNiceActionResponse =
+  | {
+      domain: string;
+      actionId: string;
+      input: JSONSerializableValue;
+      ok: true;
+      value: JSONSerializableValue;
+    }
+  | {
+      domain: string;
+      actionId: string;
+      input: JSONSerializableValue;
+      ok: false;
+      error: INiceErrorJsonObject;
+    };

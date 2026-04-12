@@ -7,10 +7,12 @@ import type {
   INiceActionDomainChildOptions,
   INiceActionDomainDef,
   ISerializedNiceAction,
+  ISerializedNiceActionResponse,
   TActionListener,
   TNiceActionDomainChildDef,
 } from "./NiceActionDomain.types";
 import { NiceActionPrimed } from "./NiceActionPrimed";
+import { NiceActionResponse, hydrateNiceActionResponse } from "./NiceActionResponse";
 
 export class NiceActionDomain<ACT_DOM extends INiceActionDomainDef = INiceActionDomainDef>
   implements INiceActionDomain<ACT_DOM["allDomains"], ACT_DOM["schema"]>
@@ -114,6 +116,33 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomainDef = INiceAction
     const coreAction = this.action(id);
     const rawInput = coreAction.schema.deserializeInput(serialized.input);
     return new NiceActionPrimed(coreAction, rawInput);
+  }
+
+  /**
+   * Reconstruct a NiceActionResponse from its serialized wire format.
+   * The result is loosely typed — `result.error` is `NiceError<TUnknownNiceErrorDef>`.
+   * Use `handleWith` / `forDomain` / `isExact` to route errors on the receiving end.
+   */
+  hydrateResponse(
+    serialized: ISerializedNiceActionResponse,
+  ): NiceActionResponse<INiceActionDomain, NiceActionSchema<any, any, any>> {
+    if (serialized.domain !== this.domain) {
+      throw err_nice_action.fromId(EErrId_NiceAction.hydration_domain_mismatch, {
+        expected: this.domain,
+        received: serialized.domain,
+      });
+    }
+
+    const id = serialized.actionId as keyof ACT_DOM["schema"] & string;
+    if (!this.schema[id]) {
+      throw err_nice_action.fromId(EErrId_NiceAction.hydration_action_id_not_found, {
+        domain: this.domain,
+        actionId: serialized.actionId,
+      });
+    }
+
+    const coreAction = this.action(id);
+    return hydrateNiceActionResponse(serialized, coreAction);
   }
 
   setActionHandler(handler?: NiceActionHandler): NiceActionHandler {

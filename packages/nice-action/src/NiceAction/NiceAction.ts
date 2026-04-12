@@ -6,6 +6,7 @@ import type {
   TInferOutputFromSchema,
 } from "./NiceActionDomain.types";
 import { NiceActionPrimed } from "./NiceActionPrimed";
+import { NiceActionResponse } from "./NiceActionResponse";
 
 export class NiceAction<DOM extends INiceActionDomain, SCH extends NiceActionSchema<any, any, any>> {
   constructor(
@@ -71,5 +72,21 @@ export class NiceAction<DOM extends INiceActionDomain, SCH extends NiceActionSch
     } catch (error) {
       return { ok: false, error: error as TInferActionError<SCH> };
     }
+  }
+
+  /**
+   * Prime this action with input, execute it, and return a `NiceActionResponse`
+   * that carries both the original primed action (domain + actionId + input) and
+   * the result (`{ ok: true, value }` or `{ ok: false, error }`).
+   *
+   * The response can be serialized for cross-boundary transport via `toJsonObject()`.
+   * Reconstruct on the receiving end with `domain.hydrateResponse(wire)`.
+   */
+  async executeToResponse(
+    input: TInferInputFromSchema<SCH>["Input"],
+  ): Promise<NiceActionResponse<DOM, SCH>> {
+    const primed = new NiceActionPrimed(this, input);
+    const result = await this.executeSafe(input);
+    return new NiceActionResponse(primed, result);
   }
 }
