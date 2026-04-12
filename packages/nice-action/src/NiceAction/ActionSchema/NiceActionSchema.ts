@@ -8,7 +8,7 @@ import type {
 
 export class NiceActionSchema<
   INPUT extends TTransportedValue<any, any> = TTransportedValue<any, any>,
-  OUTPUT extends TTransportedValue<any, any> = TTransportedValue<any, any>,
+  OUTPUT extends TTransportedValue<any, any> = TTransportedValue<undefined>,
   ERRORS extends NiceErrorDefined[] = NiceErrorDefined[],
 > {
   private errorDomains: TNiceActionErrorDomains<ERRORS> = {} as any;

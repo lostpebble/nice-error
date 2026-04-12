@@ -1,23 +1,20 @@
-import type { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
+import { EErrId_NiceAction, err_nice_action } from "../errors/err_nice_action";
+import { NiceActionHandler } from "./ActionHandler/NiceActionHandler";
 import { NiceAction } from "./NiceAction";
 import type {
+  IActionHandlerWithId,
   INiceActionDomain,
   INiceActionDomainChildOptions,
   TNiceActionDomainChildDef,
 } from "./NiceActionDomain.types";
-
-type TInferInputFromSchema<SCH> =
-  SCH extends NiceActionSchema<infer IN, any, any>
-    ? {
-        Input: IN[0];
-        SerdeInput: IN[1];
-      }
-    : never;
+import type { NiceActionPrimed } from "./NiceActionPrimed";
 
 export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDomain> {
   readonly domain: ACT_DOM["domain"];
   readonly allDomains: ACT_DOM["allDomains"];
-  private readonly schema: ACT_DOM["schema"];
+  readonly schema: ACT_DOM["schema"];
+  private _actionListeners: IActionHandlerWithId<ACT_DOM>[] = [];
+  private _handler?: NiceActionHandler<ACT_DOM> | undefined;
 
   constructor(definition: ACT_DOM) {
     this.domain = definition.domain;
@@ -38,15 +35,45 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
     return child;
   }
 
-  newAction<ID extends keyof ACT_DOM["schema"]>(
+  action<ID extends keyof ACT_DOM["schema"] & string>(
     id: ID,
-    input: TInferInputFromSchema<ACT_DOM["schema"][ID]>["Input"],
-  ) {
+    // input: TInferInputFromSchema<ACT_DOM["schema"][ID]>["Input"],
+  ): NiceAction<this, ACT_DOM["schema"][ID]> {
     const actionSchema = this.schema[id];
     if (!actionSchema) {
-      throw new Error(`Action with id "${String(id)}" does not exist in domain "${this.domain}".`);
+      throw err_nice_action.fromId(EErrId_NiceAction.action_id_not_in_domain, {
+        domain: this.domain,
+        actionId: id as string,
+      });
     }
 
-    return new NiceAction(actionSchema);
+    return new NiceAction(this, actionSchema, id);
+  }
+
+  isExactActionDomain(action: unknown): action is NiceAction<ACT_DOM, ACT_DOM["schema"][string]> {
+    return action instanceof NiceAction && this.allDomains.includes(action.domain.domain);
+  }
+
+  matchAction<ID extends keyof ACT_DOM["schema"] & string>(
+    action: unknown,
+    id: ID,
+  ): action is NiceActionPrimed<ACT_DOM, ACT_DOM["schema"][ID]> {
+    return this.isExactActionDomain(action) && action.id === id;
+  }
+
+  addActionListener(listener: IActionHandlerWithId<ACT_DOM>): void {
+    this._actionListeners.push(listener);
+  }
+
+  setActionHandler(): NiceActionHandler<ACT_DOM> {
+    if (this._handler) {
+      throw err_nice_action.fromId(EErrId_NiceAction.domain_action_handler_conflict, {
+        domain: this.domain,
+      });
+    }
+
+    const handler = new NiceActionHandler(this);
+    this._handler = handler;
+    return handler;
   }
 }

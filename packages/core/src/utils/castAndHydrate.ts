@@ -39,7 +39,7 @@ export function castAndHydrate<ERR_DEF extends INiceErrorDefinedProps>(
   niceErrorDefined: NiceErrorDefined<ERR_DEF>,
 ): NiceErrorHydrated<ERR_DEF, keyof ERR_DEF["schema"]> | NiceError {
   const casted = castNiceError(value);
-  if (niceErrorDefined.is(casted)) {
+  if (niceErrorDefined.isExact(casted)) {
     return niceErrorDefined.hydrate(casted);
   }
   return casted;

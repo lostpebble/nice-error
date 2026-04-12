@@ -317,24 +317,24 @@ describe("NiceError.toJsonObject", () => {
 describe("NiceErrorDefined.is — exact domain match", () => {
   it("returns true for errors from the exact domain", () => {
     const testErr = err_auth.fromId(EAuth.account_locked);
-    expect(err_auth.is(testErr)).toBe(true);
+    expect(err_auth.isExact(testErr)).toBe(true);
   });
 
   it("returns false for errors from a child domain", () => {
     const testErr = err_registration.fromId(ERegistration.password_error);
-    expect(err_auth.is(testErr)).toBe(false);
+    expect(err_auth.isExact(testErr)).toBe(false);
   });
 
   it("returns false for errors from a parent domain", () => {
     const testErr = err_auth.fromId(EAuth.account_locked);
-    expect(err_registration.is(testErr)).toBe(false);
+    expect(err_registration.isExact(testErr)).toBe(false);
   });
 
   it("returns false for non-NiceError values", () => {
-    expect(err_auth.is(new Error("nope"))).toBe(false);
-    expect(err_auth.is(null)).toBe(false);
-    expect(err_auth.is("string")).toBe(false);
-    expect(err_auth.is(undefined)).toBe(false);
+    expect(err_auth.isExact(new Error("nope"))).toBe(false);
+    expect(err_auth.isExact(null)).toBe(false);
+    expect(err_auth.isExact("string")).toBe(false);
+    expect(err_auth.isExact(undefined)).toBe(false);
   });
 });
 
@@ -419,9 +419,9 @@ describe("castNiceError + is() + isParentOf() integration", () => {
     const original = err_registration.fromId(ERegistration.password_error);
     const casted = castNiceError(original);
 
-    expect(err_registration.is(casted)).toBe(true);
-    expect(err_auth.is(casted)).toBe(false);
-    expect(err_app.is(casted)).toBe(false);
+    expect(err_registration.isExact(casted)).toBe(true);
+    expect(err_auth.isExact(casted)).toBe(false);
+    expect(err_app.isExact(casted)).toBe(false);
   });
 
   it("isParentOf() matches ancestry after casting an instance", () => {
@@ -446,8 +446,8 @@ describe("castNiceError + is() + isParentOf() integration", () => {
     // (only message is preserved), so is() won't match — this is expected
     // for the JSON path. Instance path preserves everything.
     const instanceCasted = castNiceError(err);
-    expect(err_registration.is(instanceCasted)).toBe(true);
-    expect(err_auth.is(instanceCasted)).toBe(false);
+    expect(err_registration.isExact(instanceCasted)).toBe(true);
+    expect(err_auth.isExact(instanceCasted)).toBe(false);
     expect(err_auth.isParentOf(instanceCasted)).toBe(true);
   });
 });

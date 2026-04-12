@@ -92,7 +92,7 @@ const server = Bun.serve({
           input: String(raw),
           message: casted.message,
           httpStatusCode: casted.httpStatusCode,
-          isAuthDomain: err_auth.is(casted),
+          isAuthDomain: err_auth.isExact(casted),
           isAppParent: err_app.isParentOf(casted),
           isNiceErrorObj: isNiceErrorObject(typeof raw === "object" && raw !== null ? raw : {}),
         };

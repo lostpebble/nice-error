@@ -11,16 +11,13 @@ import type { NiceErrorDefined } from "../NiceErrorDefined/NiceErrorDefined";
  *
  * Construct via `forDomain` or `forIds` — do not build this object directly.
  */
-export interface IErrorCase<
-  DEF extends INiceErrorDefinedProps,
-  IDS extends keyof DEF["schema"],
-> {
+export interface IErrorCase<DEF extends INiceErrorDefinedProps, IDS extends keyof DEF["schema"]> {
   /**
    * Duck-typed reference to the domain definition.
-   * Needs only `is()` and `hydrate()` at runtime — avoids any circular value import.
+   * Needs only `isExact()` and `hydrate()` at runtime — avoids any circular value import.
    * @internal
    */
-  readonly _domain: Pick<NiceErrorDefined<DEF>, "is" | "hydrate">;
+  readonly _domain: Pick<NiceErrorDefined<DEF>, "isExact" | "hydrate">;
   /** When set, the case only fires if one of these ids is active on the error. @internal */
   readonly _ids: ReadonlyArray<IDS> | undefined;
   /** The handler to invoke with the hydrated error. @internal */

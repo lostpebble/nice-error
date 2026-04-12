@@ -1,10 +1,12 @@
 import * as v from "valibot";
-import { describe, it } from "vitest";
+import { describe, it, vi } from "vitest";
 import { action } from "../NiceAction/ActionSchema/action";
 import { createActionDomain } from "../NiceAction/createActionDomain";
 
 describe("Nice Action Usage", () => {
-  it("should create a NiceActionDomain", () => {
+  it("should create a NiceActionDomain", async () => {
+    const mockRequest = vi.fn();
+
     const testActionDomain = createActionDomain({
       domain: "test_domain",
       schema: {
@@ -24,8 +26,16 @@ describe("Nice Action Usage", () => {
       },
     });
 
-    const testAction = testActionDomain.newAction("test_action", {
-      timeStart: new Date("2024-01-01T00:00:00Z"),
+    testActionDomain.setActionHandler().forDomain(testActionDomain, (action) => {
+      if (testActionDomain.matchAction(action, "test_action")) {
+        const { timeStart } = action.input;
+        mockRequest(`Action received with timeStart: ${timeStart.toISOString()}`);
+        return undefined;
+      }
     });
+
+    const testAction = testActionDomain.action("test_action");
+
+    await testAction.execute({ timeStart: new Date("2024-01-01T00:00:00Z") });
   });
 });

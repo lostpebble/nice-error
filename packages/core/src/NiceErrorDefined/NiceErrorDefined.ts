@@ -371,10 +371,16 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps = INiceErro
    * }
    * ```
    */
-  is(error: unknown): error is NiceError<ERR_DEF, keyof ERR_DEF["schema"]> {
+  isExact(error: unknown): error is NiceError<ERR_DEF, keyof ERR_DEF["schema"]> {
     if (!(error instanceof NiceError)) return false;
     const errDef = error.def as unknown as INiceErrorDefinedProps;
     return errDef.domain === this.domain;
+  }
+
+  isThisOrChild(error: unknown): boolean {
+    if (!(error instanceof NiceError)) return false;
+    const errDef = error.def as unknown as INiceErrorDefinedProps;
+    return errDef.domain === this.domain || this.allDomains.includes(errDef.domain);
   }
 
   // -------------------------------------------------------------------------

@@ -28,8 +28,7 @@ const err_jobs = defineNiceError({
   domain: "err_jobs",
   schema: {
     job_failed: err<TJobError>({
-      message: ({ jobId, failedAt }) =>
-        `Job ${jobId} failed at ${failedAt.toISOString()}`,
+      message: ({ jobId, failedAt }) => `Job ${jobId} failed at ${failedAt.toISOString()}`,
       httpStatusCode: 500,
       context: {
         required: true,
@@ -104,7 +103,7 @@ describe("custom serialization — unhydrated state after wire transit", () => {
     const wire = wireTransit(serverErr.toJsonObject());
     const casted = castNiceError(wire);
 
-    if (err_jobs.is(casted) && casted.hasId("job_failed")) {
+    if (err_jobs.isExact(casted) && casted.hasId("job_failed")) {
       const data = casted.getErrorDataForId("job_failed");
       expect(data?.contextState.kind).toBe("unhydrated");
     }
@@ -119,7 +118,7 @@ describe("custom serialization — unhydrated state after wire transit", () => {
     const wire = wireTransit(serverErr.toJsonObject());
     const casted = castNiceError(wire);
 
-    if (err_jobs.is(casted) && casted.hasId("job_failed")) {
+    if (err_jobs.isExact(casted) && casted.hasId("job_failed")) {
       expect(() => casted.getContext("job_failed")).toThrow("unhydrated");
     }
   });
@@ -149,7 +148,7 @@ describe("custom serialization — re-hydrated after explicit hydrate()", () => 
     const wire = wireTransit(serverErr.toJsonObject());
     const casted = castNiceError(wire);
 
-    if (!err_jobs.is(casted)) throw new Error("domain mismatch");
+    if (!err_jobs.isExact(casted)) throw new Error("domain mismatch");
 
     const hydrated = err_jobs.hydrate(casted);
     const ctx = hydrated.getContext("job_failed");
@@ -169,9 +168,9 @@ describe("custom serialization — re-hydrated after explicit hydrate()", () => 
     const wire = wireTransit(serverErr.toJsonObject());
 
     const result = castAndHydrate(wire, err_jobs);
-    expect(err_jobs.is(result)).toBe(true);
+    expect(err_jobs.isExact(result)).toBe(true);
 
-    if (err_jobs.is(result) && result.hasId("job_failed")) {
+    if (err_jobs.isExact(result) && result.hasId("job_failed")) {
       const ctx = result.getContext("job_failed");
       expect(ctx.jobId).toBe("job-006");
       expect(ctx.failedAt).toBeInstanceOf(Date);
@@ -190,7 +189,7 @@ describe("custom serialization — re-hydrated after explicit hydrate()", () => 
     const wire = wireTransit(serverErr.toJsonObject());
     const casted = castNiceError(wire);
 
-    if (!err_jobs.is(casted)) throw new Error("domain mismatch");
+    if (!err_jobs.isExact(casted)) throw new Error("domain mismatch");
 
     // job_timeout has no custom serializer — context accessible without hydration
     if (casted.hasId("job_timeout")) {

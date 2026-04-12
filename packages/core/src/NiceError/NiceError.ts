@@ -335,7 +335,7 @@ export class NiceError<
    */
   handleWith(cases: ReadonlyArray<IErrorCase<any, any>>): boolean {
     for (const c of cases) {
-      if (!c._domain.is(this)) continue;
+      if (!c._domain.isExact(this)) continue;
       if (c._ids !== undefined && !this.hasOneOfIds(c._ids as any)) continue;
       c._handler(c._domain.hydrate(this as any) as any);
       return true;
@@ -364,7 +364,7 @@ export class NiceError<
    */
   async handleWithAsync(cases: ReadonlyArray<IErrorCase<any, any>>): Promise<boolean> {
     for (const c of cases) {
-      if (!c._domain.is(this)) continue;
+      if (!c._domain.isExact(this)) continue;
       if (c._ids !== undefined && !this.hasOneOfIds(c._ids as any)) continue;
       await c._handler(c._domain.hydrate(this as any) as any);
       return true;

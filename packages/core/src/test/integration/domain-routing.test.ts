@@ -67,7 +67,7 @@ function handleError(thrown: unknown): THttpResponse {
   const error = castNiceError(thrown);
 
   // Most specific domain first
-  if (err_feature.is(error)) {
+  if (err_feature.isExact(error)) {
     const hydrated = err_feature.hydrate(error);
     const matched = matchFirst(hydrated, {
       not_found: ({ resource }): THttpResponse => ({ status: 404, body: `${resource} not found` }),
@@ -83,7 +83,7 @@ function handleError(thrown: unknown): THttpResponse {
     if (matched) return matched;
   }
 
-  if (err_service.is(error)) {
+  if (err_service.isExact(error)) {
     const hydrated = err_service.hydrate(error);
     const matched = matchFirst(hydrated, {
       unavailable: (): THttpResponse => ({ status: 503, body: "Service unavailable" }),
@@ -92,7 +92,7 @@ function handleError(thrown: unknown): THttpResponse {
     if (matched) return matched;
   }
 
-  if (err_app.is(error)) {
+  if (err_app.isExact(error)) {
     const hydrated = err_app.hydrate(error);
     const matched = matchFirst(hydrated, {
       unexpected: (): THttpResponse => ({ status: 500, body: "Unexpected error" }),
@@ -165,9 +165,9 @@ describe("domain routing — errors arriving over the wire (JSON payload)", () =
     expect(err_app.isParentOf(casted)).toBe(true);
 
     // Exact match only for the leaf domain
-    expect(err_feature.is(casted)).toBe(true);
-    expect(err_service.is(casted)).toBe(false);
-    expect(err_app.is(casted)).toBe(false);
+    expect(err_feature.isExact(casted)).toBe(true);
+    expect(err_service.isExact(casted)).toBe(false);
+    expect(err_app.isExact(casted)).toBe(false);
   });
 });
 
@@ -177,8 +177,8 @@ describe("castAndHydrate — one-call routing shortcut", () => {
     const wire = JSON.parse(JSON.stringify(original.toJsonObject()));
 
     const result = castAndHydrate(wire, err_feature);
-    expect(err_feature.is(result)).toBe(true);
-    if (err_feature.is(result) && result.hasId("not_found")) {
+    expect(err_feature.isExact(result)).toBe(true);
+    if (err_feature.isExact(result) && result.hasId("not_found")) {
       expect(result.getContext("not_found").resource).toBe("Invoice#5");
     }
   });
@@ -189,7 +189,7 @@ describe("castAndHydrate — one-call routing shortcut", () => {
 
     // Caller expects err_feature but gets err_service
     const result = castAndHydrate(wire, err_feature);
-    expect(err_feature.is(result)).toBe(false);
+    expect(err_feature.isExact(result)).toBe(false);
     // result is a plain NiceError with the deserialized data
     expect(result.def.domain).toBe("err_service");
   });

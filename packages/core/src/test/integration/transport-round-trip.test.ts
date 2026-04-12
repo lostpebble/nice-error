@@ -63,7 +63,7 @@ describe("transport round-trip — plain context (no custom serializer)", () => 
 
     // Client side
     const casted = castNiceError(wire);
-    expect(err_payments.is(casted)).toBe(true);
+    expect(err_payments.isExact(casted)).toBe(true);
     expect(casted.def.domain).toBe("err_payments");
     expect(casted.ids).toEqual(["payment_failed"]);
     expect(casted.message).toBe("Payment of $99 failed: insufficient funds");
@@ -78,7 +78,7 @@ describe("transport round-trip — plain context (no custom serializer)", () => 
     const wire = sendOverWire(serverErr.toJsonObject());
 
     const casted = castNiceError(wire);
-    if (err_payments.is(casted)) {
+    if (err_payments.isExact(casted)) {
       if (casted.hasId("payment_failed")) {
         const ctx = casted.getContext("payment_failed");
         expect(ctx).toEqual({ reason: "declined", amount: 50 });
@@ -110,7 +110,7 @@ describe("transport round-trip — plain context (no custom serializer)", () => 
     const wire = sendOverWire(serverErr.toJsonObject());
 
     const casted = castNiceError(wire);
-    if (err_payments.is(casted)) {
+    if (err_payments.isExact(casted)) {
       const hydrated = err_payments.hydrate(casted);
       const result = matchFirst(hydrated, {
         payment_failed: () => "handle_payment_failed",
@@ -126,9 +126,9 @@ describe("transport round-trip — plain context (no custom serializer)", () => 
     const wire = sendOverWire(serverErr.toJsonObject());
 
     const result = castAndHydrate(wire, err_payments);
-    expect(err_payments.is(result)).toBe(true);
+    expect(err_payments.isExact(result)).toBe(true);
 
-    if (err_payments.is(result)) {
+    if (err_payments.isExact(result)) {
       expect(result.hasId("rate_limited")).toBe(true);
       if (result.hasId("rate_limited")) {
         expect(result.getContext("rate_limited")).toEqual({ retryAfterMs: 5000 });
@@ -141,7 +141,7 @@ describe("transport round-trip — plain context (no custom serializer)", () => 
     // castAndHydrate returns it as-is because err_payments.is() is false.
     const unrelated = new Error("boom");
     const result = castAndHydrate(unrelated, err_payments);
-    expect(err_payments.is(result)).toBe(false);
+    expect(err_payments.isExact(result)).toBe(false);
     // The result is still a NiceError — just from the internal cast domain
     expect(result.def.domain).toBe("err_cast_not_nice");
   });
@@ -151,7 +151,7 @@ describe("transport round-trip — plain context (no custom serializer)", () => 
     // castNiceError recognises it is not a NiceError JSON shape and wraps it.
     const wire = sendOverWire({ message: "unexpected crash", code: 503 });
     const casted = castNiceError(wire);
-    expect(err_payments.is(casted)).toBe(false);
+    expect(err_payments.isExact(casted)).toBe(false);
     // Wrapped in the internal casting domain — not a payments error
     expect(casted.def.domain).toBe("err_cast_not_nice");
   });

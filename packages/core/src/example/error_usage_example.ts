@@ -71,7 +71,7 @@ function throwUserAuthError() {
 
   const validContext = authErrorFromContext.getContext(EErrId_UserAuth.invalid_credentials);
 
-  if (err_user_auth.is(authErrorFromContext)) {
+  if (err_user_auth.isExact(authErrorFromContext)) {
     if (authErrorFromContext.hasId(EErrId_UserAuth.invalid_credentials)) {
       // This block will run because authErrorFromContext is an instance of the child domain
       const context = authErrorFromContext.getContext(EErrId_UserAuth.invalid_credentials);
@@ -101,14 +101,14 @@ function throwUserAuthError() {
 
   const niceErrorCast = castNiceError(authRegistrationObj);
 
-  if (err_user_auth.is(niceErrorCast)) {
+  if (err_user_auth.isExact(niceErrorCast)) {
     // This block should not run because it is not the exact domain, but a parent domain
     logger_NiceError_testing.error(
       "This should not log because niceErrorCast is not a direct instance of err_user_auth domain",
     );
   }
 
-  if (err_user_auth_registration.is(niceErrorCast)) {
+  if (err_user_auth_registration.isExact(niceErrorCast)) {
     // This block will run because niceErrorCast is a NiceError instance with matching domain in its definition
     const isParentAfterCast = err_user_auth_registration.isParentOf(niceErrorCast); // true
     const isGrandParentAfterCast = err_example_app.isParentOf(niceErrorCast); // true

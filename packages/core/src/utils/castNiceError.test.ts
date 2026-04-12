@@ -58,6 +58,6 @@ describe("castNiceError", () => {
     const casted = castNiceError(original);
 
     expect(casted).toBeInstanceOf(NiceError);
-    expect(err_test.is(casted)).toBe(true);
+    expect(err_test.isExact(casted)).toBe(true);
   });
 });

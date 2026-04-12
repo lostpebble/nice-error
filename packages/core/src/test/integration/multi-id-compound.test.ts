@@ -66,9 +66,7 @@ describe("multi-ID construction via fromContext", () => {
     });
 
     expect(error.hasMultiple).toBe(true);
-    expect(error.getIds()).toEqual(
-      expect.arrayContaining(["required_field", "too_short"]),
-    );
+    expect(error.getIds()).toEqual(expect.arrayContaining(["required_field", "too_short"]));
   });
 
   it("message reflects the first ID supplied to fromContext", () => {
@@ -112,9 +110,7 @@ describe("multi-ID construction via addId / addContext chaining", () => {
     });
 
     expect(base.getIds()).toEqual(["required_field"]);
-    expect(extended.getIds()).toEqual(
-      expect.arrayContaining(["required_field", "invalid_format"]),
-    );
+    expect(extended.getIds()).toEqual(expect.arrayContaining(["required_field", "invalid_format"]));
     expect(extended).not.toBe(base);
   });
 
@@ -187,7 +183,7 @@ describe("multi-ID round-trip across transport", () => {
     const wire = wireTransit(serverErr.toJsonObject());
     const casted = castNiceError(wire);
 
-    expect(err_form.is(casted)).toBe(true);
+    expect(err_form.isExact(casted)).toBe(true);
     expect(casted.getIds()).toHaveLength(3);
     expect(casted.hasOneOfIds(["required_field"])).toBe(true);
     expect(casted.hasOneOfIds(["too_short"])).toBe(true);
@@ -225,7 +221,7 @@ describe("multi-ID round-trip across transport", () => {
     const wire = wireTransit(serverErr.toJsonObject());
     const casted = castNiceError(wire);
 
-    if (!err_form.is(casted)) throw new Error("domain mismatch");
+    if (!err_form.isExact(casted)) throw new Error("domain mismatch");
 
     const hydrated = err_form.hydrate(casted);
     expect(hydrated.hasId("rate_limit_exceeded")).toBe(true);
