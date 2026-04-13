@@ -24,31 +24,77 @@ export class NiceActionSchema<
   private inputOptions: TNiceActonSchemaInputOptions<any, any> | undefined;
   private outputOptions: TNiceActonSchemaInputOptions<any, any> | undefined;
 
+  /**
+   * Declare the input schema (JSON-native or with explicit SERDE type param).
+   * For non-JSON-native inputs, prefer the 3-argument form below to avoid
+   * needing explicit type parameters.
+   */
   input<
     VS extends StandardSchemaV1 = StandardSchemaV1,
     SERDE_IN extends JSONSerializableValue = never,
   >(
     options: TNiceActonSchemaInputOptions<VS, SERDE_IN>,
-  ): NiceActionSchema<
-    TTransportedValue<StandardSchemaV1.InferInput<VS>, SERDE_IN>,
-    OUTPUT,
-    ERRORS
-  > {
-    this.inputOptions = options;
+  ): NiceActionSchema<TTransportedValue<StandardSchemaV1.InferInput<VS>, SERDE_IN>, OUTPUT, ERRORS>;
+
+  /**
+   * Declare the input schema with serialization via sequential parameters.
+   * TypeScript infers SERDE_IN from `serialize`'s return type (left-to-right),
+   * then provides it as the contextual type for `deserialize`'s parameter —
+   * no explicit type parameters or casts needed.
+   */
+  input<VS extends StandardSchemaV1, SERDE_IN extends JSONSerializableValue>(
+    options: { schema: VS },
+    serialize: (raw: StandardSchemaV1.InferInput<VS>) => SERDE_IN,
+    deserialize: (serde: NoInfer<SERDE_IN>) => StandardSchemaV1.InferInput<VS>,
+  ): NiceActionSchema<TTransportedValue<StandardSchemaV1.InferInput<VS>, SERDE_IN>, OUTPUT, ERRORS>;
+
+  input(
+    options: TNiceActonSchemaInputOptions<any, any>,
+    serialize?: (raw: any) => any,
+    deserialize?: (serde: any) => any,
+  ): NiceActionSchema<any, any, any> {
+    if (serialize != null && deserialize != null) {
+      this.inputOptions = { ...options, serialization: { serialize, deserialize } };
+    } else {
+      this.inputOptions = options;
+    }
     return this as any;
   }
 
+  /**
+   * Declare the output schema (JSON-native or with explicit SERDE type param).
+   * For non-JSON-native outputs, prefer the 3-argument form below to avoid
+   * needing explicit type parameters.
+   */
   output<
     VS extends StandardSchemaV1 = StandardSchemaV1,
     SERDE_OUT extends JSONSerializableValue = JSONSerializableValue,
   >(
     options: TNiceActonSchemaInputOptions<VS, SERDE_OUT>,
-  ): NiceActionSchema<
-    INPUT,
-    TTransportedValue<StandardSchemaV1.InferInput<VS>, SERDE_OUT>,
-    ERRORS
-  > {
-    this.outputOptions = options;
+  ): NiceActionSchema<INPUT, TTransportedValue<StandardSchemaV1.InferInput<VS>, SERDE_OUT>, ERRORS>;
+
+  /**
+   * Declare the output schema with serialization via sequential parameters.
+   * TypeScript infers SERDE_OUT from `serialize`'s return type (left-to-right),
+   * then provides it as the contextual type for `deserialize`'s parameter —
+   * no explicit type parameters or casts needed.
+   */
+  output<VS extends StandardSchemaV1, SERDE_OUT extends JSONSerializableValue>(
+    options: { schema: VS },
+    serialize: (raw: StandardSchemaV1.InferInput<VS>) => SERDE_OUT,
+    deserialize: (serde: NoInfer<SERDE_OUT>) => StandardSchemaV1.InferInput<VS>,
+  ): NiceActionSchema<INPUT, TTransportedValue<StandardSchemaV1.InferInput<VS>, SERDE_OUT>, ERRORS>;
+
+  output(
+    options: TNiceActonSchemaInputOptions<any, any>,
+    serialize?: (raw: any) => any,
+    deserialize?: (serde: any) => any,
+  ): NiceActionSchema<any, any, any> {
+    if (serialize != null && deserialize != null) {
+      this.outputOptions = { ...options, serialization: { serialize, deserialize } };
+    } else {
+      this.outputOptions = options;
+    }
     return this as any;
   }
 

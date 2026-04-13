@@ -59,40 +59,30 @@ export const demoDomain = createActionDomain({
       .throws(err_demo_action, [EErrId_DemoAction.division_by_zero]),
     addMessage: action()
       .input({ schema: v.object({ message: v.string() }) })
-      .output({
-        schema: v.object({
-          lastFiveMessages: v.array(
-            v.object({
-              message: v.string(),
-              messageTime: v.date(),
-            }),
-          ),
-        }),
-        serialization: {
-          serialize: ({ lastFiveMessages }) => {
-            return {
-              serializedLastFive: lastFiveMessages.map(
-                ({ message, messageTime }) =>
-                  ({
-                    message,
-                    messageTime: messageTime.toISOString(),
-                  }) as const,
-              ),
-            } as const;
-          },
-          deserialize: ({ serializedLastFive }) => {
-            return {
-              lastFiveMessages: serializedLastFive.map(
-                ({ message, messageTime }) =>
-                  ({
-                    message,
-                    messageTime: new Date(messageTime),
-                  }) as const,
-              ),
-            };
-          },
+      .output(
+        {
+          schema: v.object({
+            lastFiveMessages: v.array(
+              v.object({
+                message: v.string(),
+                messageTime: v.date(),
+              }),
+            ),
+          }),
         },
-      }),
+        ({ lastFiveMessages }) => ({
+          serializedLastFive: lastFiveMessages.map(({ message, messageTime }) => ({
+            message,
+            messageTime: messageTime.toISOString(),
+          })),
+        }),
+        ({ serializedLastFive }) => ({
+          lastFiveMessages: serializedLastFive.map(({ message, messageTime }) => ({
+            message,
+            messageTime: new Date(messageTime),
+          })),
+        }),
+      ),
   },
 });
 
