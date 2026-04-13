@@ -75,9 +75,9 @@ test("[NiceActionSchema] deserializeInput returns raw input type", () => {
 });
 
 test("[NiceActionSchema] serializeOutput always returns JSONSerializableValue", () => {
-  const sch = action().output({ schema: v.object({ ok: v.boolean() }) });
+  const sch = action().output({ schema: v.object({ testBool: v.boolean() }) });
   type SerResult = ReturnType<typeof sch.serializeOutput>;
-  expectTypeOf<SerResult>().toEqualTypeOf<JSONSerializableValue>();
+  expectTypeOf<SerResult>().toEqualTypeOf<JSONSerializableValue | undefined>();
 });
 
 test("[NiceActionSchema] deserializeOutput returns raw output type", () => {

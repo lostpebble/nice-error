@@ -300,7 +300,7 @@ describe("NiceActionResolverEnvironment", () => {
 
     expect(response.ok).toBe(true);
     if (response.ok) {
-      expect(response.value).toEqual({ greeting: "env hello Eve" });
+      expect(response.output).toEqual({ greeting: "env hello Eve" });
     }
   });
 
@@ -338,14 +338,14 @@ describe("NiceActionResolverEnvironment", () => {
     }).toJsonObject();
     const greetResp = await env.dispatch(greetWire);
     expect(greetResp.ok).toBe(true);
-    if (greetResp.ok) expect(greetResp.value).toEqual({ greeting: "hi Frank" });
+    if (greetResp.ok) expect(greetResp.output).toEqual({ greeting: "hi Frank" });
 
     const dateWire = new NiceActionPrimed(dateDom.action("schedule"), {
       at: new Date("2025-01-01T00:00:00Z"),
     }).toJsonObject();
     const dateResp = await env.dispatch(dateWire);
     expect(dateResp.ok).toBe(true);
-    if (dateResp.ok) expect(dateResp.value).toEqual({ confirmed: true });
+    if (dateResp.ok) expect(dateResp.output).toEqual({ confirmed: true });
   });
 
   it("dispatch wraps resolver fn errors in the response as { ok: false }", async () => {
@@ -439,7 +439,7 @@ describe("full transport round-trip — wire format with serde", () => {
       domain: "greet",
       actionId: "greet",
       ok: true,
-      value: { greeting: "hello Grace" },
+      output: { greeting: "hello Grace" },
     });
   });
 });
@@ -464,7 +464,7 @@ describe("hydrateResponse after ResolverEnvironment dispatch", () => {
     const response = dom.hydrateResponse(serializedResponse);
     expect(response.result.ok).toBe(true);
     if (response.result.ok) {
-      expect(response.result.value).toEqual({ greeting: "hi Heidi" });
+      expect(response.result.output).toEqual({ greeting: "hi Heidi" });
     }
   });
 });

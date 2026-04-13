@@ -1,6 +1,9 @@
 import { EErrId_NiceAction, err_nice_action } from "../../errors/err_nice_action";
-import type { INiceActionPrimed_JsonObject } from "../NiceAction.types";
-import type { INiceActionDomain, ISerializedNiceActionResponse } from "../NiceActionDomain.types";
+import type {
+  INiceActionPrimed_JsonObject,
+  TNiceActionResponse_JsonObject,
+} from "../NiceAction.types";
+import type { INiceActionDomain } from "../NiceActionDomain.types";
 import type { NiceActionDomainResolver } from "./NiceActionDomainResolver";
 
 export class NiceActionResolverEnvironment {
@@ -31,7 +34,7 @@ export class NiceActionResolverEnvironment {
    */
   async dispatch(
     wire: INiceActionPrimed_JsonObject<INiceActionDomain, string>,
-  ): Promise<ISerializedNiceActionResponse> {
+  ): Promise<TNiceActionResponse_JsonObject> {
     const resolver = this._resolvers.get(wire.domain);
     if (resolver == null) {
       throw err_nice_action.fromId(EErrId_NiceAction.resolver_domain_not_registered, {

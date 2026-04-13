@@ -3,7 +3,7 @@
  *
  * NiceActionResponse is the transport container for cross-boundary RPC:
  * - Carries the original primed action (domain + actionId + input)
- * - Carries the result: { ok: true; value } | { ok: false; error }
+ * - Carries the result: { ok: true; output } | { ok: false; error }
  * - Serializes to ISerializedNiceActionResponse via toJsonObject()
  * - Reconstructed via domain.hydrateResponse(wire)
  */
@@ -12,6 +12,7 @@ import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { action } from "../NiceAction/ActionSchema/action";
 import { createActionDomain } from "../NiceAction/createActionDomain";
+import type { TNiceActionResponse_JsonObject } from "../NiceAction/NiceAction.types";
 import { NiceActionResponse } from "../NiceAction/NiceActionResponse";
 
 // ---------------------------------------------------------------------------
@@ -49,8 +50,8 @@ const makeUserDomain = () =>
 // Helper: simulate wire transport (stringify → parse)
 // ---------------------------------------------------------------------------
 
-function sendOverWire<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
+function sendOverWire<T>(output: T): T {
+  return JSON.parse(JSON.stringify(output)) as T;
 }
 
 // ---------------------------------------------------------------------------
@@ -71,7 +72,7 @@ describe("NiceAction.executeToResponse — success", () => {
     expect(response).toBeInstanceOf(NiceActionResponse);
     expect(response.result.ok).toBe(true);
     if (response.result.ok) {
-      expect(response.result.value).toEqual({ id: "u1", name: "Alice" });
+      expect(response.result.output).toEqual({ id: "u1", name: "Alice" });
     }
   });
 
@@ -146,11 +147,11 @@ describe("NiceActionResponse.toJsonObject — serialization", () => {
     const wire = response.toJsonObject();
 
     expect(wire.domain).toBe("user");
-    expect(wire.actionId).toBe("getUser");
+    expect(wire.id).toBe("getUser");
     expect(wire.input).toEqual({ userId: "u4" });
     expect(wire.ok).toBe(true);
     if (wire.ok) {
-      expect(wire.value).toEqual({ id: "u4", name: "Charlie" });
+      expect(wire.output).toEqual({ id: "u4", name: "Charlie" });
     }
   });
 
@@ -165,7 +166,7 @@ describe("NiceActionResponse.toJsonObject — serialization", () => {
     const wire = response.toJsonObject();
 
     expect(wire.domain).toBe("user");
-    expect(wire.actionId).toBe("getUser");
+    expect(wire.id).toBe("getUser");
     expect(wire.input).toEqual({ userId: "u5" });
     expect(wire.ok).toBe(false);
     if (!wire.ok) {
@@ -188,7 +189,7 @@ describe("NiceActionResponse.toJsonObject — serialization", () => {
 
     expect(wire.ok).toBe(true);
     if (wire.ok) {
-      expect(wire.value).toEqual({ id: "u6", name: "Dave" });
+      expect(wire.output).toEqual({ id: "u6", name: "Dave" });
     }
   });
 });
@@ -198,7 +199,7 @@ describe("NiceActionResponse.toJsonObject — serialization", () => {
 // ---------------------------------------------------------------------------
 
 describe("NiceActionDomain.hydrateResponse — round-trip success", () => {
-  it("hydrates a success response and result.value is accessible", async () => {
+  it("hydrates a success response and result.output is accessible", async () => {
     const dom = makeUserDomain();
 
     dom.setActionHandler().forActionId(dom, "getUser", (act) => ({
@@ -214,7 +215,7 @@ describe("NiceActionDomain.hydrateResponse — round-trip success", () => {
 
     expect(hydrated.result.ok).toBe(true);
     if (hydrated.result.ok) {
-      expect(hydrated.result.value).toEqual({ id: "u7", name: "Eve" });
+      expect(hydrated.result.output).toEqual({ id: "u7", name: "Eve" });
     }
     expect(hydrated.primed.input).toEqual({ userId: "u7" });
   });
@@ -296,12 +297,13 @@ describe("NiceActionDomain.hydrateResponse — round-trip success", () => {
 describe("NiceActionDomain.hydrateResponse — error cases", () => {
   it("throws hydration_domain_mismatch when domain does not match", async () => {
     const dom = makeUserDomain();
-    const wire = {
+    const wire: TNiceActionResponse_JsonObject = {
       domain: "wrong_domain",
-      actionId: "getUser",
+      allDomains: ["wrong_domain"],
+      id: "getUser",
       input: { userId: "u11" },
       ok: true as const,
-      value: { id: "u11", name: "X" },
+      output: { id: "u11", name: "X" },
     };
 
     expect(() => dom.hydrateResponse(wire)).toThrow();
@@ -309,12 +311,13 @@ describe("NiceActionDomain.hydrateResponse — error cases", () => {
 
   it("throws hydration_action_id_not_found when actionId is unknown", async () => {
     const dom = makeUserDomain();
-    const wire = {
+    const wire: TNiceActionResponse_JsonObject = {
       domain: "user",
-      actionId: "nonExistentAction",
+      allDomains: ["user"],
+      id: "nonExistentAction",
       input: {},
       ok: true as const,
-      value: {},
+      output: {},
     };
 
     expect(() => dom.hydrateResponse(wire)).toThrow();
@@ -371,7 +374,7 @@ const makeSerializedDomain = () =>
   });
 
 describe("NiceActionResponse — custom input/output serialization", () => {
-  it("result.value on executeToResponse carries the raw (non-serialized) output", async () => {
+  it("result.output on executeToResponse carries the raw (non-serialized) output", async () => {
     const dom = makeSerializedDomain();
     const createdAt = new Date("2025-06-01T00:00:00.000Z");
 
@@ -388,9 +391,9 @@ describe("NiceActionResponse — custom input/output serialization", () => {
     expect(response.result.ok).toBe(true);
     if (response.result.ok) {
       // Raw output — createdAt is a Date instance, not a string
-      expect(response.result.value.createdAt).toBeInstanceOf(Date);
-      expect(response.result.value.createdAt.toISOString()).toBe("2025-06-01T00:00:00.000Z");
-      expect(response.result.value.user).toEqual({ id: "u1", name: "Alice" });
+      expect(response.result.output.createdAt).toBeInstanceOf(Date);
+      expect(response.result.output.createdAt.toISOString()).toBe("2025-06-01T00:00:00.000Z");
+      expect(response.result.output.user).toEqual({ id: "u1", name: "Alice" });
     }
   });
 
@@ -430,7 +433,7 @@ describe("NiceActionResponse — custom input/output serialization", () => {
     // Output should be serialized
     expect(wire.ok).toBe(true);
     if (wire.ok) {
-      expect(wire.value).toEqual({
+      expect(wire.output).toEqual({
         user: { id: "u3", name: "Charlie" },
         createdAtIso: "2025-06-01T00:00:00.000Z",
       });
@@ -457,7 +460,7 @@ describe("NiceActionResponse — custom input/output serialization", () => {
     expect(typeof (wire.input as any).requestedAtIso).toBe("string");
     expect(wire.ok).toBe(true);
     if (wire.ok) {
-      expect(typeof (wire.value as any).createdAtIso).toBe("string");
+      expect(typeof (wire.output as any).createdAtIso).toBe("string");
     }
   });
 
@@ -479,6 +482,10 @@ describe("NiceActionResponse — custom input/output serialization", () => {
 
     const hydrated = dom.hydrateResponse(wire);
 
+    // if (hydrated.primed.id === "createUser") {
+    //   hydrated.primed.input.
+    // }
+
     // Input deserialized: requestedAt is a Date again
     expect(hydrated.primed.input.requestedAt).toBeInstanceOf(Date);
     expect(hydrated.primed.input.requestedAt.toISOString()).toBe("2025-01-01T00:00:00.000Z");
@@ -486,9 +493,9 @@ describe("NiceActionResponse — custom input/output serialization", () => {
     // Output deserialized: createdAt is a Date again
     expect(hydrated.result.ok).toBe(true);
     if (hydrated.result.ok) {
-      expect(hydrated.result.value.createdAt).toBeInstanceOf(Date);
-      expect(hydrated.result.value.createdAt.toISOString()).toBe("2025-06-01T00:00:00.000Z");
-      expect(hydrated.result.value.user).toEqual({ id: "u5", name: "Eve" });
+      expect(hydrated.result.output.createdAt).toBeInstanceOf(Date);
+      expect(hydrated.result.output.createdAt.toISOString()).toBe("2025-06-01T00:00:00.000Z");
+      expect(hydrated.result.output.user).toEqual({ id: "u5", name: "Eve" });
     }
   });
 

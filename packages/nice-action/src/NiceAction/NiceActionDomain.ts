@@ -3,11 +3,13 @@ import { NiceActionHandler } from "./ActionHandler/NiceActionHandler";
 import type { NiceActionDomainResolver } from "./ActionResolver/NiceActionDomainResolver";
 import type { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
 import { NiceAction } from "./NiceAction";
-import type { INiceActionPrimed_JsonObject } from "./NiceAction.types";
+import type {
+  INiceActionPrimed_JsonObject,
+  TNiceActionResponse_JsonObject,
+} from "./NiceAction.types";
 import type {
   INiceActionDomain,
   INiceActionDomainChildOptions,
-  ISerializedNiceActionResponse,
   TActionListener,
   TInferInputFromSchema,
   TNiceActionDomainChildDef,
@@ -170,9 +172,13 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
    * The result is loosely typed — `result.error` is `NiceError<TUnknownNiceErrorDef>`.
    * Use `handleWith` / `forDomain` / `isExact` to route errors on the receiving end.
    */
-  hydrateResponse(
-    serialized: ISerializedNiceActionResponse,
-  ): NiceActionResponse<ACT_DOM, keyof ACT_DOM["schema"] & string> {
+  hydrateResponse<R extends TNiceActionResponse_JsonObject>(
+    serialized: R,
+  ): NiceActionResponse<
+    ACT_DOM,
+    keyof ACT_DOM["schema"] & string,
+    ACT_DOM["schema"][R["id"] & keyof ACT_DOM["schema"]]
+  > {
     if (serialized.domain !== this.domain) {
       throw err_nice_action.fromId(EErrId_NiceAction.hydration_domain_mismatch, {
         expected: this.domain,
@@ -180,19 +186,16 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
       });
     }
 
-    const id = serialized.actionId as keyof ACT_DOM["schema"] & string;
+    const id = serialized.id as keyof ACT_DOM["schema"] & string;
     if (!this.schema[id]) {
       throw err_nice_action.fromId(EErrId_NiceAction.hydration_action_id_not_found, {
         domain: this.domain,
-        actionId: serialized.actionId,
+        actionId: serialized.id,
       });
     }
 
     const coreAction = this.action(id);
-    return hydrateNiceActionResponse(serialized, coreAction) as NiceActionResponse<
-      ACT_DOM,
-      keyof ACT_DOM["schema"] & string
-    >;
+    return hydrateNiceActionResponse(serialized, coreAction);
   }
 
   /**

@@ -1,30 +1,21 @@
 import { castNiceError } from "@nice-error/core";
 import type { TInferActionError } from "./ActionSchema/NiceActionSchema";
 import type { NiceAction } from "./NiceAction";
-import type {
-  INiceActionDomain,
-  ISerializedNiceActionResponse,
-  NiceActionResult,
-  TInferOutputFromSchema,
-} from "./NiceActionDomain.types";
+import type { NiceActionResult, TNiceActionResponse_JsonObject } from "./NiceAction.types";
+import type { INiceActionDomain, TInferOutputFromSchema } from "./NiceActionDomain.types";
 import { NiceActionPrimed } from "./NiceActionPrimed";
 
 export class NiceActionResponse<
   DOM extends INiceActionDomain,
   ID extends keyof DOM["schema"] & string,
+  SCH extends DOM["schema"][ID],
 > {
-  readonly primed: NiceActionPrimed<DOM, ID, DOM["schema"][ID]>;
-  readonly result: NiceActionResult<
-    TInferOutputFromSchema<DOM["schema"][ID]>["Output"],
-    TInferActionError<DOM["schema"][ID]>
-  >;
+  readonly primed: NiceActionPrimed<DOM, ID, SCH>;
+  readonly result: NiceActionResult<TInferOutputFromSchema<SCH>["Output"], TInferActionError<SCH>>;
 
   constructor(
-    primed: NiceActionPrimed<DOM, ID, DOM["schema"][ID]>,
-    result: NiceActionResult<
-      TInferOutputFromSchema<DOM["schema"][ID]>["Output"],
-      TInferActionError<DOM["schema"][ID]>
-    >,
+    primed: NiceActionPrimed<DOM, ID, SCH>,
+    result: NiceActionResult<TInferOutputFromSchema<SCH>["Output"], TInferActionError<SCH>>,
   ) {
     this.primed = primed;
     this.result = result;
@@ -37,18 +28,14 @@ export class NiceActionResponse<
    * if one is defined, otherwise used as-is.
    * On failure, the error is serialized via `NiceError.toJsonObject()`.
    */
-  toJsonObject(): ISerializedNiceActionResponse {
-    const base = {
-      domain: this.primed.coreAction.domain,
-      actionId: this.primed.coreAction.id,
-      input: this.primed.coreAction.schema.serializeInput(this.primed.input),
-    };
+  toJsonObject(): TNiceActionResponse_JsonObject {
+    const base = this.primed.toJsonObject();
 
     if (this.result.ok) {
       return {
         ...base,
         ok: true,
-        value: this.primed.coreAction.schema.serializeOutput(this.result.value),
+        output: this.primed.coreAction.schema.serializeOutput(this.result.output),
       };
     }
 
@@ -72,19 +59,23 @@ export class NiceActionResponse<
  * Use `handleWith` / `forDomain` / `isExact` to narrow on the receiving end.
  */
 export function hydrateNiceActionResponse<DOM extends INiceActionDomain>(
-  wire: ISerializedNiceActionResponse,
+  wire: TNiceActionResponse_JsonObject,
   coreAction: NiceAction<
     DOM,
     keyof DOM["schema"] & string,
     DOM["schema"][keyof DOM["schema"] & string]
   >,
-): NiceActionResponse<DOM, keyof DOM["schema"] & string> {
+): NiceActionResponse<
+  DOM,
+  keyof DOM["schema"] & string,
+  DOM["schema"][keyof DOM["schema"] & string]
+> {
   const rawInput = coreAction.schema.deserializeInput(wire.input);
   const primed = new NiceActionPrimed(coreAction, rawInput);
 
   if (wire.ok) {
-    const rawOutput = coreAction.schema.deserializeOutput(wire.value);
-    return new NiceActionResponse(primed, { ok: true, value: rawOutput });
+    const rawOutput = coreAction.schema.deserializeOutput(wire.output);
+    return new NiceActionResponse(primed, { ok: true, output: rawOutput });
   }
 
   return new NiceActionResponse(primed, { ok: false, error: castNiceError(wire.error) as any });

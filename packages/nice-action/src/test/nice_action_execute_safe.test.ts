@@ -72,7 +72,7 @@ describe("NiceAction.executeSafe — success", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value).toEqual({ id: "u1", name: "Alice" });
+      expect(result.output).toEqual({ id: "u1", name: "Alice" });
     }
   });
 
@@ -241,7 +241,7 @@ describe("NiceActionPrimed.executeSafe", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value).toEqual({ id: "u5", name: "Bob" });
+      expect(result.output).toEqual({ id: "u5", name: "Bob" });
     }
   });
 

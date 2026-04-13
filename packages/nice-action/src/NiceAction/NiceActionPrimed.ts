@@ -1,12 +1,16 @@
 import type { TInferActionError } from "./ActionSchema/NiceActionSchema";
 import type { NiceAction } from "./NiceAction";
-import type { INiceAction, INiceActionPrimed_JsonObject } from "./NiceAction.types";
+import type {
+  INiceAction,
+  INiceActionPrimed_JsonObject,
+  NiceActionResult,
+} from "./NiceAction.types";
 import type {
   INiceActionDomain,
-  NiceActionResult,
   TInferInputFromSchema,
   TInferOutputFromSchema,
 } from "./NiceActionDomain.types";
+import { NiceActionResponse } from "./NiceActionResponse";
 
 export class NiceActionPrimed<
   DOM extends INiceActionDomain,
@@ -40,6 +44,10 @@ export class NiceActionPrimed<
     };
   }
 
+  setOutput(output: TInferOutputFromSchema<SCH>["Output"]): NiceActionResponse<DOM, ID, SCH> {
+    return new NiceActionResponse(this, { ok: true, output: output });
+  }
+
   /**
    * Re-execute this primed action through the domain handler or resolver.
    * Useful for deferred or cross-environment execution of a hydrated action.
@@ -63,7 +71,7 @@ export class NiceActionPrimed<
   ): Promise<NiceActionResult<TInferOutputFromSchema<SCH>["Output"], TInferActionError<SCH>>> {
     try {
       const value = await this.execute(envId);
-      return { ok: true, value };
+      return { ok: true, output: value };
     } catch (error) {
       return { ok: false, error: error as TInferActionError<SCH> };
     }

@@ -139,19 +139,19 @@ export class NiceActionSchema<
   /**
    * Serialize raw output to a JSON-serializable form.
    */
-  serializeOutput(rawOutput: OUTPUT[0]): JSONSerializableValue {
+  serializeOutput(rawOutput: OUTPUT[0]): OUTPUT[1] {
     if (this.outputOptions?.serialization) {
       return this.outputOptions.serialization.serialize(rawOutput);
     }
-    return rawOutput as JSONSerializableValue;
+    return rawOutput as OUTPUT[1];
   }
 
   /**
    * Deserialize a JSON value back into the raw output type.
    */
-  deserializeOutput(serialized: JSONSerializableValue): OUTPUT[0] {
+  deserializeOutput(serialized: OUTPUT[1]): OUTPUT[0] {
     if (this.outputOptions?.serialization) {
-      return this.outputOptions.serialization.deserialize(serialized as any);
+      return this.outputOptions.serialization.deserialize(serialized);
     }
     return serialized as OUTPUT[0];
   }

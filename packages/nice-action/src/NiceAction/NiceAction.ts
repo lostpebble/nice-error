@@ -1,9 +1,8 @@
 import type { TInferActionError } from "./ActionSchema/NiceActionSchema";
-import type { INiceAction, INiceAction_JsonObject } from "./NiceAction.types";
+import type { INiceAction, INiceAction_JsonObject, NiceActionResult } from "./NiceAction.types";
 import type { NiceActionDomain } from "./NiceActionDomain";
 import type {
   INiceActionDomain,
-  NiceActionResult,
   TInferInputFromSchema,
   TInferOutputFromSchema,
 } from "./NiceActionDomain.types";
@@ -96,7 +95,7 @@ export class NiceAction<
   ): Promise<NiceActionResult<TInferOutputFromSchema<SCH>["Output"], TInferActionError<SCH>>> {
     try {
       const value = await this.execute(input, envId);
-      return { ok: true, value };
+      return { ok: true, output: value };
     } catch (error) {
       return { ok: false, error: error as TInferActionError<SCH> };
     }
@@ -113,9 +112,9 @@ export class NiceAction<
   async executeToResponse(
     input: TInferInputFromSchema<SCH>["Input"],
     envId?: string,
-  ): Promise<NiceActionResponse<DOM, ID>> {
+  ): Promise<NiceActionResponse<DOM, ID, SCH>> {
     const primed = this.prime(input);
     const result = await this.executeSafe(input, envId);
-    return new NiceActionResponse<DOM, ID>(primed, result);
+    return new NiceActionResponse<DOM, ID, SCH>(primed, result);
   }
 }

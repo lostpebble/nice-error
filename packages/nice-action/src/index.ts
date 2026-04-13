@@ -20,17 +20,18 @@ export type {
 export { createActionDomain } from "./NiceAction/createActionDomain";
 export { NiceAction } from "./NiceAction/NiceAction";
 export type {
+  INiceAction,
   INiceAction_JsonObject,
   INiceActionPrimed_JsonObject,
+  NiceActionResult,
+  TNiceActionResponse_JsonObject as ISerializedNiceActionResponse,
 } from "./NiceAction/NiceAction.types";
 export { NiceActionDomain } from "./NiceAction/NiceActionDomain";
 export type {
   INiceActionDomain as INiceActionDomainDef,
   INiceActionDomain,
   INiceActionDomainChildOptions,
-  ISerializedNiceActionResponse,
   MaybePromise,
-  NiceActionResult,
   TActionHandlerForDomain,
   TActionIdHandlerForDomain,
   TActionListener,
