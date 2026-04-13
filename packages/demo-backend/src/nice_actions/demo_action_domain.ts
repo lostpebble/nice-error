@@ -57,6 +57,42 @@ export const demoDomain = createActionDomain({
       .input({ schema: v.object({ dividend: v.number(), divisor: v.number() }) })
       .output({ schema: v.object({ result: v.number(), isExact: v.boolean() }) })
       .throws(err_demo_action, [EErrId_DemoAction.division_by_zero]),
+    addMessage: action()
+      .input({ schema: v.object({ message: v.string() }) })
+      .output({
+        schema: v.object({
+          lastFiveMessages: v.array(
+            v.object({
+              message: v.string(),
+              messageTime: v.date(),
+            }),
+          ),
+        }),
+        serialization: {
+          serialize: ({ lastFiveMessages }) => {
+            return {
+              serializedLastFive: lastFiveMessages.map(
+                ({ message, messageTime }) =>
+                  ({
+                    message,
+                    messageTime: messageTime.toISOString(),
+                  }) as const,
+              ),
+            } as const;
+          },
+          deserialize: ({ serializedLastFive }) => {
+            return {
+              lastFiveMessages: serializedLastFive.map(
+                ({ message, messageTime }) =>
+                  ({
+                    message,
+                    messageTime: new Date(messageTime),
+                  }) as const,
+              ),
+            };
+          },
+        },
+      }),
   },
 });
 
