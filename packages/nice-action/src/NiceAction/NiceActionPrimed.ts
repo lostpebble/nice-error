@@ -1,4 +1,4 @@
-import type { NiceActionSchema, TInferActionError } from "./ActionSchema/NiceActionSchema";
+import type { TInferActionError } from "./ActionSchema/NiceActionSchema";
 import type { NiceAction } from "./NiceAction";
 import type { INiceAction, INiceActionPrimed_JsonObject } from "./NiceAction.types";
 import type {
@@ -10,8 +10,8 @@ import type {
 
 export class NiceActionPrimed<
   DOM extends INiceActionDomain,
-  SCH extends NiceActionSchema<any, any, any>,
   ID extends keyof DOM["schema"] & string,
+  SCH extends DOM["schema"][ID],
 > implements Omit<INiceAction<DOM, ID>, "schema">
 {
   readonly _isPrimed = true;
@@ -20,8 +20,8 @@ export class NiceActionPrimed<
   readonly id: ID;
 
   constructor(
-    readonly coreAction: NiceAction<DOM, SCH, ID>,
-    readonly input: TInferInputFromSchema<DOM["schema"][ID]>["Input"],
+    readonly coreAction: NiceAction<DOM, ID, SCH>,
+    readonly input: TInferInputFromSchema<SCH>["Input"],
   ) {
     this.domain = coreAction.domain;
     this.allDomains = coreAction.allDomains;

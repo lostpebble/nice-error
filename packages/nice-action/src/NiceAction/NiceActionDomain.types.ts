@@ -91,8 +91,8 @@ export type TInferOutputFromSchema<SCH> =
 export type TActionHandlerForDomain<ACT_DOM extends INiceActionDomain> = (
   action: NiceActionPrimed<
     ACT_DOM,
-    ACT_DOM["schema"][keyof ACT_DOM["schema"] & string],
-    keyof ACT_DOM["schema"] & string
+    keyof ACT_DOM["schema"] & string,
+    ACT_DOM["schema"][keyof ACT_DOM["schema"] & string]
   >,
 ) => MaybePromise<unknown>;
 
@@ -103,14 +103,14 @@ export type TActionHandlerForDomain<ACT_DOM extends INiceActionDomain> = (
 export type TActionIdHandlerForDomain<
   ACT_DOM extends INiceActionDomain,
   ID extends keyof ACT_DOM["schema"] & string,
-> = (action: NiceActionPrimed<ACT_DOM, ACT_DOM["schema"][ID], ID>) => MaybePromise<unknown>;
+> = (action: NiceActionPrimed<ACT_DOM, ID, ACT_DOM["schema"][ID]>) => MaybePromise<unknown>;
 
 /**
  * Observer called after each action is dispatched.
  * Return value is ignored. Use for logging, metrics, tracing, etc.
  */
 export type TActionListener = (
-  action: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>, string>,
+  action: NiceActionPrimed<INiceActionDomain, string, INiceActionDomain["schema"][string]>,
 ) => MaybePromise<void>;
 
 /**
@@ -119,7 +119,7 @@ export type TActionListener = (
  * `TActionIdHandlerForDomain`); they are cast to this for storage.
  */
 export type TBroadActionHandler = (
-  action: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>, string>,
+  action: NiceActionPrimed<INiceActionDomain, string, INiceActionDomain["schema"][string]>,
 ) => MaybePromise<unknown>;
 
 /**
@@ -129,7 +129,7 @@ export type TBroadActionHandler = (
  */
 export interface IActionCase {
   readonly _matcher: (
-    action: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>, string>,
+    action: NiceActionPrimed<INiceActionDomain, string, INiceActionDomain["schema"][string]>,
   ) => boolean;
   readonly _handler: TBroadActionHandler;
 }

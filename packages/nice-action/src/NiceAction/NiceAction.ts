@@ -1,4 +1,4 @@
-import type { NiceActionSchema, TInferActionError } from "./ActionSchema/NiceActionSchema";
+import type { TInferActionError } from "./ActionSchema/NiceActionSchema";
 import type { INiceAction_JsonObject } from "./NiceAction.types";
 import type { NiceActionDomain } from "./NiceActionDomain";
 import type {
@@ -12,8 +12,8 @@ import { NiceActionResponse } from "./NiceActionResponse";
 
 export class NiceAction<
   DOM extends INiceActionDomain,
-  SCH extends NiceActionSchema<any, any, any>,
   ID extends keyof DOM["schema"] & string,
+  SCH extends DOM["schema"][ID],
 > {
   readonly domain: DOM["domain"];
   readonly allDomains: DOM["allDomains"];
@@ -41,7 +41,7 @@ export class NiceAction<
     };
   }
 
-  is(action: unknown): action is NiceActionPrimed<DOM, SCH, ID> {
+  is(action: unknown): action is NiceActionPrimed<DOM, ID, SCH> {
     return (
       action instanceof NiceActionPrimed &&
       action.coreAction.domain.domain === this.domain &&
@@ -49,7 +49,7 @@ export class NiceAction<
     );
   }
 
-  prime(input: TInferInputFromSchema<SCH>["Input"]): NiceActionPrimed<DOM, SCH, ID> {
+  prime(input: TInferInputFromSchema<SCH>["Input"]): NiceActionPrimed<DOM, ID, SCH> {
     return new NiceActionPrimed(this, input);
   }
 
@@ -115,6 +115,6 @@ export class NiceAction<
   ): Promise<NiceActionResponse<DOM, ID>> {
     const primed = this.prime(input);
     const result = await this.executeSafe(input, envId);
-    return new NiceActionResponse(primed, result);
+    return new NiceActionResponse<DOM, ID>(primed, result);
   }
 }

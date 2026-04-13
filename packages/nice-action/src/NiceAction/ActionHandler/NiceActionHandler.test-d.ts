@@ -8,7 +8,6 @@
 import * as v from "valibot";
 import { assertType, expectTypeOf, test } from "vitest";
 import { action } from "../ActionSchema/action";
-import type { NiceActionSchema } from "../ActionSchema/NiceActionSchema";
 import { createActionDomain } from "../createActionDomain";
 import type { INiceActionDomain } from "../NiceActionDomain.types";
 import type { NiceActionPrimed } from "../NiceActionPrimed";
@@ -98,7 +97,9 @@ test("[forDomain] act.input for the shared dom is the union of setName/setAge/gr
 
 test("[setDefaultHandler] handler receives the generic NiceActionPrimed type", () => {
   new NiceActionHandler().setDefaultHandler((act) => {
-    assertType<NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>, string>>(act);
+    assertType<NiceActionPrimed<INiceActionDomain, string, INiceActionDomain["schema"][string]>>(
+      act,
+    );
   });
 });
 

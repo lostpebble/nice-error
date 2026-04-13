@@ -1,5 +1,5 @@
 import { castNiceError } from "@nice-error/core";
-import type { NiceActionSchema, TInferActionError } from "./ActionSchema/NiceActionSchema";
+import type { TInferActionError } from "./ActionSchema/NiceActionSchema";
 import type { NiceAction } from "./NiceAction";
 import type {
   INiceActionDomain,
@@ -13,14 +13,14 @@ export class NiceActionResponse<
   DOM extends INiceActionDomain,
   ID extends keyof DOM["schema"] & string,
 > {
-  readonly primed: NiceActionPrimed<DOM, DOM["schema"][ID], ID>;
+  readonly primed: NiceActionPrimed<DOM, ID, DOM["schema"][ID]>;
   readonly result: NiceActionResult<
     TInferOutputFromSchema<DOM["schema"][ID]>["Output"],
     TInferActionError<DOM["schema"][ID]>
   >;
 
   constructor(
-    primed: NiceActionPrimed<DOM, DOM["schema"][ID], ID>,
+    primed: NiceActionPrimed<DOM, ID, DOM["schema"][ID]>,
     result: NiceActionResult<
       TInferOutputFromSchema<DOM["schema"][ID]>["Output"],
       TInferActionError<DOM["schema"][ID]>
@@ -73,7 +73,7 @@ export class NiceActionResponse<
  */
 export function hydrateNiceActionResponse(
   wire: ISerializedNiceActionResponse,
-  coreAction: NiceAction<INiceActionDomain, NiceActionSchema<any, any, any>, string>,
+  coreAction: NiceAction<INiceActionDomain, string, INiceActionDomain["schema"][string]>,
 ): NiceActionResponse<INiceActionDomain, string> {
   const rawInput = coreAction.schema.deserializeInput(wire.input);
   const primed = new NiceActionPrimed(coreAction, rawInput);

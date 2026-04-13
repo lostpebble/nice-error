@@ -1,4 +1,3 @@
-import type { NiceActionSchema } from "../ActionSchema/NiceActionSchema";
 import type { NiceActionDomain } from "../NiceActionDomain";
 import type {
   IActionCase,
@@ -14,7 +13,7 @@ export class NiceActionHandler {
   private _defaultHandler?: TBroadActionHandler;
 
   async handleAction(
-    action: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>, string>,
+    action: NiceActionPrimed<INiceActionDomain, string, INiceActionDomain["schema"][string]>,
   ): Promise<unknown> {
     for (const actionCase of this.cases) {
       if (!actionCase._matcher(action)) continue;

@@ -48,17 +48,17 @@ export class NiceActionDomainResolver<DOM extends INiceActionDomain> {
    * Throws `resolver_action_not_registered` if no fn was registered for the action ID.
    */
   async _resolvePrimed(
-    primed: NiceActionPrimed<any, NiceActionSchema<any, any, any>, string>,
+    primed: NiceActionPrimed<INiceActionDomain, string, INiceActionDomain["schema"][string]>,
   ): Promise<unknown> {
     const resolver = this._resolvers.get(primed.coreAction.id);
     if (resolver == null) {
       throw err_nice_action.fromId(EErrId_NiceAction.resolver_action_not_registered, {
-        domain: primed.coreAction.domain.domain,
+        domain: primed.domain,
         actionId: primed.coreAction.id,
       });
     }
     const validatedInput = await primed.coreAction.schema.validateInput(primed.input, {
-      domain: primed.coreAction.domain.domain,
+      domain: primed.domain,
       actionId: primed.coreAction.id,
     });
     return resolver(validatedInput);
@@ -75,7 +75,7 @@ export class NiceActionDomainResolver<DOM extends INiceActionDomain> {
    */
   async _dispatch<P extends INiceActionPrimed_JsonObject<DOM, string>>(
     wire: P,
-  ): Promise<NiceActionResponse<DOM, DOM["schema"][P["actionId"]], P["actionId"]>> {
+  ): Promise<NiceActionResponse<DOM, P["actionId"]>> {
     const primed = this._domain.hydrateAction(wire);
 
     // _resolvePrimed throws synchronously for unregistered actions — intentionally outside
@@ -94,12 +94,12 @@ export class NiceActionDomainResolver<DOM extends INiceActionDomain> {
         actionId: wire.actionId,
       });
       const output = await resolverFn(validatedInput);
-      return new NiceActionResponse<DOM, DOM["schema"][P["actionId"]], P["actionId"]>(primed, {
+      return new NiceActionResponse<DOM, P["actionId"]>(primed, {
         ok: true,
         value: output,
       });
     } catch (e) {
-      return new NiceActionResponse<DOM, DOM["schema"][P["actionId"]], P["actionId"]>(primed, {
+      return new NiceActionResponse<DOM, P["actionId"]>(primed, {
         ok: false,
         error: castNiceError(e) as any,
       });

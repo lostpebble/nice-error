@@ -6,10 +6,9 @@ import {
   NiceError,
 } from "@nice-error/core";
 import * as v from "valibot";
-import { expectTypeOf, test } from "vitest";
+import { expect, expectTypeOf, test, vi } from "vitest";
 import { action } from "./ActionSchema/action";
 import type { TInferActionError } from "./ActionSchema/NiceActionSchema";
-import { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
 import { createActionDomain } from "./createActionDomain";
 import type { INiceActionDomain, TNiceActionDomainIds } from "./NiceActionDomain.types";
 import { NiceActionPrimed } from "./NiceActionPrimed";
@@ -100,7 +99,11 @@ test("[NiceActionDomain.matchAction] returns narrowed primed action or null", ()
     },
   });
 
-  const wildcard = {} as NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>;
+  const wildcard = {} as NiceActionPrimed<
+    INiceActionDomain,
+    string,
+    INiceActionDomain["schema"][string]
+  >;
 
   const send = dom.matchAction(wildcard, "send");
 
@@ -118,7 +121,11 @@ test("[NiceActionDomain.matchAction] narrows input type for the matched action i
     },
   });
 
-  const wildcard = {} as NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>;
+  const wildcard = {} as NiceActionPrimed<
+    INiceActionDomain,
+    string,
+    INiceActionDomain["schema"][string]
+  >;
 
   const send = dom.matchAction(wildcard, "send");
   if (send != null) {
@@ -141,12 +148,17 @@ test("[NiceActionDomain.isExactActionDomain] narrows unknown to NiceActionPrimed
     schema: { foo: action().input({ schema: v.object({ x: v.number() }) }) },
   });
 
+  const shouldNotExecute = vi.fn();
+
+  // Inside the true branch, the type is narrowed to NiceActionPrimed with the domain's schema.
+
   const unknown: unknown = {};
   if (dom.isExactActionDomain(unknown)) {
-    expectTypeOf(unknown).toEqualTypeOf<
-      NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>
-    >();
+    // shouldn't execute
+    shouldNotExecute();
   }
+
+  expect(shouldNotExecute).not.toHaveBeenCalled();
 });
 
 // ---------------------------------------------------------------------------

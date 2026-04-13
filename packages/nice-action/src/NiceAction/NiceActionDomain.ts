@@ -46,13 +46,13 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
   primeAction<ID extends keyof ACT_DOM["schema"] & string>(
     id: ID,
     input: TInferInputFromSchema<ACT_DOM["schema"][ID]>["Input"],
-  ): NiceActionPrimed<ACT_DOM, ACT_DOM["schema"][ID], ID> {
+  ): NiceActionPrimed<ACT_DOM, ID, ACT_DOM["schema"][ID]> {
     return this.action(id).prime(input);
   }
 
   action<ID extends keyof ACT_DOM["schema"] & string>(
     id: ID,
-  ): NiceAction<ACT_DOM, ACT_DOM["schema"][ID], ID> {
+  ): NiceAction<ACT_DOM, ID, ACT_DOM["schema"][ID]> {
     const actionSchema = this.schema[id];
     if (!actionSchema) {
       throw err_nice_action.fromId(EErrId_NiceAction.action_id_not_in_domain, {
@@ -60,25 +60,25 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
         actionId: id as string,
       });
     }
-    return new NiceAction<ACT_DOM, ACT_DOM["schema"][ID], ID>(this, actionSchema, id);
+    return new NiceAction<ACT_DOM, ID, ACT_DOM["schema"][ID]>(this, actionSchema, id);
   }
 
   isExactActionDomain(
     action: unknown,
   ): action is NiceActionPrimed<
     ACT_DOM,
-    NiceActionSchema<any, any, any>,
-    keyof ACT_DOM["schema"] & string
+    keyof ACT_DOM["schema"] & string,
+    ACT_DOM["schema"][keyof ACT_DOM["schema"] & string]
   > {
     return action instanceof NiceActionPrimed && this.domain === action.domain;
   }
 
   matchAction<ID extends keyof ACT_DOM["schema"] & string>(
-    action: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>, ID>,
+    action: NiceActionPrimed<INiceActionDomain, string, NiceActionSchema<any, any, any>>,
     id: ID,
-  ): NiceActionPrimed<ACT_DOM, ACT_DOM["schema"][ID], ID> | null {
+  ): NiceActionPrimed<ACT_DOM, ID, ACT_DOM["schema"][ID]> | null {
     if (this.isExactActionDomain(action) && action.coreAction.id === id) {
-      return action as NiceActionPrimed<ACT_DOM, ACT_DOM["schema"][ID], ID>;
+      return action as NiceActionPrimed<ACT_DOM, ID, ACT_DOM["schema"][ID]>;
     }
     return null;
   }
@@ -95,7 +95,7 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
   }
 
   async _dispatchAction(
-    primed: NiceActionPrimed<ACT_DOM, NiceActionSchema<any, any, any>, string>,
+    primed: NiceActionPrimed<ACT_DOM, string, ACT_DOM["schema"][string]>,
     envId?: string,
   ): Promise<unknown> {
     if (envId != null) {
@@ -140,7 +140,7 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
    */
   hydrateAction<P extends INiceActionPrimed_JsonObject<ACT_DOM, string>>(
     serialized: P,
-  ): NiceActionPrimed<ACT_DOM, ACT_DOM["schema"][P["actionId"]], P["actionId"]> {
+  ): NiceActionPrimed<ACT_DOM, P["actionId"], ACT_DOM["schema"][P["actionId"]]> {
     if (serialized.domain !== this.domain) {
       throw err_nice_action.fromId(EErrId_NiceAction.hydration_domain_mismatch, {
         expected: this.domain,
@@ -168,7 +168,7 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
    */
   hydrateResponse(
     serialized: ISerializedNiceActionResponse,
-  ): NiceActionResponse<ACT_DOM, NiceActionSchema<any, any, any>, string> {
+  ): NiceActionResponse<ACT_DOM, keyof ACT_DOM["schema"] & string> {
     if (serialized.domain !== this.domain) {
       throw err_nice_action.fromId(EErrId_NiceAction.hydration_domain_mismatch, {
         expected: this.domain,
