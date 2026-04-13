@@ -32,6 +32,9 @@
       ],
       "@nice-error/nice-action": [
         "../nice-action/src/index.ts"
+      ],
+      "demo-shared": [
+        "../demo-shared/src/index.ts"
       ]
     }
   },

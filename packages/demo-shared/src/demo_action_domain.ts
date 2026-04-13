@@ -3,7 +3,7 @@ import { action, createActionDomain } from "@nice-error/nice-action";
 import * as v from "valibot";
 
 // ---------------------------------------------------------------------------
-// Error domain — mirrors packages/demo-backend/src/nice_actions/demo_action_domain.ts
+// Error domain
 // ---------------------------------------------------------------------------
 
 export enum EErrId_DemoAction {
@@ -57,5 +57,34 @@ export const demoDomain = createActionDomain({
       .input({ schema: v.object({ dividend: v.number(), divisor: v.number() }) })
       .output({ schema: v.object({ result: v.number(), isExact: v.boolean() }) })
       .throws(err_demo_action, [EErrId_DemoAction.division_by_zero]),
+
+    addMessage: action()
+      .input({ schema: v.object({ message: v.string() }) })
+      .output(
+        {
+          schema: v.object({
+            lastFiveMessages: v.array(
+              v.object({
+                message: v.string(),
+                messageTime: v.date(),
+              }),
+            ),
+          }),
+        },
+        ({ lastFiveMessages }) => ({
+          serializedLastFive: lastFiveMessages.map(({ message, messageTime }) => ({
+            message,
+            messageTime: messageTime.toISOString(),
+          })),
+        }),
+        ({ serializedLastFive }) => ({
+          lastFiveMessages: serializedLastFive.map(({ message, messageTime }) => ({
+            message,
+            messageTime: new Date(messageTime),
+          })),
+        }),
+      ),
   },
 });
+
+export type TDemoDomain = typeof demoDomain;

@@ -1,5 +1,5 @@
 import { createDomainResolver, createResolverEnvironment } from "@nice-error/nice-action";
-import { demoDomain, EErrId_DemoAction, err_demo_action } from "./demo_action_domain";
+import { demoDomain, EErrId_DemoAction, err_demo_action } from "demo-shared";
 
 // ---------------------------------------------------------------------------
 // Simulated DB
@@ -10,6 +10,12 @@ const USERS: Record<string, { id: string; username: string; email: string }> = {
   user2: { id: "user2", username: "bob", email: "bob@example.com" },
   user3: { id: "user3", username: "carol", email: "carol@example.com" },
 };
+
+// ---------------------------------------------------------------------------
+// In-memory message store (last 5 messages)
+// ---------------------------------------------------------------------------
+
+const messageStore: Array<{ message: string; messageTime: Date }> = [];
 
 // ---------------------------------------------------------------------------
 // Domain resolver
@@ -35,6 +41,11 @@ export const demoDomainResolver = createDomainResolver(demoDomain)
     }
     const result = dividend / divisor;
     return { result, isExact: Number.isInteger(result) };
+  })
+  .resolve("addMessage", async ({ message }) => {
+    messageStore.push({ message, messageTime: new Date() });
+    const lastFiveMessages = messageStore.slice(-5);
+    return { lastFiveMessages };
   });
 
 // ---------------------------------------------------------------------------

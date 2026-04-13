@@ -1,5 +1,6 @@
 import type { INiceErrorJsonObject } from "@nice-error/core";
 import type { ISerializedNiceActionResponse } from "@nice-error/nice-action";
+import { demoDomain } from "demo-shared";
 import { useState } from "react";
 import {
   ACTION_META,
@@ -7,7 +8,6 @@ import {
   type IFieldMeta,
   type TFieldType,
 } from "../actions/action_field_meta";
-import { demoDomain } from "../actions/demo_action_domain";
 
 const BACKEND_URL = import.meta.env["VITE_BACKEND_URL"] as string;
 const VALIDATION_ERROR_ID = "action_input_validation_failed";
