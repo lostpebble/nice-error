@@ -29,7 +29,7 @@ type AddIdArgs<
 /** Full-featured construction from NiceErrorDefined.fromId / fromContext. */
 export interface INiceErrorHydratedOptions<
   ERR_DEF extends INiceErrorDefinedProps,
-  ID extends keyof ERR_DEF["schema"],
+  ID extends keyof ERR_DEF["schema"] & string,
 > extends INiceErrorOptions<ERR_DEF, ID> {
   def: ERR_DEF;
   niceErrorDefined: NiceErrorDefined<ERR_DEF>;
@@ -44,7 +44,7 @@ export class NiceErrorHydrated<
    * - After `hasOneOfIds([a,b])`: narrows to that subset.
    * - Default (bare construction / castNiceError): `TUnknownNiceErrorId`.
    */
-  ACTIVE_IDS extends keyof ERR_DEF["schema"] = keyof ERR_DEF["schema"],
+  ACTIVE_IDS extends keyof ERR_DEF["schema"] & string = keyof ERR_DEF["schema"] & string,
 > extends NiceError<ERR_DEF, ACTIVE_IDS> {
   override readonly def: ERR_DEF;
   private readonly niceErrorDefined: NiceErrorDefined<ERR_DEF>;

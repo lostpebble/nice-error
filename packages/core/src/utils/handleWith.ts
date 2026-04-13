@@ -11,7 +11,10 @@ import type { NiceErrorDefined } from "../NiceErrorDefined/NiceErrorDefined";
  *
  * Construct via `forDomain` or `forIds` — do not build this object directly.
  */
-export interface IErrorCase<DEF extends INiceErrorDefinedProps, IDS extends keyof DEF["schema"]> {
+export interface IErrorCase<
+  DEF extends INiceErrorDefinedProps,
+  IDS extends keyof DEF["schema"] & string,
+> {
   /**
    * Duck-typed reference to the domain definition.
    * Needs only `isExact()` and `hydrate()` at runtime — avoids any circular value import.
@@ -48,8 +51,8 @@ export interface IErrorCase<DEF extends INiceErrorDefinedProps, IDS extends keyo
  */
 export function forDomain<DEF extends INiceErrorDefinedProps>(
   domain: NiceErrorDefined<DEF>,
-  handler: (error: NiceErrorHydrated<DEF, keyof DEF["schema"]>) => void | Promise<void>,
-): IErrorCase<DEF, keyof DEF["schema"]> {
+  handler: (error: NiceErrorHydrated<DEF, keyof DEF["schema"] & string>) => void | Promise<void>,
+): IErrorCase<DEF, keyof DEF["schema"] & string> {
   return { _domain: domain, _ids: undefined, _handler: handler };
 }
 
@@ -78,7 +81,7 @@ export function forDomain<DEF extends INiceErrorDefinedProps>(
  */
 export function forIds<
   DEF extends INiceErrorDefinedProps,
-  IDS extends ReadonlyArray<keyof DEF["schema"]>,
+  IDS extends ReadonlyArray<keyof DEF["schema"] & string>,
 >(
   domain: NiceErrorDefined<DEF>,
   ids: IDS,

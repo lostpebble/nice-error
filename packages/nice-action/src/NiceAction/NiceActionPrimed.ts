@@ -1,8 +1,8 @@
 import type { NiceActionSchema, TInferActionError } from "./ActionSchema/NiceActionSchema";
 import type { NiceAction } from "./NiceAction";
+import type { INiceActionPrimed_JsonObject } from "./NiceAction.types";
 import type {
   INiceActionDomain,
-  ISerializedNiceAction,
   NiceActionResult,
   TInferInputFromSchema,
   TInferOutputFromSchema,
@@ -11,12 +11,13 @@ import type {
 export class NiceActionPrimed<
   DOM extends INiceActionDomain,
   SCH extends NiceActionSchema<any, any, any>,
+  ID extends keyof DOM["schema"] & string,
 > {
   readonly _isPrimed = true;
 
   constructor(
-    readonly coreAction: NiceAction<DOM, SCH>,
-    readonly input: TInferInputFromSchema<SCH>["Input"],
+    readonly coreAction: NiceAction<DOM, SCH, ID>,
+    readonly input: TInferInputFromSchema<DOM["schema"][ID]>["Input"],
   ) {}
 
   /**
@@ -24,10 +25,9 @@ export class NiceActionPrimed<
    * The input is passed through the schema's serialize function if one is defined,
    * otherwise the (already JSON-native) input is used as-is.
    */
-  toJsonObject(): ISerializedNiceAction {
+  toJsonObject(): INiceActionPrimed_JsonObject<DOM, ID> {
     return {
-      domain: this.coreAction.domain.domain,
-      actionId: this.coreAction.id,
+      ...this.coreAction.toJsonObject(),
       input: this.coreAction.schema.serializeInput(this.input),
     };
   }
@@ -39,7 +39,7 @@ export class NiceActionPrimed<
    * Pass `envId` to target a specific named handler/resolver on the domain.
    */
   async execute(envId?: string): Promise<TInferOutputFromSchema<SCH>["Output"]> {
-    return this.coreAction.domain._dispatchAction(this, envId) as Promise<
+    return this.coreAction._actionDomain._dispatchAction(this, envId) as Promise<
       TInferOutputFromSchema<SCH>["Output"]
     >;
   }

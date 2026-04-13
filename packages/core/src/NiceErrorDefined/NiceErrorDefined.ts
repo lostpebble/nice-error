@@ -54,7 +54,9 @@ interface ILinkedNiceErrorDefined {
  * ```
  */
 export type InferNiceError<T extends NiceErrorDefined<any>> =
-  T extends NiceErrorDefined<infer ERR_DEF> ? NiceError<ERR_DEF, keyof ERR_DEF["schema"]> : never;
+  T extends NiceErrorDefined<infer ERR_DEF>
+    ? NiceError<ERR_DEF, keyof ERR_DEF["schema"] & string>
+    : never;
 
 /**
  * Infers the strongly-typed `NiceErrorHydrated` class type from a `NiceErrorDefined` instance.
@@ -71,7 +73,7 @@ export type InferNiceError<T extends NiceErrorDefined<any>> =
  */
 export type InferNiceErrorHydrated<T extends NiceErrorDefined<any>> =
   T extends NiceErrorDefined<infer ERR_DEF>
-    ? NiceErrorHydrated<ERR_DEF, keyof ERR_DEF["schema"]>
+    ? NiceErrorHydrated<ERR_DEF, keyof ERR_DEF["schema"] & string>
     : never;
 
 // ---------------------------------------------------------------------------
@@ -223,7 +225,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps = INiceErro
    * }
    * ```
    */
-  hydrate<ACTIVE_IDS extends keyof ERR_DEF["schema"]>(
+  hydrate<ACTIVE_IDS extends keyof ERR_DEF["schema"] & string>(
     error: NiceError<ERR_DEF, ACTIVE_IDS>,
   ): NiceErrorHydrated<ERR_DEF, ACTIVE_IDS> {
     const errDef = error.def as unknown as INiceErrorDefinedProps;
@@ -371,7 +373,7 @@ export class NiceErrorDefined<ERR_DEF extends INiceErrorDefinedProps = INiceErro
    * }
    * ```
    */
-  isExact(error: unknown): error is NiceError<ERR_DEF, keyof ERR_DEF["schema"]> {
+  isExact(error: unknown): error is NiceError<ERR_DEF, keyof ERR_DEF["schema"] & string> {
     if (!(error instanceof NiceError)) return false;
     const errDef = error.def as unknown as INiceErrorDefinedProps;
     return errDef.domain === this.domain;

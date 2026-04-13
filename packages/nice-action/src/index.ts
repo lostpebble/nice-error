@@ -19,13 +19,15 @@ export type {
 } from "./NiceAction/ActionSchema/NiceActionSchema.types";
 export { createActionDomain } from "./NiceAction/createActionDomain";
 export { NiceAction } from "./NiceAction/NiceAction";
+export type {
+  INiceAction_JsonObject,
+  INiceActionPrimed_JsonObject,
+} from "./NiceAction/NiceAction.types";
 export { NiceActionDomain } from "./NiceAction/NiceActionDomain";
 export type {
+  INiceActionDomain as INiceActionDomainDef,
   INiceActionDomain,
   INiceActionDomainChildOptions,
-  INiceActionDomainDef,
-  INiceActionResolverLike,
-  ISerializedNiceAction,
   ISerializedNiceActionResponse,
   MaybePromise,
   NiceActionResult,

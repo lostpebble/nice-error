@@ -3,7 +3,6 @@ import type { NiceActionDomain } from "../NiceActionDomain";
 import type {
   IActionCase,
   INiceActionDomain,
-  INiceActionDomainDef,
   TActionHandlerForDomain,
   TActionIdHandlerForDomain,
   TBroadActionHandler,
@@ -27,7 +26,7 @@ export class NiceActionHandler {
     }
 
     throw new Error(
-      `No handler found for action "${action.coreAction.id}" in domain "${action.coreAction.domain.domain}"`,
+      `No handler found for action "${action.coreAction.id}" in domain "${action.coreAction.domain}"`,
     );
   }
 
@@ -36,7 +35,7 @@ export class NiceActionHandler {
    * `act.input` is typed as the union of input types for all actions in `domain`.
    * First matching case wins.
    */
-  forDomain<FOR_DOM extends INiceActionDomainDef>(
+  forDomain<FOR_DOM extends INiceActionDomain>(
     domain: NiceActionDomain<FOR_DOM>,
     handler: TActionHandlerForDomain<FOR_DOM>,
   ): this {
@@ -52,7 +51,7 @@ export class NiceActionHandler {
    * The handler's `action.input` is narrowed to the schema for that ID.
    * First matching case wins.
    */
-  forActionId<ACT_DOM extends INiceActionDomainDef, ID extends keyof ACT_DOM["schema"] & string>(
+  forActionId<ACT_DOM extends INiceActionDomain, ID extends keyof ACT_DOM["schema"] & string>(
     domain: NiceActionDomain<ACT_DOM>,
     id: ID,
     handler: TActionIdHandlerForDomain<ACT_DOM, ID>,
@@ -70,7 +69,7 @@ export class NiceActionHandler {
    * First matching case wins.
    */
   forActionIds<
-    ACT_DOM extends INiceActionDomainDef,
+    ACT_DOM extends INiceActionDomain,
     IDS extends ReadonlyArray<keyof ACT_DOM["schema"] & string>,
   >(
     domain: NiceActionDomain<ACT_DOM>,

@@ -11,14 +11,20 @@ import { NiceActionPrimed } from "./NiceActionPrimed";
 
 export class NiceActionResponse<
   DOM extends INiceActionDomain,
-  SCH extends NiceActionSchema<any, any, any>,
+  ID extends keyof DOM["schema"] & string,
 > {
-  readonly primed: NiceActionPrimed<DOM, SCH>;
-  readonly result: NiceActionResult<TInferOutputFromSchema<SCH>["Output"], TInferActionError<SCH>>;
+  readonly primed: NiceActionPrimed<DOM, DOM["schema"][ID], ID>;
+  readonly result: NiceActionResult<
+    TInferOutputFromSchema<DOM["schema"][ID]>["Output"],
+    TInferActionError<DOM["schema"][ID]>
+  >;
 
   constructor(
-    primed: NiceActionPrimed<DOM, SCH>,
-    result: NiceActionResult<TInferOutputFromSchema<SCH>["Output"], TInferActionError<SCH>>,
+    primed: NiceActionPrimed<DOM, DOM["schema"][ID], ID>,
+    result: NiceActionResult<
+      TInferOutputFromSchema<DOM["schema"][ID]>["Output"],
+      TInferActionError<DOM["schema"][ID]>
+    >,
   ) {
     this.primed = primed;
     this.result = result;
@@ -33,7 +39,7 @@ export class NiceActionResponse<
    */
   toJsonObject(): ISerializedNiceActionResponse {
     const base = {
-      domain: this.primed.coreAction.domain.domain,
+      domain: this.primed.coreAction.domain,
       actionId: this.primed.coreAction.id,
       input: this.primed.coreAction.schema.serializeInput(this.primed.input),
     };
@@ -67,8 +73,8 @@ export class NiceActionResponse<
  */
 export function hydrateNiceActionResponse(
   wire: ISerializedNiceActionResponse,
-  coreAction: NiceAction<INiceActionDomain, NiceActionSchema<any, any, any>>,
-): NiceActionResponse<INiceActionDomain, NiceActionSchema<any, any, any>> {
+  coreAction: NiceAction<INiceActionDomain, NiceActionSchema<any, any, any>, string>,
+): NiceActionResponse<INiceActionDomain, string> {
   const rawInput = coreAction.schema.deserializeInput(wire.input);
   const primed = new NiceActionPrimed(coreAction, rawInput);
 

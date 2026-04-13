@@ -1,19 +1,14 @@
 import { castNiceError } from "@nice-error/core";
 import { EErrId_NiceAction, err_nice_action } from "../../errors/err_nice_action";
 import type { NiceActionSchema } from "../ActionSchema/NiceActionSchema";
+import type { INiceActionPrimed_JsonObject } from "../NiceAction.types";
 import type { NiceActionDomain } from "../NiceActionDomain";
-import type {
-  INiceActionDomainDef,
-  INiceActionResolverLike,
-  ISerializedNiceAction,
-} from "../NiceActionDomain.types";
+import type { INiceActionDomain } from "../NiceActionDomain.types";
 import type { NiceActionPrimed } from "../NiceActionPrimed";
 import { NiceActionResponse } from "../NiceActionResponse";
 import type { TActionResolverFn } from "./NiceActionResolver.types";
 
-export class NiceActionDomainResolver<DOM extends INiceActionDomainDef>
-  implements INiceActionResolverLike
-{
+export class NiceActionDomainResolver<DOM extends INiceActionDomain> {
   private _domain: NiceActionDomain<DOM>;
   private _resolvers = new Map<string, TActionResolverFn<NiceActionSchema<any, any, any>>>();
 
@@ -78,10 +73,14 @@ export class NiceActionDomainResolver<DOM extends INiceActionDomainDef>
    * Throws `hydration_*` errors (from `NiceActionDomain.hydrateAction`) if the action ID
    * is not part of this domain's schema.
    */
-  async _dispatch(
-    wire: ISerializedNiceAction,
-  ): Promise<NiceActionResponse<any, NiceActionSchema<any, any, any>>> {
-    const primed = this._domain.hydrateAction(wire);
+  async _dispatch<P extends INiceActionPrimed_JsonObject<DOM, string>>(
+    wire: P,
+  ): Promise<NiceActionResponse<DOM, P["actionId"]>> {
+    const primed = this._domain.hydrateAction(wire) as NiceActionPrimed<
+      DOM,
+      DOM["schema"][P["actionId"]],
+      P["actionId"]
+    >;
 
     // _resolvePrimed throws synchronously for unregistered actions — intentionally outside
     // the try/catch so programming errors are not swallowed into the response.
@@ -99,9 +98,12 @@ export class NiceActionDomainResolver<DOM extends INiceActionDomainDef>
         actionId: wire.actionId,
       });
       const output = await resolverFn(validatedInput);
-      return new NiceActionResponse(primed, { ok: true, value: output });
+      return new NiceActionResponse<DOM, P["actionId"]>(primed, { ok: true, value: output });
     } catch (e) {
-      return new NiceActionResponse(primed, { ok: false, error: castNiceError(e) as any });
+      return new NiceActionResponse<DOM, P["actionId"]>(primed, {
+        ok: false,
+        error: castNiceError(e) as any,
+      });
     }
   }
 }
@@ -111,7 +113,7 @@ export class NiceActionDomainResolver<DOM extends INiceActionDomainDef>
  * Chain `.resolve(actionId, fn)` calls to register typed resolver functions,
  * then pass the resolver to `createResolverEnvironment`.
  */
-export function createDomainResolver<DOM extends INiceActionDomainDef>(
+export function createDomainResolver<DOM extends INiceActionDomain>(
   domain: NiceActionDomain<DOM>,
 ): NiceActionDomainResolver<DOM> {
   return new NiceActionDomainResolver(domain);

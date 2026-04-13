@@ -1,21 +1,21 @@
 import { EErrId_NiceAction, err_nice_action } from "../errors/err_nice_action";
 import { NiceActionHandler } from "./ActionHandler/NiceActionHandler";
+import type { NiceActionDomainResolver } from "./ActionResolver/NiceActionDomainResolver";
 import type { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
 import { NiceAction } from "./NiceAction";
+import type { INiceActionPrimed_JsonObject } from "./NiceAction.types";
 import type {
   INiceActionDomain,
   INiceActionDomainChildOptions,
-  INiceActionDomainDef,
-  INiceActionResolverLike,
-  ISerializedNiceAction,
   ISerializedNiceActionResponse,
   TActionListener,
+  TInferInputFromSchema,
   TNiceActionDomainChildDef,
 } from "./NiceActionDomain.types";
 import { NiceActionPrimed } from "./NiceActionPrimed";
 import { hydrateNiceActionResponse, NiceActionResponse } from "./NiceActionResponse";
 
-export class NiceActionDomain<ACT_DOM extends INiceActionDomainDef = INiceActionDomainDef>
+export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDomain>
   implements INiceActionDomain<ACT_DOM["allDomains"], ACT_DOM["schema"]>
 {
   readonly domain: ACT_DOM["domain"];
@@ -23,7 +23,7 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomainDef = INiceAction
   readonly schema: ACT_DOM["schema"];
   private _listeners: TActionListener[] = [];
   private _handlers = new Map<string | undefined, NiceActionHandler>();
-  private _resolvers = new Map<string | undefined, INiceActionResolverLike>();
+  private _resolvers = new Map<string | undefined, NiceActionDomainResolver<this>>();
 
   constructor(definition: ACT_DOM) {
     this.domain = definition.domain;
@@ -41,6 +41,13 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomainDef = INiceAction
       domain: subDomainDef.domain,
       schema: subDomainDef.schema,
     });
+  }
+
+  primeAction<ID extends keyof ACT_DOM["schema"] & string>(
+    id: ID,
+    input: TInferInputFromSchema<ACT_DOM["schema"][ID]>["Input"],
+  ): NiceActionPrimed<this, ACT_DOM["schema"][ID]> {
+    return this.action(id).prime(input);
   }
 
   action<ID extends keyof ACT_DOM["schema"] & string>(
@@ -131,8 +138,8 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomainDef = INiceAction
    * Runs the schema's deserializeInput if a custom serialization was defined.
    */
   hydrateAction(
-    serialized: ISerializedNiceAction,
-  ): NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>> {
+    serialized: INiceActionPrimed_JsonObject<ACT_DOM, string>,
+  ): NiceActionPrimed<NiceActionDomain, NiceActionSchema<any, any, any>, string> {
     if (serialized.domain !== this.domain) {
       throw err_nice_action.fromId(EErrId_NiceAction.hydration_domain_mismatch, {
         expected: this.domain,
@@ -158,9 +165,7 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomainDef = INiceAction
    * The result is loosely typed — `result.error` is `NiceError<TUnknownNiceErrorDef>`.
    * Use `handleWith` / `forDomain` / `isExact` to route errors on the receiving end.
    */
-  hydrateResponse(
-    serialized: ISerializedNiceActionResponse,
-  ): NiceActionResponse<INiceActionDomain, NiceActionSchema<any, any, any>> {
+  hydrateResponse(serialized: ISerializedNiceActionResponse): NiceActionResponse<ACT_DOM, string> {
     if (serialized.domain !== this.domain) {
       throw err_nice_action.fromId(EErrId_NiceAction.hydration_domain_mismatch, {
         expected: this.domain,
@@ -217,7 +222,7 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomainDef = INiceAction
    * Pass `options.envId` to register under a named environment.
    * Throws `environment_already_registered` if the envId (or default) is already taken.
    */
-  registerResolver(resolver: INiceActionResolverLike, options?: { envId?: string }): this {
+  registerResolver(resolver: NiceActionDomainResolver<this>, options?: { envId?: string }): this {
     const envId = options?.envId;
     if (this._resolvers.has(envId)) {
       throw err_nice_action.fromId(EErrId_NiceAction.environment_already_registered, {

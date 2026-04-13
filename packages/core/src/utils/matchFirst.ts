@@ -9,7 +9,7 @@ import type { INiceErrorDefinedProps, TExtractContextType } from "../NiceError/N
  */
 export type TMatchFirstHandlers<
   ERR_DEF extends INiceErrorDefinedProps,
-  ACTIVE_IDS extends keyof ERR_DEF["schema"],
+  ACTIVE_IDS extends keyof ERR_DEF["schema"] & string,
   RESULT,
 > = {
   [K in ACTIVE_IDS]?: (context: TExtractContextType<ERR_DEF["schema"][K]>) => RESULT;
@@ -38,7 +38,7 @@ export type TMatchFirstHandlers<
  */
 export function matchFirst<
   ERR_DEF extends INiceErrorDefinedProps,
-  ACTIVE_IDS extends keyof ERR_DEF["schema"],
+  ACTIVE_IDS extends keyof ERR_DEF["schema"] & string,
   RESULT,
 >(
   error: NiceError<ERR_DEF, ACTIVE_IDS>,

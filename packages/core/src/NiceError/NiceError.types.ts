@@ -248,7 +248,7 @@ export interface INiceErrorDefinedProps<
 
 export interface INiceErrorJsonObject<
   ERR_DEF extends INiceErrorDefinedProps = INiceErrorDefinedProps,
-  ID extends keyof ERR_DEF["schema"] = keyof ERR_DEF["schema"],
+  ID extends keyof ERR_DEF["schema"] & string = keyof ERR_DEF["schema"] & string,
 > {
   name: "NiceError";
   def: Omit<ERR_DEF, "schema">;

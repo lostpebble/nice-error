@@ -57,7 +57,7 @@ export class NiceError<
    * - After `hasOneOfIds([a,b])`: narrows to that subset.
    * - Default (bare construction / castNiceError): `TUnknownNiceErrorId`.
    */
-  ACTIVE_IDS extends keyof ERR_DEF["schema"] = keyof ERR_DEF["schema"],
+  ACTIVE_IDS extends keyof ERR_DEF["schema"] & string = keyof ERR_DEF["schema"] & string,
 > extends Error {
   override readonly name = "NiceError" as const;
 
@@ -102,7 +102,7 @@ export class NiceError<
    * Type guard: returns `true` if this error was created with (or contains) the
    * given `id`. After the guard, `getContext(id)` will be strongly typed.
    */
-  hasId<ID extends keyof ERR_DEF["schema"]>(id: ID): this is NiceError<ERR_DEF, ID> {
+  hasId<ID extends keyof ERR_DEF["schema"] & string>(id: ID): this is NiceError<ERR_DEF, ID> {
     return id in this._errorDataMap;
   }
 
@@ -114,7 +114,7 @@ export class NiceError<
    * Returns `true` if this error contains **at least one** of the supplied ids.
    * Narrows `ACTIVE_IDS` to the matching subset of `IDS`.
    */
-  hasOneOfIds<IDS extends ReadonlyArray<keyof ERR_DEF["schema"]>>(
+  hasOneOfIds<IDS extends ReadonlyArray<keyof ERR_DEF["schema"] & string>>(
     ids: IDS,
   ): this is NiceError<ERR_DEF, IDS[number]> {
     return ids.some((id) => id in this._errorDataMap);

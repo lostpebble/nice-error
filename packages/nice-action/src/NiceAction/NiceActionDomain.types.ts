@@ -26,7 +26,7 @@ export type TNiceActionDomainSchema = Record<
  * Data shape for a domain — used for construction and as the type-level schema carrier.
  * Does NOT include class methods.
  */
-export interface INiceActionDomainDef<
+export interface INiceActionDomain<
   IDS extends TNiceActionDomainIds = TNiceActionDomainIds,
   SCH extends TNiceActionDomainSchema = TNiceActionDomainSchema,
 > {
@@ -36,31 +36,17 @@ export interface INiceActionDomainDef<
 }
 
 /**
- * Full domain contract — extends the data shape with the dispatch method.
- * Implemented by NiceActionDomain. Used as the constraint on NiceAction / NiceActionPrimed.
- */
-export interface INiceActionDomain<
-  IDS extends TNiceActionDomainIds = TNiceActionDomainIds,
-  SCH extends TNiceActionDomainSchema = TNiceActionDomainSchema,
-> extends INiceActionDomainDef<IDS, SCH> {
-  _dispatchAction(
-    primed: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>,
-    envId?: string,
-  ): Promise<unknown>;
-}
-
-/**
  * Structural interface implemented by `NiceActionDomainResolver`.
  * Used by `NiceActionDomain` to avoid a circular import with the concrete class.
  *
  * `_resolvePrimed` is the inline dispatch path — calls the registered fn directly
  * without re-serializing/deserializing. Errors from the fn propagate naturally.
  */
-export interface INiceActionResolverLike {
-  _resolvePrimed(
-    primed: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>,
-  ): Promise<unknown>;
-}
+// export interface INiceActionResolverLike {
+//   _resolvePrimed(
+//     primed: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>,
+//   ): Promise<unknown>;
+// }
 
 export interface INiceActionDomainChildOptions<
   ERR_DOMAIN extends string = string,
@@ -71,7 +57,7 @@ export interface INiceActionDomainChildOptions<
 }
 
 export type TNiceActionDomainChildDef<
-  PARENT_DEF extends INiceActionDomainDef,
+  PARENT_DEF extends INiceActionDomain,
   SUB extends INiceActionDomainChildOptions,
 > = {
   domain: SUB["domain"];
@@ -102,8 +88,12 @@ export type TInferOutputFromSchema<SCH> =
  * and `act.coreAction` carries the matching schema — the same narrowing you get
  * from `forActionIds` over all action IDs in the domain.
  */
-export type TActionHandlerForDomain<ACT_DOM extends INiceActionDomainDef> = (
-  action: NiceActionPrimed<INiceActionDomain, ACT_DOM["schema"][keyof ACT_DOM["schema"] & string]>,
+export type TActionHandlerForDomain<ACT_DOM extends INiceActionDomain> = (
+  action: NiceActionPrimed<
+    INiceActionDomain,
+    ACT_DOM["schema"][keyof ACT_DOM["schema"] & string],
+    keyof ACT_DOM["schema"] & string
+  >,
 ) => MaybePromise<unknown>;
 
 /**
@@ -111,16 +101,18 @@ export type TActionHandlerForDomain<ACT_DOM extends INiceActionDomainDef> = (
  * the primed action's input narrowed to that ID's schema.
  */
 export type TActionIdHandlerForDomain<
-  ACT_DOM extends INiceActionDomainDef,
+  ACT_DOM extends INiceActionDomain,
   ID extends keyof ACT_DOM["schema"] & string,
-> = (action: NiceActionPrimed<INiceActionDomain, ACT_DOM["schema"][ID]>) => MaybePromise<unknown>;
+> = (
+  action: NiceActionPrimed<INiceActionDomain, ACT_DOM["schema"][ID], ID>,
+) => MaybePromise<unknown>;
 
 /**
  * Observer called after each action is dispatched.
  * Return value is ignored. Use for logging, metrics, tracing, etc.
  */
 export type TActionListener = (
-  action: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>,
+  action: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>, string>,
 ) => MaybePromise<void>;
 
 /**
@@ -129,7 +121,7 @@ export type TActionListener = (
  * `TActionIdHandlerForDomain`); they are cast to this for storage.
  */
 export type TBroadActionHandler = (
-  action: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>,
+  action: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>, string>,
 ) => MaybePromise<unknown>;
 
 /**
@@ -139,18 +131,9 @@ export type TBroadActionHandler = (
  */
 export interface IActionCase {
   readonly _matcher: (
-    action: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>,
+    action: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>, string>,
   ) => boolean;
   readonly _handler: TBroadActionHandler;
-}
-
-/**
- * Wire format for a serialized NiceActionPrimed — safe to JSON.stringify / transmit.
- */
-export interface ISerializedNiceAction {
-  domain: string;
-  actionId: string;
-  input: JSONSerializableValue;
 }
 
 export interface IActionHandlerWithId {

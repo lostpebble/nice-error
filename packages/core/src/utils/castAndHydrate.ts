@@ -37,7 +37,7 @@ import { castNiceError } from "./castNiceError";
 export function castAndHydrate<ERR_DEF extends INiceErrorDefinedProps>(
   value: unknown,
   niceErrorDefined: NiceErrorDefined<ERR_DEF>,
-): NiceErrorHydrated<ERR_DEF, keyof ERR_DEF["schema"]> | NiceError {
+): NiceErrorHydrated<ERR_DEF, keyof ERR_DEF["schema"] & string> | NiceError {
   const casted = castNiceError(value);
   if (niceErrorDefined.isExact(casted)) {
     return niceErrorDefined.hydrate(casted);

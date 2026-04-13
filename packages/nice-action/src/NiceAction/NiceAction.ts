@@ -1,4 +1,6 @@
 import type { NiceActionSchema, TInferActionError } from "./ActionSchema/NiceActionSchema";
+import type { INiceAction_JsonObject } from "./NiceAction.types";
+import type { NiceActionDomain } from "./NiceActionDomain";
 import type {
   INiceActionDomain,
   NiceActionResult,
@@ -11,30 +13,44 @@ import { NiceActionResponse } from "./NiceActionResponse";
 export class NiceAction<
   DOM extends INiceActionDomain,
   SCH extends NiceActionSchema<any, any, any>,
+  ID extends keyof DOM["schema"] & string,
 > {
+  readonly domain: DOM["domain"];
+  readonly allDomains: DOM["allDomains"];
+  readonly _actionDomain: NiceActionDomain<DOM>;
+
   constructor(
-    readonly domain: DOM,
+    readonly actionDomain: NiceActionDomain<DOM>,
     readonly schema: SCH,
-    readonly id: string,
-  ) {}
+    readonly id: ID,
+  ) {
+    this._actionDomain = actionDomain;
+    this.domain = actionDomain.domain;
+    this.allDomains = actionDomain.allDomains;
+  }
 
   /**
    * Serialize this action definition (without input) to a JSON-safe object.
    * Useful for describing which action will be invoked without yet having input.
    */
-  toJsonObject(): { domain: string; actionId: string } {
+  toJsonObject(): INiceAction_JsonObject<DOM, ID> {
     return {
-      domain: this.domain.domain,
+      domain: this.domain,
+      allDomains: this.allDomains,
       actionId: this.id,
     };
   }
 
-  is(action: unknown): action is NiceActionPrimed<DOM, SCH> {
+  is(action: unknown): action is NiceActionPrimed<DOM, SCH, ID> {
     return (
       action instanceof NiceActionPrimed &&
-      action.coreAction.domain.domain === this.domain.domain &&
+      action.coreAction.domain.domain === this.domain &&
       action.coreAction.id === this.id
     );
+  }
+
+  prime(input: TInferInputFromSchema<SCH>["Input"]): NiceActionPrimed<DOM, SCH, ID> {
+    return new NiceActionPrimed(this, input);
   }
 
   /**
@@ -49,7 +65,7 @@ export class NiceAction<
     envId?: string,
   ): Promise<TInferOutputFromSchema<SCH>["Output"]> {
     const primed = new NiceActionPrimed(this, input);
-    return this.domain._dispatchAction(primed, envId) as Promise<
+    return this._actionDomain._dispatchAction(primed, envId) as Promise<
       TInferOutputFromSchema<SCH>["Output"]
     >;
   }
@@ -96,7 +112,7 @@ export class NiceAction<
   async executeToResponse(
     input: TInferInputFromSchema<SCH>["Input"],
     envId?: string,
-  ): Promise<NiceActionResponse<DOM, SCH>> {
+  ): Promise<NiceActionResponse<DOM, ID>> {
     const primed = new NiceActionPrimed(this, input);
     const result = await this.executeSafe(input, envId);
     return new NiceActionResponse(primed, result);
