@@ -1,16 +1,16 @@
-import type { NiceActionDomain } from "../NiceActionDomain";
+import type { NiceActionDomain } from "../../ActionDomain/NiceActionDomain";
 import type {
   IActionCase,
   INiceActionDomain,
   TActionHandlerForDomain,
   TActionIdHandlerForDomain,
-  TBroadActionHandler,
-} from "../NiceActionDomain.types";
-import type { NiceActionPrimed } from "../NiceActionPrimed";
+  TBroadActionRequester,
+} from "../../ActionDomain/NiceActionDomain.types";
+import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
 
-export class NiceActionHandler {
+export class NiceActionRequester {
   private cases: IActionCase[] = [];
-  private _defaultHandler?: TBroadActionHandler;
+  private _defaultRequester?: TBroadActionRequester;
 
   async handleAction(action: NiceActionPrimed<any, any, any>): Promise<unknown> {
     for (const actionCase of this.cases) {
@@ -18,8 +18,8 @@ export class NiceActionHandler {
       return await actionCase._handler(action);
     }
 
-    if (this._defaultHandler) {
-      return await this._defaultHandler(action);
+    if (this._defaultRequester) {
+      return await this._defaultRequester(action);
     }
 
     throw new Error(
@@ -38,7 +38,7 @@ export class NiceActionHandler {
   ): this {
     this.cases.push({
       _matcher: (action) => domain.isExactActionDomain(action),
-      _handler: handler as unknown as TBroadActionHandler,
+      _handler: handler as unknown as TBroadActionRequester,
     });
     return this;
   }
@@ -55,7 +55,7 @@ export class NiceActionHandler {
   ): this {
     this.cases.push({
       _matcher: (action) => domain.isExactActionDomain(action) && action.coreAction.id === id,
-      _handler: handler as unknown as TBroadActionHandler,
+      _handler: handler as unknown as TBroadActionRequester,
     });
     return this;
   }
@@ -77,7 +77,7 @@ export class NiceActionHandler {
       _matcher: (action) =>
         domain.isExactActionDomain(action) &&
         (ids as readonly string[]).includes(action.coreAction.id),
-      _handler: handler as unknown as TBroadActionHandler,
+      _handler: handler as unknown as TBroadActionRequester,
     });
     return this;
   }
@@ -86,8 +86,8 @@ export class NiceActionHandler {
    * Register a fallback handler that fires when no other case matches.
    * Only one default handler can be registered — calling this twice replaces the previous one.
    */
-  setDefaultHandler(handler: TBroadActionHandler): this {
-    this._defaultHandler = handler;
+  setDefaultHandler(handler: TBroadActionRequester): this {
+    this._defaultRequester = handler;
     return this;
   }
 }

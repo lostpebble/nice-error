@@ -1,11 +1,11 @@
-import type { TInferActionError } from "./ActionSchema/NiceActionSchema";
-import type { INiceAction, INiceAction_JsonObject, NiceActionResult } from "./NiceAction.types";
-import type { NiceActionDomain } from "./NiceActionDomain";
+import type { NiceActionDomain } from "../ActionDomain/NiceActionDomain";
 import type {
   INiceActionDomain,
   TInferInputFromSchema,
   TInferOutputFromSchema,
-} from "./NiceActionDomain.types";
+} from "../ActionDomain/NiceActionDomain.types";
+import type { TInferActionError } from "../ActionSchema/NiceActionSchema";
+import type { INiceAction, INiceAction_JsonObject, NiceActionResult } from "./NiceAction.types";
 import { NiceActionPrimed } from "./NiceActionPrimed";
 import { NiceActionResponse } from "./NiceActionResponse";
 

@@ -7,11 +7,11 @@ import {
 } from "@nice-error/core";
 import * as v from "valibot";
 import { expect, expectTypeOf, test, vi } from "vitest";
-import { action } from "./ActionSchema/action";
-import type { TInferActionError } from "./ActionSchema/NiceActionSchema";
+import { action } from "../ActionSchema/action";
+import type { TInferActionError } from "../ActionSchema/NiceActionSchema";
+import { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
 import { createActionDomain } from "./createActionDomain";
 import type { INiceActionDomain, TPossibleDomainIdList } from "./NiceActionDomain.types";
-import { NiceActionPrimed } from "./NiceActionPrimed";
 
 // ---------------------------------------------------------------------------
 // Domain structure — domain / allDomains base types

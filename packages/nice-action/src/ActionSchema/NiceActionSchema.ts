@@ -7,7 +7,7 @@ import {
   type NiceErrorDefined,
 } from "@nice-error/core";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
-import { EErrId_NiceAction, err_nice_action } from "../../errors/err_nice_action";
+import { EErrId_NiceAction, err_nice_action } from "../errors/err_nice_action";
 import type {
   INiceActionErrorDeclaration,
   TInferDeclaredErrors,

@@ -1,23 +1,40 @@
-export { EErrId_NiceAction, err_nice_action } from "./errors/err_nice_action";
-export { NiceActionHandler } from "./NiceAction/ActionHandler/NiceActionHandler";
+/* export type {
+  INiceActionDomain as INiceActionDomainDef,
+  INiceActionDomain,
+  INiceActionDomainChildOptions,
+  MaybePromise,
+  TActionHandlerForDomain,
+  TActionIdHandlerForDomain,
+  TActionListener,
+  TBroadActionResponder as TBroadActionHandler,
+  TInferInputFromSchema,
+  TInferOutputFromSchema,
+  TNiceActionDomainChildDef,
+  TNiceActionDomainId,
+  TNiceActionDomainIds,
+  TNiceActionDomainSchema,
+} from "./ActionDomain";
+export { NiceActionDomain } from "./ActionDomain";
+export { createActionDomain } from "./ActionDomain/createActionDomain";
+export { NiceActionRequester as NiceActionHandler } from "./ActionRequestResponse/ActionRequester/NiceActionRequester";
 export {
   createDomainResolver,
-  NiceActionDomainResolver,
-} from "./NiceAction/ActionResolver/NiceActionDomainResolver";
-export type { TActionResolverFn } from "./NiceAction/ActionResolver/NiceActionResolver.types";
+  NiceActionDomainResponder as NiceActionDomainResolver,
+} from "./ActionRequestResponse/ActionResponder/NiceActionResponder";
+export type { TActionResponderFn as TActionResolverFn } from "./ActionRequestResponse/ActionResponder/NiceActionResponder.types";
 export {
-  createResolverEnvironment,
-  NiceActionResolverEnvironment,
-} from "./NiceAction/ActionResolver/NiceActionResolverEnvironment";
-export { action } from "./NiceAction/ActionSchema/action";
-export type { TInferActionError } from "./NiceAction/ActionSchema/NiceActionSchema";
-export { NiceActionSchema } from "./NiceAction/ActionSchema/NiceActionSchema";
+  createResponderEnvironment as createResolverEnvironment,
+  NiceActionResponderEnvironment as NiceActionResolverEnvironment,
+} from "./ActionRequestResponse/ActionResponder/NiceActionResponderEnvironment";
+export { action } from "./ActionSchema/action";
+export type { TInferActionError } from "./ActionSchema/NiceActionSchema";
+export { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
 export type {
   TNiceActionSerializationDefinition,
   TNiceActonSchemaInputOptions,
   TTransportedValue,
-} from "./NiceAction/ActionSchema/NiceActionSchema.types";
-export { createActionDomain } from "./NiceAction/createActionDomain";
+} from "./ActionSchema/NiceActionSchema.types";
+export { EErrId_NiceAction, err_nice_action } from "./errors/err_nice_action";
 export { NiceAction } from "./NiceAction/NiceAction";
 export type {
   INiceAction,
@@ -26,20 +43,6 @@ export type {
   NiceActionResult,
   TNiceActionResponse_JsonObject as ISerializedNiceActionResponse,
 } from "./NiceAction/NiceAction.types";
-export { NiceActionDomain } from "./NiceAction/NiceActionDomain";
-export type {
-  INiceActionDomain as INiceActionDomainDef,
-  INiceActionDomain,
-  INiceActionDomainChildOptions,
-  MaybePromise,
-  TActionHandlerForDomain,
-  TActionIdHandlerForDomain,
-  TActionListener,
-  TBroadActionHandler,
-  TInferInputFromSchema,
-  TInferOutputFromSchema,
-  TNiceActionDomainChildDef,
-  TNiceActionDomainSchema,
-} from "./NiceAction/NiceActionDomain.types";
 export { NiceActionPrimed } from "./NiceAction/NiceActionPrimed";
 export { NiceActionResponse } from "./NiceAction/NiceActionResponse";
+ */

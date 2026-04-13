@@ -1,16 +1,16 @@
 import { castNiceError } from "@nice-error/core";
+import type { NiceActionDomain } from "../../ActionDomain/NiceActionDomain";
+import type { INiceActionDomain } from "../../ActionDomain/NiceActionDomain.types";
+import type { NiceActionSchema } from "../../ActionSchema/NiceActionSchema";
 import { EErrId_NiceAction, err_nice_action } from "../../errors/err_nice_action";
-import type { NiceActionSchema } from "../ActionSchema/NiceActionSchema";
-import type { INiceActionPrimed_JsonObject } from "../NiceAction.types";
-import type { NiceActionDomain } from "../NiceActionDomain";
-import type { INiceActionDomain } from "../NiceActionDomain.types";
-import type { NiceActionPrimed } from "../NiceActionPrimed";
-import { NiceActionResponse } from "../NiceActionResponse";
-import type { TActionResolverFn } from "./NiceActionResolver.types";
+import type { INiceActionPrimed_JsonObject } from "../../NiceAction/NiceAction.types";
+import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
+import { NiceActionResponse } from "../../NiceAction/NiceActionResponse";
+import type { TActionResponderFn } from "./NiceActionResponder.types";
 
-export class NiceActionDomainResolver<DOM extends INiceActionDomain> {
+export class NiceActionDomainResponder<DOM extends INiceActionDomain> {
   private _domain: NiceActionDomain<DOM>;
-  private _resolvers = new Map<string, TActionResolverFn<NiceActionSchema<any, any, any>>>();
+  private _responders = new Map<string, TActionResponderFn<NiceActionSchema<any, any, any>>>();
 
   constructor(domain: NiceActionDomain<DOM>) {
     this._domain = domain;
@@ -21,22 +21,22 @@ export class NiceActionDomainResolver<DOM extends INiceActionDomain> {
   }
 
   /**
-   * Register a resolver function for a specific action ID in this domain.
+   * Register a responder function for a specific action ID in this domain.
    * The input and output types are inferred from the domain's schema for that action ID.
    *
    * @example
    * ```ts
-   * createDomainResolver(myDomain)
+   * createDomainResponder(myDomain)
    *   .resolve("myAction", async (input) => {
    *     return { result: await db.query(input.id) };
    *   });
    * ```
    */
-  resolve<ID extends keyof DOM["schema"] & string>(
+  resolveAction<ID extends keyof DOM["schema"] & string>(
     actionId: ID,
-    fn: TActionResolverFn<DOM["schema"][ID]>,
+    fn: TActionResponderFn<DOM["schema"][ID]>,
   ): this {
-    this._resolvers.set(actionId, fn as TActionResolverFn<NiceActionSchema<any, any, any>>);
+    this._responders.set(actionId, fn as TActionResponderFn<NiceActionSchema<any, any, any>>);
     return this;
   }
 
@@ -48,7 +48,7 @@ export class NiceActionDomainResolver<DOM extends INiceActionDomain> {
    * Throws `resolver_action_not_registered` if no fn was registered for the action ID.
    */
   async _resolvePrimed(primed: NiceActionPrimed<any, any, any>): Promise<unknown> {
-    const resolver = this._resolvers.get(primed.coreAction.id);
+    const resolver = this._responders.get(primed.coreAction.id);
     if (resolver == null) {
       throw err_nice_action.fromId(EErrId_NiceAction.resolver_action_not_registered, {
         domain: primed.domain,
@@ -78,7 +78,7 @@ export class NiceActionDomainResolver<DOM extends INiceActionDomain> {
 
     // _resolvePrimed throws synchronously for unregistered actions — intentionally outside
     // the try/catch so programming errors are not swallowed into the response.
-    const resolverFn = this._resolvers.get(wire.id);
+    const resolverFn = this._responders.get(wire.id);
     if (resolverFn == null) {
       throw err_nice_action.fromId(EErrId_NiceAction.resolver_action_not_registered, {
         domain: wire.domain,
@@ -118,6 +118,6 @@ export class NiceActionDomainResolver<DOM extends INiceActionDomain> {
  */
 export function createDomainResolver<DOM extends INiceActionDomain>(
   domain: NiceActionDomain<DOM>,
-): NiceActionDomainResolver<DOM> {
-  return new NiceActionDomainResolver(domain);
+): NiceActionDomainResponder<DOM> {
+  return new NiceActionDomainResponder(domain);
 }

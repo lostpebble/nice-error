@@ -19,9 +19,9 @@
  */
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
-import { createDomainResolver } from "../NiceAction/ActionResolver/NiceActionDomainResolver";
-import { action } from "../NiceAction/ActionSchema/action";
-import { createActionDomain } from "../NiceAction/createActionDomain";
+import { createActionDomain } from "../ActionDomain/createActionDomain";
+import { createDomainResolver } from "../ActionRequestResponse/ActionResponder/NiceActionResponder";
+import { action } from "../ActionSchema/action";
 import { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
 import { NiceActionResponse } from "../NiceAction/NiceActionResponse";
 
@@ -311,7 +311,7 @@ describe("NiceActionDomain.matchAction()", () => {
     });
 
     let capturedBy: number | undefined;
-    dom.setActionHandler().forDomain(dom, (act) => {
+    dom.setActionRequester().forDomain(dom, (act) => {
       const inc = dom.matchAction(act, "increment");
       if (inc) capturedBy = inc.input.by;
     });
@@ -449,7 +449,7 @@ describe("Child domain allDomains in serialized payload", () => {
       schema: { pong: action().input({ schema: v.object({ v: v.string() }) }) },
     });
 
-    child.setActionHandler().forDomain(child, () => {});
+    child.setActionRequester().forDomain(child, () => {});
 
     const wire = child.primeAction("pong", { v: "hello" }).toJsonObject();
     const hydrated = child.hydrateAction(wire);
@@ -588,8 +588,8 @@ describe("Input validation failure in resolver path", () => {
       },
     });
 
-    dom.registerResolver(
-      createDomainResolver(dom).resolve("greet", ({ name }) => ({ greeting: `hi ${name}` })),
+    dom.registerResponder(
+      createDomainResolver(dom).resolveAction("greet", ({ name }) => ({ greeting: `hi ${name}` })),
     );
 
     // Force invalid input through wire format — bypass TypeScript types
@@ -694,7 +694,7 @@ describe("Full JSON.stringify / JSON.parse transport", () => {
   it("primed action survives complete wire transport and can still execute", async () => {
     const dom = createTestActionDomain();
 
-    dom.setActionHandler().forActionId(dom, "send_message", (act) => ({
+    dom.setActionRequester().forActionId(dom, "send_message", (act) => ({
       lastFiveMessages: [act.input.message],
     }));
 
@@ -713,7 +713,7 @@ describe("Full JSON.stringify / JSON.parse transport", () => {
   it("response payload survives complete wire transport and can be hydrated", async () => {
     const dom = createTestActionDomain();
 
-    dom.setActionHandler().forActionId(dom, "send_message", () => ({
+    dom.setActionRequester().forActionId(dom, "send_message", () => ({
       lastFiveMessages: ["a", "b", "c", "d", "e"],
     }));
 

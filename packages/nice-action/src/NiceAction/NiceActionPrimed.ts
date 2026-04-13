@@ -1,15 +1,15 @@
-import type { TInferActionError } from "./ActionSchema/NiceActionSchema";
+import type {
+  INiceActionDomain,
+  TInferInputFromSchema,
+  TInferOutputFromSchema,
+} from "../ActionDomain/NiceActionDomain.types";
+import type { TInferActionError } from "../ActionSchema/NiceActionSchema";
 import type { NiceAction } from "./NiceAction";
 import type {
   INiceAction,
   INiceActionPrimed_JsonObject,
   NiceActionResult,
 } from "./NiceAction.types";
-import type {
-  INiceActionDomain,
-  TInferInputFromSchema,
-  TInferOutputFromSchema,
-} from "./NiceActionDomain.types";
 import { NiceActionResponse } from "./NiceActionResponse";
 
 export class NiceActionPrimed<

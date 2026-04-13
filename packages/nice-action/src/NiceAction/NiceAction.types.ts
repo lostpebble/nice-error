@@ -3,7 +3,7 @@ import type {
   INiceActionDomain,
   TInferInputFromSchema,
   TInferOutputFromSchema,
-} from "./NiceActionDomain.types";
+} from "../ActionDomain/NiceActionDomain.types";
 
 export interface INiceAction<
   DOM extends INiceActionDomain,

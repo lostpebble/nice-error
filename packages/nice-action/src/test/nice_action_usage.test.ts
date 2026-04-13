@@ -1,7 +1,7 @@
 import * as v from "valibot";
 import { describe, expect, it, vi } from "vitest";
-import { action } from "../NiceAction/ActionSchema/action";
-import { createActionDomain } from "../NiceAction/createActionDomain";
+import { createActionDomain } from "../ActionDomain/createActionDomain";
+import { action } from "../ActionSchema/action";
 
 // ---------------------------------------------------------------------------
 // 1. Basic domain creation and action execution
@@ -16,7 +16,7 @@ describe("NiceAction — basic domain", () => {
       schema: { ping: action().input({ schema: v.object({ msg: v.string() }) }) },
     });
 
-    domain.setActionHandler().forDomain(domain, (act) => {
+    domain.setActionRequester().forDomain(domain, (act) => {
       const ping = domain.matchAction(act, "ping");
       if (ping) mockFn(ping.input.msg);
     });
@@ -36,7 +36,7 @@ describe("NiceAction — basic domain", () => {
       },
     });
 
-    greetDomain.setActionHandler().forDomain(greetDomain, (act) => {
+    greetDomain.setActionRequester().forDomain(greetDomain, (act) => {
       const greet = greetDomain.matchAction(act, "greet");
       if (greet) return { greeting: `Hello, ${greet.input.name}!` };
     });
@@ -67,7 +67,7 @@ describe("NiceAction — serialization", () => {
       },
     });
 
-    dateDomain.setActionHandler().forDomain(dateDomain, (act) => {
+    dateDomain.setActionRequester().forDomain(dateDomain, (act) => {
       const schedule = dateDomain.matchAction(act, "schedule");
       if (schedule) received(schedule.input.timeStart);
     });
@@ -89,7 +89,7 @@ describe("NiceAction — serialization", () => {
     let capturedCount: number | undefined;
     let capturedLabel: string | undefined;
 
-    domain.setActionHandler().forDomain(domain, (act) => {
+    domain.setActionRequester().forDomain(domain, (act) => {
       const send = domain.matchAction(act, "send");
       if (send) {
         // TypeScript compile error here if input types are wrong
@@ -122,7 +122,7 @@ describe("NiceAction — multiple actions per domain", () => {
     const log = vi.fn();
 
     // matchAction returns a narrowed value — no sequential narrowing pitfall
-    multiDomain.setActionHandler().forDomain(multiDomain, (act) => {
+    multiDomain.setActionRequester().forDomain(multiDomain, (act) => {
       const increment = multiDomain.matchAction(act, "increment");
       if (increment) {
         log(`increment:${increment.input.by}`);
@@ -158,7 +158,7 @@ describe("NiceAction — child domains", () => {
 
     const childLog = vi.fn();
 
-    child.setActionHandler().forDomain(child, (act) => {
+    child.setActionRequester().forDomain(child, (act) => {
       const pong = child.matchAction(act, "pong");
       if (pong) childLog(pong.input.v);
     });
@@ -188,9 +188,9 @@ describe("NiceAction — error handling", () => {
       schema: { a: action().input({ schema: v.object({ x: v.number() }) }) },
     });
 
-    conflict.setActionHandler();
+    conflict.setActionRequester();
 
-    expect(() => conflict.setActionHandler()).toThrow(/already has a handler/i);
+    expect(() => conflict.setActionRequester()).toThrow(/already has a handler/i);
   });
 
   it("throws when action id does not exist in domain", () => {
@@ -216,7 +216,7 @@ describe("NiceActionPrimed — primed re-execution", () => {
       schema: { fire: action().input({ schema: v.object({ n: v.number() }) }) },
     });
 
-    dom.setActionHandler().forDomain(dom, (act) => {
+    dom.setActionRequester().forDomain(dom, (act) => {
       const fire = dom.matchAction(act, "fire");
       if (fire) calls(fire.input.n);
     });
@@ -246,7 +246,7 @@ describe("NiceAction — async handler", () => {
       },
     });
 
-    dom.setActionHandler().forDomain(dom, async (act) => {
+    dom.setActionRequester().forDomain(dom, async (act) => {
       const fetch = dom.matchAction(act, "fetch");
       if (fetch) {
         await Promise.resolve(); // simulate async work

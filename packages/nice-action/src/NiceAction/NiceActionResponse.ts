@@ -1,12 +1,15 @@
 import { castNiceError } from "@nice-error/core";
-import type { TInferActionError } from "./ActionSchema/NiceActionSchema";
+import type {
+  INiceActionDomain,
+  TInferOutputFromSchema,
+} from "../ActionDomain/NiceActionDomain.types";
+import type { TInferActionError } from "../ActionSchema/NiceActionSchema";
 import type { NiceAction } from "./NiceAction";
 import type {
   INiceAction,
   NiceActionResult,
   TNiceActionResponse_JsonObject,
 } from "./NiceAction.types";
-import type { INiceActionDomain, TInferOutputFromSchema } from "./NiceActionDomain.types";
 import { NiceActionPrimed } from "./NiceActionPrimed";
 
 export class NiceActionResponse<

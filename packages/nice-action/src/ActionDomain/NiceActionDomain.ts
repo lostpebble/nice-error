@@ -1,11 +1,13 @@
+import { NiceActionRequester } from "../ActionRequestResponse/ActionRequester/NiceActionRequester";
+import type { NiceActionDomainResponder } from "../ActionRequestResponse/ActionResponder/NiceActionResponder";
 import { EErrId_NiceAction, err_nice_action } from "../errors/err_nice_action";
-import { NiceActionHandler } from "./ActionHandler/NiceActionHandler";
-import type { NiceActionDomainResolver } from "./ActionResolver/NiceActionDomainResolver";
-import { NiceAction } from "./NiceAction";
+import { NiceAction } from "../NiceAction/NiceAction";
 import type {
   INiceActionPrimed_JsonObject,
   TNiceActionResponse_JsonObject,
-} from "./NiceAction.types";
+} from "../NiceAction/NiceAction.types";
+import { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
+import { hydrateNiceActionResponse, NiceActionResponse } from "../NiceAction/NiceActionResponse";
 import type {
   INiceActionDomain,
   INiceActionDomainChildOptions,
@@ -13,8 +15,6 @@ import type {
   TInferInputFromSchema,
   TNiceActionDomainChildDef,
 } from "./NiceActionDomain.types";
-import { NiceActionPrimed } from "./NiceActionPrimed";
-import { hydrateNiceActionResponse, NiceActionResponse } from "./NiceActionResponse";
 
 export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDomain>
   implements INiceActionDomain<ACT_DOM["allDomains"], ACT_DOM["schema"]>
@@ -23,8 +23,8 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
   readonly allDomains: ACT_DOM["allDomains"];
   readonly schema: ACT_DOM["schema"];
   private _listeners: TActionListener[] = [];
-  private _handlers = new Map<string | undefined, NiceActionHandler>();
-  private _resolvers = new Map<string | undefined, NiceActionDomainResolver<ACT_DOM>>();
+  private _requesters = new Map<string | undefined, NiceActionRequester>();
+  private _responders = new Map<string | undefined, NiceActionDomainResponder<ACT_DOM>>();
 
   constructor(definition: ACT_DOM) {
     this.domain = definition.domain;
@@ -96,15 +96,15 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
     envId?: string,
   ): Promise<unknown> {
     if (envId != null) {
-      const handler = this._handlers.get(envId);
-      if (handler) {
-        const result = await handler.handleAction(primed);
+      const requester = this._requesters.get(envId);
+      if (requester) {
+        const result = await requester.handleAction(primed);
         for (const listener of this._listeners) await listener(primed);
         return result;
       }
-      const resolver = this._resolvers.get(envId);
-      if (resolver) {
-        const result = await resolver._resolvePrimed(primed);
+      const responder = this._responders.get(envId);
+      if (responder) {
+        const result = await responder._resolvePrimed(primed);
         for (const listener of this._listeners) await listener(primed);
         return result;
       }
@@ -114,14 +114,14 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
       });
     }
 
-    const defaultHandler = this._handlers.get(undefined);
+    const defaultHandler = this._requesters.get(undefined);
     if (defaultHandler) {
       const result = await defaultHandler.handleAction(primed);
       for (const listener of this._listeners) await listener(primed);
       return result;
     }
 
-    const defaultResolver = this._resolvers.get(undefined);
+    const defaultResolver = this._responders.get(undefined);
     if (defaultResolver) {
       const result = await defaultResolver._resolvePrimed(primed);
       for (const listener of this._listeners) await listener(primed);
@@ -194,30 +194,33 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
   }
 
   /**
-   * Register a `NiceActionHandler` on this domain.
+   * Register a `NiceActionRequester` on this domain.
    *
    * Pass `options.envId` to register under a named environment — useful when multiple
    * execution environments (e.g. worker, main thread) share the same domain definition.
-   * Named handlers are targeted by passing the same `envId` to `action.execute(input, envId)`.
+   * Named requesters are targeted by passing the same `envId` to `action.execute(input, envId)`.
    *
-   * Omit `envId` to register the default handler, used when no `envId` is passed to `execute`.
-   * Throws `environment_already_registered` / `domain_action_handler_conflict` if already taken.
+   * Omit `envId` to register the default requester, used when no `envId` is passed to `execute`.
+   * Throws `environment_already_registered` / `domain_action_requester_conflict` if already taken.
    */
-  setActionHandler(handler?: NiceActionHandler, options?: { envId?: string }): NiceActionHandler {
+  setActionRequester(
+    handler?: NiceActionRequester,
+    options?: { envId?: string },
+  ): NiceActionRequester {
     const envId = options?.envId;
-    if (this._handlers.has(envId)) {
+    if (this._requesters.has(envId)) {
       if (envId != null) {
         throw err_nice_action.fromId(EErrId_NiceAction.environment_already_registered, {
           domain: this.domain,
           envId,
         });
       }
-      throw err_nice_action.fromId(EErrId_NiceAction.domain_action_handler_conflict, {
+      throw err_nice_action.fromId(EErrId_NiceAction.domain_action_requester_conflict, {
         domain: this.domain,
       });
     }
-    const h = handler ?? new NiceActionHandler();
-    this._handlers.set(envId, h);
+    const h = handler ?? new NiceActionRequester();
+    this._requesters.set(envId, h);
     return h;
   }
 
@@ -230,18 +233,18 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
    * Pass `options.envId` to register under a named environment.
    * Throws `environment_already_registered` if the envId (or default) is already taken.
    */
-  registerResolver(
-    resolver: NiceActionDomainResolver<ACT_DOM>,
+  registerResponder(
+    resolver: NiceActionDomainResponder<ACT_DOM>,
     options?: { envId?: string },
   ): this {
     const envId = options?.envId;
-    if (this._resolvers.has(envId)) {
+    if (this._responders.has(envId)) {
       throw err_nice_action.fromId(EErrId_NiceAction.environment_already_registered, {
         domain: this.domain,
         envId: envId ?? "(default)",
       });
     }
-    this._resolvers.set(envId, resolver);
+    this._responders.set(envId, resolver);
     return this;
   }
 }

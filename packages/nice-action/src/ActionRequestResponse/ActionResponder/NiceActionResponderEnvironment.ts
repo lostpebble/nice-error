@@ -1,15 +1,15 @@
+import type { INiceActionDomain } from "../../ActionDomain/NiceActionDomain.types";
 import { EErrId_NiceAction, err_nice_action } from "../../errors/err_nice_action";
 import type {
   INiceActionPrimed_JsonObject,
   TNiceActionResponse_JsonObject,
-} from "../NiceAction.types";
-import type { INiceActionDomain } from "../NiceActionDomain.types";
-import type { NiceActionDomainResolver } from "./NiceActionDomainResolver";
+} from "../../NiceAction/NiceAction.types";
+import type { NiceActionDomainResponder } from "./NiceActionResponder";
 
-export class NiceActionResolverEnvironment {
-  private _resolvers = new Map<string, NiceActionDomainResolver<INiceActionDomain>>();
+export class NiceActionResponderEnvironment {
+  private _resolvers = new Map<string, NiceActionDomainResponder<INiceActionDomain>>();
 
-  constructor(resolvers: NiceActionDomainResolver<INiceActionDomain>[]) {
+  constructor(resolvers: NiceActionDomainResponder<INiceActionDomain>[]) {
     for (const resolver of resolvers) {
       this._resolvers.set(resolver.domainId, resolver);
     }
@@ -47,12 +47,12 @@ export class NiceActionResolverEnvironment {
 }
 
 /**
- * Create a `NiceActionResolverEnvironment` from one or more domain resolvers.
+ * Create a `NiceActionResponderEnvironment` from one or more domain resolvers.
  * The environment routes incoming serialized actions to the correct resolver by domain ID.
  *
  * @example
  * ```ts
- * const env = createResolverEnvironment([
+ * const env = createResponderEnvironment([
  *   createDomainResolver(paymentDomain)
  *     .resolve("chargeCard", async (input) => { ... }),
  *   createDomainResolver(authDomain)
@@ -62,8 +62,8 @@ export class NiceActionResolverEnvironment {
  * const serializedResponse = await env.dispatch(incomingWire);
  * ```
  */
-export function createResolverEnvironment(
-  resolvers: NiceActionDomainResolver<INiceActionDomain<any, any>>[],
-): NiceActionResolverEnvironment {
-  return new NiceActionResolverEnvironment(resolvers);
+export function createResponderEnvironment(
+  resolvers: NiceActionDomainResponder<INiceActionDomain<any, any>>[],
+): NiceActionResponderEnvironment {
+  return new NiceActionResponderEnvironment(resolvers);
 }
