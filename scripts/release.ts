@@ -15,6 +15,8 @@ import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+const packages = ["core", "common-errors", "nice-action"] as const;
+
 // ---------------------------------------------------------------------------
 // Args
 // ---------------------------------------------------------------------------
@@ -41,7 +43,7 @@ if (!/^\d+\.\d+\.\d+(-[\w.-]+)?(\+[\w.-]+)?$/.test(version)) {
 
 const REPO_ROOT = join(import.meta.dir, "..");
 
-const PACKAGES = [join(REPO_ROOT, "packages/core"), join(REPO_ROOT, "packages/common-errors")];
+const PACKAGES = packages.map((pkg) => join(REPO_ROOT, `packages/${pkg}`));
 
 function readPkg(dir: string) {
   return JSON.parse(readFileSync(join(dir, "package.json"), "utf-8")) as Record<string, unknown>;
@@ -96,7 +98,7 @@ for (const pkgDir of PACKAGES) {
 
 // 4. Git tag
 step("Git tag");
-run(`git add packages/core/package.json packages/common-errors/package.json`);
+run(`git add ${packages.map((pkg) => `packages/${pkg}/package.json`).join(" ")}`);
 run(`git commit -m "chore: release v${version}"`);
 run(`git tag v${version}`);
 

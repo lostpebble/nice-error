@@ -55,7 +55,7 @@
       },
     },
     "packages/demo-frontend": {
-      "name": "@nice-error/demo-frontend",
+      "name": "demo-frontend",
       "version": "0.0.0",
       "dependencies": {
         "@nice-error/common-errors": "workspace:*",
@@ -323,8 +323,6 @@
     "@nice-error/common-errors": ["@nice-error/common-errors@workspace:packages/common-errors"],
 
     "@nice-error/core": ["@nice-error/core@workspace:packages/core"],
-
-    "@nice-error/demo-frontend": ["@nice-error/demo-frontend@workspace:packages/demo-frontend"],
 
     "@nice-error/nice-action": ["@nice-error/nice-action@workspace:packages/nice-action"],
 
@@ -645,6 +643,8 @@
     "defu": ["defu@6.1.7", "", {}, "sha512-7z22QmUWiQ/2d0KkdYmANbRUVABpZ9SNYyH5vx6PZ+nE5bcC0l7uFvEfHlyld/HcGBFTL536ClDt3DEcSlEJAQ=="],
 
     "demo-backend": ["demo-backend@workspace:packages/demo-backend"],
+
+    "demo-frontend": ["demo-frontend@workspace:packages/demo-frontend"],
 
     "dequal": ["dequal@2.0.3", "", {}, "sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA=="],
 
