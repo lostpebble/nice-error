@@ -44,6 +44,16 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
     });
   }
 
+  primeUnknown(
+    actionId: ACT_DOM["allDomains"][number],
+    input: unknown,
+  ): NiceActionPrimed<ACT_DOM, string, ACT_DOM["schema"][string]> {
+    const action = this.action(actionId as keyof ACT_DOM["schema"] & string).prime(
+      input as TInferInputFromSchema<ACT_DOM["schema"][keyof ACT_DOM["schema"] & string]>["Input"],
+    );
+    return action;
+  }
+
   primeAction<ID extends keyof ACT_DOM["schema"] & string>(
     id: ID,
     input: TInferInputFromSchema<ACT_DOM["schema"][ID]>["Input"],
@@ -91,8 +101,8 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
     };
   }
 
-  async _dispatchAction(
-    primed: NiceActionPrimed<ACT_DOM, string, ACT_DOM["schema"][string]>,
+  async _dispatchAction<P extends NiceActionPrimed<ACT_DOM, string, ACT_DOM["schema"][string]>>(
+    primed: P,
     envId?: string,
   ): Promise<unknown> {
     if (envId != null) {
@@ -244,7 +254,10 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
         envId: envId ?? "(default)",
       });
     }
-    this._responders.set(envId, resolver as unknown as NiceActionDomainResponder<INiceActionDomain>);
+    this._responders.set(
+      envId,
+      resolver as unknown as NiceActionDomainResponder<INiceActionDomain>,
+    );
     return this;
   }
 }

@@ -42,7 +42,7 @@ export const demoDomainResolver = createDomainResolver(act_domain_demo)
     const result = dividend / divisor;
     return { result, isExact: Number.isInteger(result) };
   })
-  .resolveAction("addMessage", async ({ message }) => {
+  .resolveAction("add_message", async ({ message }) => {
     messageStore.push({ message, messageTime: new Date() });
     const lastFiveMessages = messageStore.slice(-5);
     return { lastFiveMessages };

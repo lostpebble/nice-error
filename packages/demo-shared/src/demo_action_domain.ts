@@ -58,7 +58,7 @@ export const act_domain_demo = createActionDomain({
       .output({ schema: v.object({ result: v.number(), isExact: v.boolean() }) })
       .throws(err_demo_action, [EErrId_DemoAction.division_by_zero]),
 
-    addMessage: action()
+    add_message: action()
       .input({ schema: v.object({ message: v.string() }) })
       .output(
         {

@@ -1,3 +1,4 @@
+import type { NiceActionResponse } from "../..";
 import type { NiceActionDomain } from "../../ActionDomain/NiceActionDomain";
 import type {
   IActionCase,
@@ -12,10 +13,16 @@ export class NiceActionRequester {
   private cases: IActionCase[] = [];
   private _defaultRequester?: TBroadActionRequester;
 
-  async handleAction(action: NiceActionPrimed<any, any, any>): Promise<unknown> {
+  async handleAction<A extends NiceActionPrimed<any, any, any>>(
+    action: A,
+  ): Promise<
+    A extends NiceActionPrimed<infer ACT_DOM, infer ID, infer SCH>
+      ? NiceActionResponse<ACT_DOM, ID, SCH>
+      : never
+  > {
     for (const actionCase of this.cases) {
       if (!actionCase._matcher(action)) continue;
-      return await actionCase._handler(action);
+      return await actionCase._requester(action);
     }
 
     if (this._defaultRequester) {
@@ -38,7 +45,7 @@ export class NiceActionRequester {
   ): this {
     this.cases.push({
       _matcher: (action) => domain.isExactActionDomain(action),
-      _handler: handler as unknown as TBroadActionRequester,
+      _requester: handler as unknown as TBroadActionRequester,
     });
     return this;
   }
@@ -55,7 +62,7 @@ export class NiceActionRequester {
   ): this {
     this.cases.push({
       _matcher: (action) => domain.isExactActionDomain(action) && action.coreAction.id === id,
-      _handler: handler as unknown as TBroadActionRequester,
+      _requester: handler as unknown as TBroadActionRequester,
     });
     return this;
   }
@@ -77,7 +84,7 @@ export class NiceActionRequester {
       _matcher: (action) =>
         domain.isExactActionDomain(action) &&
         (ids as readonly string[]).includes(action.coreAction.id),
-      _handler: handler as unknown as TBroadActionRequester,
+      _requester: handler as unknown as TBroadActionRequester,
     });
     return this;
   }

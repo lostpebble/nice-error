@@ -8,7 +8,6 @@ import {
   type IFieldMeta,
   type TFieldType,
 } from "../actions/action_field_meta";
-import { BACKEND_BASE_URL } from "../frontend_env";
 
 const VALIDATION_ERROR_ID = "action_input_validation_failed";
 
@@ -170,22 +169,29 @@ export function ActionTester() {
         input[field.key] = parseFieldValue(field);
       }
 
-      // act_domain_demo.action(selectedActionId).execute(input);
+      const primed = act_domain_demo.primeUnknown(selectedActionId, input);
+      const res = await primed.executeSafe();
 
-      const wire = { domain: act_domain_demo.domain, actionId: selectedActionId, input };
-
-      const res = await fetch(`${BACKEND_BASE_URL}resolve_action`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(wire),
-      });
-
-      if (!res.ok) {
-        // Non-2xx: Hono's onError returned a raw NiceError JSON (e.g. programmer error)
-        setServerError((await res.json()) as INiceErrorJsonObject);
+      if (res.ok) {
+        setResult(res.output);
       } else {
-        setResult((await res.json()) as TNiceActionResponse_JsonObject);
+        setServerError(res.error);
       }
+
+      // /* const wire = { domain: act_domain_demo.domain, actionId: selectedActionId, input };
+
+      // const res = await fetch(`${BACKEND_BASE_URL}resolve_action`, {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify(wire),
+      // }); */
+
+      // if (!res.ok) {
+      //   // Non-2xx: Hono's onError returned a raw NiceError JSON (e.g. programmer error)
+      //   setServerError((await res.json()) as INiceErrorJsonObject);
+      // } else {
+      //   setResult((await res.json()) as TNiceActionResponse_JsonObject);
+      // }
     } catch (e) {
       setFetchError(e instanceof Error ? e.message : String(e));
     } finally {

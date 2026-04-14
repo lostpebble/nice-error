@@ -115,8 +115,8 @@ export type TActionListener = (action: NiceActionPrimed<any, any, any>) => Maybe
  * Public-facing registration methods use narrower types (`TActionHandlerForDomain`,
  * `TActionIdHandlerForDomain`); they are cast to this for storage.
  */
-export type TBroadActionRequester = (
-  action: NiceActionPrimed<INiceActionDomain, string, INiceActionDomain["schema"][string]>,
+export type TBroadActionRequester<P extends NiceActionPrimed<any, any, any>> = (
+  action: P,
 ) => MaybePromise<unknown>;
 
 /**
@@ -124,14 +124,14 @@ export type TBroadActionRequester = (
  *
  * Construct via `forDomain` / `forActionId` / `forActionIds` — do not build directly.
  */
-export interface IActionCase {
-  readonly _matcher: (
-    action: NiceActionPrimed<INiceActionDomain, string, INiceActionDomain["schema"][string]>,
-  ) => boolean;
-  readonly _handler: TBroadActionRequester;
+export interface IActionCase<
+  P extends NiceActionPrimed<any, any, any> = NiceActionPrimed<any, any, any>,
+> {
+  readonly _matcher: (action: P) => boolean;
+  readonly _requester: TBroadActionRequester<P>;
 }
 
-export interface IActionHandlerWithId {
+export interface IActionHandlerWithId<P extends NiceActionPrimed<any, any, any>> {
   id: string;
   handler: NiceActionRequester;
 }

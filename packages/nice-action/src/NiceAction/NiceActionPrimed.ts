@@ -59,9 +59,7 @@ export class NiceActionPrimed<
    * Pass `envId` to target a specific named handler/resolver on the domain.
    */
   async execute(envId?: string): Promise<TInferOutputFromSchema<SCH>["Output"]> {
-    return this.coreAction._actionDomain._dispatchAction(this, envId) as Promise<
-      TInferOutputFromSchema<SCH>["Output"]
-    >;
+    return this.coreAction._actionDomain._dispatchAction(this, envId);
   }
 
   /**

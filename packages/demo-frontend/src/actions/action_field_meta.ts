@@ -50,4 +50,10 @@ export const ACTION_META: IActionMeta[] = [
       { key: "divisor", label: "Divisor", type: "number", defaultValue: 3 },
     ],
   },
+  {
+    id: "add_message",
+    label: "Add Message",
+    description: "Adds a message to the message list.",
+    fields: [{ key: "message", label: "Message", type: "string", defaultValue: "Hi friends!" }],
+  },
 ];
