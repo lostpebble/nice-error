@@ -59,7 +59,8 @@ export class NiceActionDomainResponder<DOM extends INiceActionDomain> {
       domain: primed.domain,
       actionId: primed.coreAction.id,
     });
-    return resolver(validatedInput);
+    const response = await resolver(validatedInput);
+    return response;
   }
 
   /**

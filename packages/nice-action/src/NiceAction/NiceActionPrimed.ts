@@ -1,3 +1,4 @@
+import { castNiceError } from "@nice-error/core";
 import type {
   INiceActionDomain,
   TInferInputFromSchema,
@@ -9,6 +10,7 @@ import type {
   INiceAction,
   INiceActionPrimed_JsonObject,
   NiceActionResult,
+  TNiceActionResponse_JsonObject,
 } from "./NiceAction.types";
 import { NiceActionResponse } from "./NiceActionResponse";
 
@@ -50,6 +52,34 @@ export class NiceActionPrimed<
 
   setOutput(output: TInferOutputFromSchema<SCH>["Output"]): NiceActionResponse<DOM, ID, SCH> {
     return new NiceActionResponse(this, { ok: true, output: output });
+  }
+
+  /**
+   * Process a wire response returned by a remote `NiceActionResponderEnvironment`.
+   *
+   * Deserializes the output using the schema's deserialization if defined, and throws
+   * the error (via `castNiceError`) if the response indicates failure.
+   *
+   * Intended for use inside `NiceActionRequester` handlers that receive a
+   * `TNiceActionResponse_JsonObject` from a network call, so the caller of `execute()`
+   * always gets the raw output type without manually deserializing.
+   *
+   * @example
+   * ```ts
+   * dom.setActionRequester().forDomain(dom, async (act) => {
+   *   const wire = await fetch("/api/actions", {
+   *     method: "POST",
+   *     body: JSON.stringify(act.toJsonObject()),
+   *   }).then((r) => r.json());
+   *   return act.processResponse(wire);
+   * });
+   * ```
+   */
+  processResponse(wire: TNiceActionResponse_JsonObject): TInferOutputFromSchema<SCH>["Output"] {
+    if (!wire.ok) {
+      throw castNiceError(wire.error);
+    }
+    return this.coreAction.schema.deserializeOutput(wire.output as any);
   }
 
   /**
