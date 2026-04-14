@@ -8,5 +8,5 @@ export const demo_requester = new NiceActionRequester().setDefaultHandler(async 
     body: action.toJsonString(),
   });
 
-  return await res.json();
+  return action.processResponse(await res.json());
 });
