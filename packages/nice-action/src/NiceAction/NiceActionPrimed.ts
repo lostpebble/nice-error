@@ -1,6 +1,4 @@
 import { castNiceError } from "@nice-error/core";
-import type { StandardSchemaV1 } from "@standard-schema/spec";
-import * as v from "valibot";
 import type {
   INiceActionDomain,
   TInferInputFromSchema,
@@ -45,21 +43,6 @@ export class NiceActionPrimed<
     return {
       ...this.coreAction.toJsonObject(),
       input: this.coreAction.schema.serializeInput(this.input),
-    };
-  }
-
-  toValidationSchema(): StandardSchemaV1<any, any> {
-    return {
-      ...v.object({
-        domain: v.literal(this.domain),
-        allDomains: v.pipe(
-          v.array(v.string()),
-          v.length(this.allDomains.length),
-          v.includes(this.domain),
-        ),
-        id: v.literal(this.id),
-      }),
-      input: this.coreAction.schema.inputSchema,
     };
   }
 
