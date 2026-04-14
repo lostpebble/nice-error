@@ -169,6 +169,7 @@ export function ActionTester() {
         });
       }
     } catch (e) {
+      console.error(e);
       setFetchError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
