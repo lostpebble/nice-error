@@ -38,6 +38,19 @@ if (!/^\d+\.\d+\.\d+(-[\w.-]+)?(\+[\w.-]+)?$/.test(version)) {
 }
 
 // ---------------------------------------------------------------------------
+// Guard: no uncommitted changes
+// ---------------------------------------------------------------------------
+
+if (!dryRun) {
+  const status = execSync("git status --porcelain", { encoding: "utf-8" });
+  if (status.trim().length > 0) {
+    console.error("Uncommitted changes detected. Commit or stash before releasing.");
+    console.error(status);
+    process.exit(1);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
