@@ -1,6 +1,6 @@
 {
   "name": "@nice-error/nice-action",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "private": false,
   "type": "module",
   "exports": {
