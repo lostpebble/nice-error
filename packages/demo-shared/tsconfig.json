@@ -17,7 +17,7 @@
     ],
     "paths": {
       "@nice-code/error": [
-        "../core/src/index.ts"
+        "../nice-error/src/index.ts"
       ],
       "@nice-code/action": [
         "../nice-action/src/index.ts"

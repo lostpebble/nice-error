@@ -6,7 +6,7 @@ on:
       - master
     paths:
       - "packages/documentation/**"
-      - "packages/core/src/**"
+      - "packages/nice-error/src/**"
       - "packages/nice-action/src/**"
       - ".github/workflows/deploy-docs.yml"
   workflow_dispatch:

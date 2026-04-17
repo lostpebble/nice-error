@@ -24,12 +24,12 @@ export default defineConfig({
         {
           label: "@nice-code/error",
           items: [
-            { label: "Error Domains", slug: "core/domains" },
-            { label: "Type Guards & Narrowing", slug: "core/type-guards" },
-            { label: "Multi-ID Errors", slug: "core/multi-id" },
-            { label: "Handling & Routing", slug: "core/handling" },
-            { label: "Serialization", slug: "core/serialization" },
-            { label: "Error Packing", slug: "core/packing" },
+            { label: "Error Domains", slug: "nice-error/domains" },
+            { label: "Type Guards & Narrowing", slug: "nice-error/type-guards" },
+            { label: "Multi-ID Errors", slug: "nice-error/multi-id" },
+            { label: "Handling & Routing", slug: "nice-error/handling" },
+            { label: "Serialization", slug: "nice-error/serialization" },
+            { label: "Error Packing", slug: "nice-error/packing" },
           ],
         },
         {

@@ -27,7 +27,7 @@
     "local_protocol": "http"
   },
   "alias": {
-    "@nice-code/error": "../core/src/index.ts",
+    "@nice-code/error": "../nice-error/src/index.ts",
     "@nice-code/action": "../nice-action/src/index.ts",
     "@nice-code/common-errors": "../common-errors/src/index.ts"
   }

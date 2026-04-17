@@ -19,7 +19,7 @@
     ],
     "paths": {
       "@nice-code/error": [
-        "../core/src/index.ts"
+        "../nice-error/src/index.ts"
       ],
       "@nice-code/common-errors": [
         "../common-errors/src/index.ts"
