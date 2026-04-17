@@ -300,13 +300,26 @@ describe("named environment — handler envId", () => {
     expect(log.mock.calls).toEqual([["default"], ["named"]]);
   });
 
-  it("throws action_environment_not_found when envId has no handler or resolver", async () => {
+  it("throws action_environment_not_found when envId is unknown and no default handler exists", async () => {
     const dom = makeCounterDomain();
-    dom.setActionRequester().forDomain(dom, () => {});
+    // Only a named env handler registered — no default fallback.
+    dom.setActionRequester(undefined, { envId: "named" }).forDomain(dom, () => {});
 
     await expect(dom.action("increment").execute({ by: 1 }, "missing")).rejects.toThrow(
       /no handler or resolver registered with environment id/i,
     );
+  });
+
+  it("uses default handler as fallback when envId is not registered on this domain", async () => {
+    const dom = makeCounterDomain();
+    const log = vi.fn<(src: string) => void>();
+
+    dom.setActionRequester().forDomain(dom, () => log("default-fallback"));
+
+    // "unregistered" envId is never set up — default handler should catch it
+    await dom.action("increment").execute({ by: 1 }, "unregistered");
+
+    expect(log).toHaveBeenCalledWith("default-fallback");
   });
 
   it("throws environment_already_registered when the same envId is used twice", () => {

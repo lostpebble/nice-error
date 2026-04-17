@@ -241,18 +241,34 @@ describe("registerResolver — named envId", () => {
     expect(log.mock.calls).toEqual([["env-a"], ["env-b"]]);
   });
 
-  it("throws action_environment_not_found for an unknown envId", async () => {
+  it("throws action_environment_not_found when envId is unknown and no default resolver exists", async () => {
     const dom = makeGreetDomain();
 
+    // Only a named env resolver — no default fallback.
     dom.registerResponder(
       createDomainResolver(dom)
         .resolveAction("greet", () => ({ greeting: "x" }))
         .resolveAction("shout", ({ text }) => ({ result: text })),
+      { envId: "named" },
     );
 
     await expect(dom.action("greet").execute({ name: "x" }, "ghost")).rejects.toThrow(
       /no handler or resolver registered with environment id/i,
     );
+  });
+
+  it("uses default resolver as fallback when envId is not registered on this domain", async () => {
+    const dom = makeGreetDomain();
+
+    dom.registerResponder(
+      createDomainResolver(dom)
+        .resolveAction("greet", ({ name }) => ({ greeting: `Hi ${name}` }))
+        .resolveAction("shout", ({ text }) => ({ result: text })),
+    );
+
+    // "unknown" envId is never set up — default resolver should catch it
+    const result = await dom.action("greet").execute({ name: "World" }, "unknown");
+    expect(result).toEqual({ greeting: "Hi World" });
   });
 
   it("throws environment_already_registered when the same envId is registered twice", () => {

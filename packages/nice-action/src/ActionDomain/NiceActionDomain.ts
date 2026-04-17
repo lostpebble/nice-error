@@ -115,41 +115,50 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
     primed: P,
     envId?: string,
   ): Promise<unknown> {
+    // envId-specific requester takes first priority when registered.
     if (envId != null) {
-      const requester = this._requesters.get(envId);
-      if (requester) {
+      const envRequester = this._requesters.get(envId);
+
+      if (envRequester) {
         const validatedPrimed = await this._withValidatedInput(primed);
-        const result = await requester.handleAction(validatedPrimed);
+        const result = await envRequester.handleAction(validatedPrimed);
         for (const listener of this._listeners) await listener(validatedPrimed);
         return result;
       }
-      const responder = this._responders.get(envId);
-      if (responder) {
-        const result = await responder._resolvePrimed(primed);
+
+      const envResponder = this._responders.get(envId);
+      if (envResponder) {
+        const result = await envResponder._resolvePrimed(primed);
         for (const listener of this._listeners) await listener(primed);
         return result;
       }
+      // No envId-specific handler found — fall through to this domain's default handler
+      // so that a domain's own registered handler always takes priority over an envId that
+      // is not registered here (e.g. a child domain's local handler wins over a parent's
+      // envId-keyed handler that was never registered on this domain).
+    }
+
+    const defaultRequester = this._requesters.get(undefined);
+    if (defaultRequester) {
+      const validatedPrimed = await this._withValidatedInput(primed);
+      const result = await defaultRequester.handleAction(validatedPrimed);
+      for (const listener of this._listeners) await listener(validatedPrimed);
+      return result;
+    }
+
+    const defaultResponder = this._responders.get(undefined);
+    if (defaultResponder) {
+      const result = await defaultResponder._resolvePrimed(primed);
+      for (const listener of this._listeners) await listener(primed);
+      return result;
+    }
+
+    if (envId != null) {
       throw err_nice_action.fromId(EErrId_NiceAction.action_environment_not_found, {
         domain: this.domain,
         envId,
       });
     }
-
-    const defaultHandler = this._requesters.get(undefined);
-    if (defaultHandler) {
-      const validatedPrimed = await this._withValidatedInput(primed);
-      const result = await defaultHandler.handleAction(validatedPrimed);
-      for (const listener of this._listeners) await listener(validatedPrimed);
-      return result;
-    }
-
-    const defaultResolver = this._responders.get(undefined);
-    if (defaultResolver) {
-      const result = await defaultResolver._resolvePrimed(primed);
-      for (const listener of this._listeners) await listener(primed);
-      return result;
-    }
-
     throw err_nice_action.fromId(EErrId_NiceAction.domain_no_handler, { domain: this.domain });
   }
 
