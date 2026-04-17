@@ -1,6 +1,6 @@
 {
   "name": "@nice-code/common-errors",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "private": false,
   "type": "module",
   "exports": {
