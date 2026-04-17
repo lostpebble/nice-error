@@ -15,7 +15,7 @@ import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const packages = ["core", "common-errors", "nice-action"] as const;
+const packages = ["nice-error", "common-errors", "nice-action"] as const;
 
 // ---------------------------------------------------------------------------
 // Args
