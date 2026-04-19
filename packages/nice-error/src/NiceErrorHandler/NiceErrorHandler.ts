@@ -13,58 +13,58 @@ export class NiceErrorHandler<RES_DEF = never, RES = never> {
   private handlerConfigs: IErrorHandlerConfig<any, RES>[] = [];
   private _defaultRequester?: TBroadErrorHandler<NiceError<any, any>, RES_DEF>;
 
-  // handleError(
-  //   error: NiceError<any, any>,
-  //   options?: IHandleErrorOptions,
-  // ): MaybePromise<TErrorHandleAttempt<RES>> {
-  //   for (const handlerConfig of this.handlerConfigs) {
-  //     if (!handlerConfig._matcher(error)) continue;
-  //     const errorResult = handlerConfig._requester(error);
+  /* handleError(
+    error: NiceError<any, any>,
+    options?: IHandleErrorOptions,
+  ): MaybePromise<TErrorHandleAttempt<RES>> {
+    for (const handlerConfig of this.handlerConfigs) {
+      if (!handlerConfig._matcher(error)) continue;
+      const errorResult = handlerConfig._requester(error);
 
-  //     if (errorResult instanceof Promise) {
-  //       return errorResult.then((result) => ({
-  //         handled: true,
-  //         result,
-  //         target: handlerConfig.target,
-  //       }));
-  //     }
+      if (errorResult instanceof Promise) {
+        return errorResult.then((result) => ({
+          handled: true,
+          result,
+          target: handlerConfig.target,
+        }));
+      }
 
-  //     return {
-  //       handled: true,
-  //       result: errorResult as RES,
-  //       target: handlerConfig.target,
-  //     };
-  //   }
+      return {
+        handled: true,
+        result: errorResult as RES,
+        target: handlerConfig.target,
+      };
+    }
 
-  //   if (this._defaultRequester) {
-  //     const defaultResult = this._defaultRequester(error);
+    if (this._defaultRequester) {
+      const defaultResult = this._defaultRequester(error);
 
-  //     if (defaultResult instanceof Promise) {
-  //       return defaultResult.then((result) => ({
-  //         handled: true,
-  //         result: result as RES,
-  //         target: {
-  //           type: EErrorHandlerTargetType.default,
-  //         },
-  //       }));
-  //     }
+      if (defaultResult instanceof Promise) {
+        return defaultResult.then((result) => ({
+          handled: true,
+          result: result as RES,
+          target: {
+            type: EErrorHandlerTargetType.default,
+          },
+        }));
+      }
 
-  //     return {
-  //       handled: true,
-  //       result: defaultResult as RES,
-  //       target: { type: EErrorHandlerTargetType.default },
-  //     };
-  //   }
+      return {
+        handled: true,
+        result: defaultResult as RES,
+        target: { type: EErrorHandlerTargetType.default },
+      };
+    }
 
-  //   if (options?.throwOnUnhandled === true) {
-  //     throw error;
-  //   }
+    if (options?.throwOnUnhandled === true) {
+      throw error;
+    }
 
-  //   return {
-  //     handled: false,
-  //     targets: this.handlerConfigs.map((config) => config.target),
-  //   };
-  // }
+    return {
+      handled: false,
+      targets: this.handlerConfigs.map((config) => config.target),
+    };
+  } */
 
   handleErrorWithPromiseInspection(
     error: NiceError<any, any>,
@@ -131,8 +131,8 @@ export class NiceErrorHandler<RES_DEF = never, RES = never> {
   forDomain<DEF extends INiceErrorDomainProps>(
     domain: NiceErrorDomain<DEF>,
     handler: (error: NiceError<DEF, TDomainNiceErrorId<DEF>>) => void | Promise<void>,
-  ): this {
-    this.handlerConfigs.push({
+  ): NiceErrorHandler<RES_DEF, RES | ReturnType<typeof handler>> {
+    (this as NiceErrorHandler<RES_DEF, RES | ReturnType<typeof handler>>).handlerConfigs.push({
       target: {
         type: EErrorHandlerTargetType.domain,
         domain: domain.domain,
@@ -147,8 +147,8 @@ export class NiceErrorHandler<RES_DEF = never, RES = never> {
     domain: NiceErrorDomain<DEF>,
     id: ID,
     handler: (error: NiceError<DEF, ID>) => void | Promise<void>,
-  ): this {
-    this.handlerConfigs.push({
+  ): NiceErrorHandler<RES_DEF, RES | ReturnType<typeof handler>> {
+    (this as NiceErrorHandler<RES_DEF, RES | ReturnType<typeof handler>>).handlerConfigs.push({
       target: {
         type: EErrorHandlerTargetType.ids,
         domain: domain.domain,
