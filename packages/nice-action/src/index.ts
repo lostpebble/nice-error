@@ -35,6 +35,7 @@ export type {
 } from "./ActionSchema/NiceActionSchema.types";
 export { EErrId_NiceAction, err_nice_action } from "./errors/err_nice_action";
 export { NiceAction } from "./NiceAction/NiceAction";
+export { EActionState } from "./NiceAction/NiceAction.types";
 export type {
   INiceAction,
   INiceAction_JsonObject,
