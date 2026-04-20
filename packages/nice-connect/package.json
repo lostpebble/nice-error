@@ -1,0 +1,38 @@
+{
+  "name": "@nice-code/connect",
+  "version": "0.0.21",
+  "private": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./build/types/index.d.ts",
+      "import": "./build/index.js"
+    }
+  },
+  "files": [
+    "build",
+    "package.json",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "type-check": "bunx tsc --noEmit",
+    "type-check-watch": "bunx tsc --noEmit --watch",
+    "clean-build": "bunx rimraf build",
+    "vitest": "vitest --typecheck",
+    "vitest-agent": "vitest --typecheck --reporter=agent",
+    "build": "bun run clean-build && bun run build.ts && bun run build-types",
+    "build-watch": "bun run clean-build && bun run build.ts --watch && bun run build-types --watch",
+    "build-types": "tsc --project tsconfig.build.json"
+  },
+  "dependencies": {
+    "@nice-code/error": "workspace:*",
+    "@nice-code/common-errors": "workspace:*",
+    "@nice-code/action": "workspace:*",
+    "http-status-codes": "^2.3.0",
+    "nanoid": "^5.1.9"
+  },
+  "peerDependencies": {}
+}

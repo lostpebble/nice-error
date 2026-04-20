@@ -12,7 +12,7 @@ import * as v from "valibot";
 import { assertType, expectTypeOf, test } from "vitest";
 import { createActionDomain } from "../../ActionDomain/createActionDomain";
 import { action } from "../../ActionSchema/action";
-import { createDomainResolver, type NiceActionDomainResponder } from "./NiceActionResponder";
+import { createDomainResponder, type NiceActionDomainResponder } from "./NiceActionResponder";
 import type { TActionResponderFn } from "./NiceActionResponder.types";
 import {
   createResponderEnvironment,
@@ -41,21 +41,21 @@ const dom = createActionDomain({
 // ---------------------------------------------------------------------------
 
 test("[resolve] fn input is typed from the action's input schema", () => {
-  createDomainResolver(dom).resolveAction("greet", (input) => {
+  createDomainResponder(dom).resolveAction("greet", (input) => {
     expectTypeOf(input).toEqualTypeOf<{ name: string }>();
     return { greeting: `hello ${input.name}` };
   });
 });
 
 test("[resolve] fn input for a multi-field schema is typed correctly", () => {
-  createDomainResolver(dom).resolveAction("compute", (input) => {
+  createDomainResponder(dom).resolveAction("compute", (input) => {
     expectTypeOf(input).toEqualTypeOf<{ x: number; y: number }>();
     return { result: input.x + input.y };
   });
 });
 
 test("[resolve] fn input for schema without output is typed correctly", () => {
-  createDomainResolver(dom).resolveAction("fire", (input) => {
+  createDomainResponder(dom).resolveAction("fire", (input) => {
     expectTypeOf(input).toEqualTypeOf<{ count: number }>();
   });
 });
@@ -65,18 +65,18 @@ test("[resolve] fn input for schema without output is typed correctly", () => {
 // ---------------------------------------------------------------------------
 
 test("[resolve] synchronous fn with correct return type compiles", () => {
-  createDomainResolver(dom).resolveAction("greet", () => ({ greeting: "hi" }));
+  createDomainResponder(dom).resolveAction("greet", () => ({ greeting: "hi" }));
 });
 
 test("[resolve] async fn with correct return type compiles (MaybePromise)", () => {
-  createDomainResolver(dom).resolveAction("greet", async (input) => {
+  createDomainResponder(dom).resolveAction("greet", async (input) => {
     expectTypeOf(input).toEqualTypeOf<{ name: string }>();
     return { greeting: `hello ${input.name}` };
   });
 });
 
 test("[resolve] async fn for compute returns correct type", () => {
-  createDomainResolver(dom).resolveAction("compute", async (input) => ({
+  createDomainResponder(dom).resolveAction("compute", async (input) => ({
     result: input.x * input.y,
   }));
 });
@@ -86,7 +86,7 @@ test("[resolve] async fn for compute returns correct type", () => {
 // ---------------------------------------------------------------------------
 
 test("[resolve] chaining multiple resolve calls returns the resolver instance", () => {
-  const resolver = createDomainResolver(dom);
+  const resolver = createDomainResponder(dom);
   const chained = resolver
     .resolveAction("greet", () => ({ greeting: "hi" }))
     .resolveAction("compute", (input) => ({ result: input.x + input.y }));
@@ -125,12 +125,12 @@ test("[TActionResolverFn] infers multi-field output correctly", () => {
 // ---------------------------------------------------------------------------
 
 test("[createDomainResolver] returns a NiceActionDomainResolver", () => {
-  const resolver = createDomainResolver(dom);
+  const resolver = createDomainResponder(dom);
   assertType<NiceActionDomainResponder<any>>(resolver);
 });
 
 test("[createResolverEnvironment] accepts a NiceActionDomainResolver array", () => {
-  const resolver = createDomainResolver(dom)
+  const resolver = createDomainResponder(dom)
     .resolveAction("greet", () => ({ greeting: "hi" }))
     .resolveAction("compute", (i) => ({ result: i.x }))
     .resolveAction("fire", () => {});

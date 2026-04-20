@@ -20,7 +20,7 @@
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { createActionDomain } from "../ActionDomain/createActionDomain";
-import { createDomainResolver } from "../ActionRequestResponse/ActionResponder/NiceActionResponder";
+import { createDomainResponder } from "../ActionRequestResponse/ActionResponder/NiceActionResponder";
 import { action } from "../ActionSchema/action";
 import { EActionState } from "../NiceAction/NiceAction.types";
 import { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
@@ -632,7 +632,7 @@ describe("Input validation failure in resolver path", () => {
     });
 
     dom.registerResponder(
-      createDomainResolver(dom).resolveAction("greet", ({ name }) => ({ greeting: `hi ${name}` })),
+      createDomainResponder(dom).resolveAction("greet", ({ name }) => ({ greeting: `hi ${name}` })),
     );
 
     // Force invalid input through wire format — bypass TypeScript types

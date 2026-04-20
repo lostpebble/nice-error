@@ -8,7 +8,7 @@
 import * as v from "valibot";
 import { describe, expect, it, vi } from "vitest";
 import { createActionDomain } from "../ActionDomain/createActionDomain";
-import { createDomainResolver } from "../ActionRequestResponse/ActionResponder/NiceActionResponder";
+import { createDomainResponder } from "../ActionRequestResponse/ActionResponder/NiceActionResponder";
 import { action } from "../ActionSchema/action";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -30,12 +30,10 @@ describe("envId dispatch — named handler is used when registered", () => {
   it("execute with envId routes to the envId-keyed requester", async () => {
     const domain = makeUserDomain();
 
-    domain
-      .setActionRequester({ envId:"remote" })
-      .forActionId(domain, "getUser", (act) => ({
-        id: act.input.userId,
-        source: "remote",
-      }));
+    domain.setActionRequester({ envId: "remote" }).forActionId(domain, "getUser", (act) => ({
+      id: act.input.userId,
+      source: "remote",
+    }));
 
     domain.setActionRequester().forActionId(domain, "getUser", (act) => ({
       id: act.input.userId,
@@ -50,7 +48,7 @@ describe("envId dispatch — named handler is used when registered", () => {
     const domain = makeUserDomain();
 
     domain
-      .setActionRequester({ envId:"remote" })
+      .setActionRequester({ envId: "remote" })
       .forActionId(domain, "getUser", (act) => ({ id: act.input.userId, source: "remote" }));
 
     domain
@@ -81,7 +79,7 @@ describe("envId dispatch — falls back to default handler when envId absent", (
     const domain = makeUserDomain();
 
     domain.registerResponder(
-      createDomainResolver(domain).resolveAction("getUser", (input) => ({
+      createDomainResponder(domain).resolveAction("getUser", (input) => ({
         id: input.userId,
         source: "default-resolver",
       })),
@@ -96,7 +94,7 @@ describe("envId dispatch — falls back to default handler when envId absent", (
 
     // envId-keyed responder
     domain.registerResponder(
-      createDomainResolver(domain).resolveAction("getUser", (input) => ({
+      createDomainResponder(domain).resolveAction("getUser", (input) => ({
         id: input.userId,
         source: "env-resolver",
       })),
@@ -153,7 +151,7 @@ describe("child domain — own handler takes priority", () => {
 
     // "remote" envId is registered on root but NOT on child
     root
-      .setActionRequester({ envId:"remote" })
+      .setActionRequester({ envId: "remote" })
       .forDomain(root, () => ({ result: "from-root-remote" }));
 
     // Child has only a default handler
@@ -183,7 +181,7 @@ describe("child domain — own handler takes priority", () => {
 
     // child has BOTH a "remote" envId handler AND a default handler
     child
-      .setActionRequester({ envId:"remote" })
+      .setActionRequester({ envId: "remote" })
       .forActionId(child, "pong", (act) => ({ result: `remote:${act.input.v}` }));
 
     child

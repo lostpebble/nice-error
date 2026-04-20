@@ -113,11 +113,11 @@ export class NiceActionDomainResponder<DOM extends INiceActionDomain> {
 }
 
 /**
- * Create a `NiceActionDomainResolver` for `domain`.
- * Chain `.resolve(actionId, fn)` calls to register typed resolver functions,
- * then pass the resolver to `createResolverEnvironment`.
+ * Create a `NiceActionDomainResponder` for `domain`.
+ * Chain `.resolveAction(actionId, fn)` calls to register typed resolver functions,
+ * then pass the responder to `createResolverEnvironment`.
  */
-export function createDomainResolver<DOM extends INiceActionDomain>(
+export function createDomainResponder<DOM extends INiceActionDomain>(
   domain: NiceActionDomain<DOM>,
 ): NiceActionDomainResponder<DOM> {
   return new NiceActionDomainResponder(domain);

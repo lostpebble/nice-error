@@ -17,7 +17,7 @@ export type {
 } from "./ActionDomain/NiceActionDomain.types";
 export { NiceActionRequester } from "./ActionRequestResponse/ActionRequester/NiceActionRequester";
 export {
-  createDomainResolver,
+  createDomainResponder as createDomainResolver,
   NiceActionDomainResponder,
 } from "./ActionRequestResponse/ActionResponder/NiceActionResponder";
 export type { TActionResponderFn } from "./ActionRequestResponse/ActionResponder/NiceActionResponder.types";

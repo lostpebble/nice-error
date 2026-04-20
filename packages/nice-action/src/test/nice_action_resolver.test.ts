@@ -22,7 +22,7 @@ import * as v from "valibot";
 import { describe, expect, it, vi } from "vitest";
 import { createActionDomain } from "../ActionDomain/createActionDomain";
 import {
-  createDomainResolver,
+  createDomainResponder,
   NiceActionDomainResponder,
 } from "../ActionRequestResponse/ActionResponder/NiceActionResponder";
 import {
@@ -75,7 +75,7 @@ describe("registerResolver — inline dispatch (same environment)", () => {
     const dom = makeGreetDomain();
 
     dom.registerResponder(
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", ({ name }) => ({ greeting: `hello ${name}` }))
         .resolveAction("shout", ({ text }) => ({ result: text.toUpperCase() })),
     );
@@ -89,7 +89,7 @@ describe("registerResolver — inline dispatch (same environment)", () => {
     const received = vi.fn();
 
     dom.registerResponder(
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", (input) => {
           received(input.name);
           return { greeting: `hi ${input.name}` };
@@ -105,7 +105,7 @@ describe("registerResolver — inline dispatch (same environment)", () => {
     const dom = makeGreetDomain();
 
     dom.registerResponder(
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", async ({ name }) => {
           await Promise.resolve();
           return { greeting: `async hello ${name}` };
@@ -121,7 +121,7 @@ describe("registerResolver — inline dispatch (same environment)", () => {
     const dom = makeGreetDomain();
 
     dom.registerResponder(
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", () => {
           throw new Error("resolver failed");
         })
@@ -136,7 +136,7 @@ describe("registerResolver — inline dispatch (same environment)", () => {
     const dom = makeGreetDomain();
 
     dom.registerResponder(
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", () => {
           throw new Error("boom");
         })
@@ -157,7 +157,7 @@ describe("registerResolver — serde (Date input)", () => {
     const received = vi.fn();
 
     dom.registerResponder(
-      createDomainResolver(dom).resolveAction("schedule", ({ at }) => {
+      createDomainResponder(dom).resolveAction("schedule", ({ at }) => {
         received(at);
         return { confirmed: true };
       }),
@@ -180,7 +180,7 @@ describe("registerResolver — named envId", () => {
     const log = vi.fn();
 
     dom.registerResponder(
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", ({ name }) => {
           log(`named:${name}`);
           return { greeting: name };
@@ -198,7 +198,7 @@ describe("registerResolver — named envId", () => {
     const log = vi.fn();
 
     dom.registerResponder(
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", () => {
           log("named");
           return { greeting: "x" };
@@ -217,7 +217,7 @@ describe("registerResolver — named envId", () => {
     const log = vi.fn();
 
     dom.registerResponder(
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", () => {
           log("env-a");
           return { greeting: "a" };
@@ -226,7 +226,7 @@ describe("registerResolver — named envId", () => {
       { envId: "env-a" },
     );
     dom.registerResponder(
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", () => {
           log("env-b");
           return { greeting: "b" };
@@ -246,7 +246,7 @@ describe("registerResolver — named envId", () => {
 
     // Only a named env resolver — no default fallback.
     dom.registerResponder(
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", () => ({ greeting: "x" }))
         .resolveAction("shout", ({ text }) => ({ result: text })),
       { envId: "named" },
@@ -261,7 +261,7 @@ describe("registerResolver — named envId", () => {
     const dom = makeGreetDomain();
 
     dom.registerResponder(
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", ({ name }) => ({ greeting: `Hi ${name}` }))
         .resolveAction("shout", ({ text }) => ({ result: text })),
     );
@@ -273,7 +273,7 @@ describe("registerResolver — named envId", () => {
 
   it("throws environment_already_registered when the same envId is registered twice", () => {
     const dom = makeGreetDomain();
-    const resolver = createDomainResolver(dom)
+    const resolver = createDomainResponder(dom)
       .resolveAction("greet", () => ({ greeting: "x" }))
       .resolveAction("shout", ({ text }) => ({ result: text }));
 
@@ -292,7 +292,7 @@ describe("resolver_action_not_registered", () => {
 
     // Only greet is registered — shout is not
     dom.registerResponder(
-      createDomainResolver(dom).resolveAction("greet", () => ({ greeting: "x" })),
+      createDomainResponder(dom).resolveAction("greet", () => ({ greeting: "x" })),
     );
 
     await expect(dom.action("shout").execute({ text: "hello" })).rejects.toThrow(
@@ -308,7 +308,7 @@ describe("resolver_action_not_registered", () => {
 describe("NiceActionResolverEnvironment", () => {
   it("dispatch routes a serialized action to the correct domain resolver", async () => {
     const dom = makeGreetDomain();
-    const resolver = createDomainResolver(dom)
+    const resolver = createDomainResponder(dom)
       .resolveAction("greet", ({ name }) => ({ greeting: `env hello ${name}` }))
       .resolveAction("shout", ({ text }) => ({ result: text.toUpperCase() }));
 
@@ -326,7 +326,7 @@ describe("NiceActionResolverEnvironment", () => {
   it("dispatch returns the full ISerializedNiceActionResponse shape", async () => {
     const dom = makeGreetDomain();
     const env = createResponderEnvironment([
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", () => ({ greeting: "hi" }))
         .resolveAction("shout", ({ text }) => ({ result: text })),
     ]);
@@ -346,10 +346,10 @@ describe("NiceActionResolverEnvironment", () => {
     const dateDom = makeDateDomain();
 
     const env = createResponderEnvironment([
-      createDomainResolver(greetDom)
+      createDomainResponder(greetDom)
         .resolveAction("greet", ({ name }) => ({ greeting: `hi ${name}` }))
         .resolveAction("shout", ({ text }) => ({ result: text })),
-      createDomainResolver(dateDom).resolveAction("schedule", () => ({ confirmed: true })),
+      createDomainResponder(dateDom).resolveAction("schedule", () => ({ confirmed: true })),
     ]);
 
     const greetWire = new NiceActionPrimed(greetDom.action("greet"), {
@@ -370,7 +370,7 @@ describe("NiceActionResolverEnvironment", () => {
   it("dispatch wraps resolver fn errors in the response as { ok: false }", async () => {
     const dom = makeGreetDomain();
     const env = createResponderEnvironment([
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", () => {
           throw new Error("downstream error");
         })
@@ -408,7 +408,7 @@ describe("NiceActionResolverEnvironment", () => {
     const dom = makeGreetDomain();
     const env = createResponderEnvironment([
       // Only greet registered, not shout
-      createDomainResolver(dom).resolveAction("greet", () => ({ greeting: "x" })),
+      createDomainResponder(dom).resolveAction("greet", () => ({ greeting: "x" })),
     ]);
 
     await expect(
@@ -436,7 +436,7 @@ describe("full transport round-trip — wire format with serde", () => {
     const received = vi.fn();
 
     const env = createResponderEnvironment([
-      createDomainResolver(dom).resolveAction("schedule", ({ at }) => {
+      createDomainResponder(dom).resolveAction("schedule", ({ at }) => {
         received(at);
         return { confirmed: true };
       }),
@@ -458,7 +458,7 @@ describe("full transport round-trip — wire format with serde", () => {
   it("greet domain completes a full JSON.stringify/parse round-trip", async () => {
     const dom = makeGreetDomain();
     const env = createResponderEnvironment([
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", ({ name }) => ({ greeting: `hello ${name}` }))
         .resolveAction("shout", ({ text }) => ({ result: text })),
     ]);
@@ -484,7 +484,7 @@ describe("hydrateResponse after ResolverEnvironment dispatch", () => {
   it("domain.hydrateResponse reconstructs the success response with typed output", async () => {
     const dom = makeGreetDomain();
     const env = createResponderEnvironment([
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", ({ name }) => ({ greeting: `hi ${name}` }))
         .resolveAction("shout", ({ text }) => ({ result: text })),
     ]);
@@ -511,7 +511,7 @@ describe("action listeners — resolver dispatch path", () => {
     const seen = vi.fn();
 
     dom.registerResponder(
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", () => ({ greeting: "x" }))
         .resolveAction("shout", ({ text }) => ({ result: text })),
     );
@@ -526,7 +526,7 @@ describe("action listeners — resolver dispatch path", () => {
     const seen = vi.fn();
 
     dom.registerResponder(
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", () => ({ greeting: "x" }))
         .resolveAction("shout", ({ text }) => ({ result: text })),
       { envId: "remote" },
@@ -548,7 +548,7 @@ describe("NiceActionPrimed.execute(envId) — resolver path", () => {
     const log = vi.fn();
 
     dom.registerResponder(
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", ({ name }) => {
           log(`primed:${name}`);
           return { greeting: name };
@@ -566,7 +566,7 @@ describe("NiceActionPrimed.execute(envId) — resolver path", () => {
     const dom = makeGreetDomain();
 
     dom.registerResponder(
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", () => {
           throw new Error("nope");
         })
@@ -587,14 +587,14 @@ describe("NiceActionPrimed.execute(envId) — resolver path", () => {
 describe("factory helpers", () => {
   it("createDomainResolver returns a NiceActionDomainResolver", () => {
     const dom = makeGreetDomain();
-    const resolver = createDomainResolver(dom);
+    const resolver = createDomainResponder(dom);
     expect(resolver).toBeInstanceOf(NiceActionDomainResponder);
   });
 
   it("createResolverEnvironment returns a NiceActionResolverEnvironment", () => {
     const dom = makeGreetDomain();
     const env = createResponderEnvironment([
-      createDomainResolver(dom)
+      createDomainResponder(dom)
         .resolveAction("greet", () => ({ greeting: "x" }))
         .resolveAction("shout", ({ text }) => ({ result: text })),
     ]);
@@ -603,7 +603,7 @@ describe("factory helpers", () => {
 
   it("resolve() chaining returns the same resolver instance", () => {
     const dom = makeGreetDomain();
-    const resolver = createDomainResolver(dom);
+    const resolver = createDomainResponder(dom);
     const chained = resolver.resolveAction("greet", () => ({ greeting: "x" }));
     expect(chained).toBe(resolver);
   });
