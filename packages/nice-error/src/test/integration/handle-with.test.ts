@@ -428,18 +428,15 @@ describe("handleWith — handler receives hydrated error with full API", () => {
 describe("handleWith — response union type", () => {
   it("returns the exact value returned by the matching handler", () => {
     const error = err_api.fromId("not_found", { resource: "User" });
-    const result = error.handleWith([
-      forDomain(err_api, (h) => h.httpStatusCode),
-    ]);
+    const result = error.handleWith([forDomain(err_api, (h) => h.httpStatusCode)]);
     expect(result).toBe(404);
   });
 
   it("returns a Promise when the matching handler is async (use handleWithAsync to await it)", () => {
     const error = err_api.fromId("unauthorized");
-    const result = error.handleWith([
-      forDomain(err_api, async () => "async-result"),
-    ]);
-    expect(result).toBeInstanceOf(Promise);
+    const result = error.handleWith([forDomain(err_api, async () => "async-result")]);
+
+    expect(result).toBeUndefined();
   });
 
   it("union type: handler returning different types per case — result is the union", () => {

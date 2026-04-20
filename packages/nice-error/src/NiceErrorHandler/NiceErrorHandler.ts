@@ -49,6 +49,7 @@ export class NiceErrorHandler<RES_DEF = never, RES = never> {
           matched: true,
           target: {
             type: EErrorHandlerTargetType.default,
+            identifier: "[matched:default]",
           },
           handlerPromise: defaultResult,
         };
@@ -57,7 +58,7 @@ export class NiceErrorHandler<RES_DEF = never, RES = never> {
       return {
         isPromise: false,
         matched: true,
-        target: { type: EErrorHandlerTargetType.default },
+        target: { type: EErrorHandlerTargetType.default, identifier: "[matched:default]" },
         handlerResponse: defaultResult,
       };
     }
@@ -85,6 +86,7 @@ export class NiceErrorHandler<RES_DEF = never, RES = never> {
       target: {
         type: EErrorHandlerTargetType.domain,
         domain: domain.domain,
+        identifier: `[matched:domain:${domain.domain}]`,
       },
       _matcher: (error) => domain.isExact(error),
       _requester: (error) =>
@@ -103,11 +105,14 @@ export class NiceErrorHandler<RES_DEF = never, RES = never> {
         type: EErrorHandlerTargetType.ids,
         domain: domain.domain,
         ids: [id],
+        identifier: `[matched:ids:${domain.domain}:${id}]`,
       },
       _matcher: (error) => domain.isExact(error) && error.hasId(id),
       _requester: (error) =>
         handler(
-          domain.hydrate(error as unknown as NiceError<DEF, TDomainNiceErrorId<DEF>>) as NiceErrorHydrated<DEF, ID>,
+          domain.hydrate(
+            error as unknown as NiceError<DEF, TDomainNiceErrorId<DEF>>,
+          ) as NiceErrorHydrated<DEF, ID>,
         ),
     });
     return this;
@@ -123,14 +128,14 @@ export class NiceErrorHandler<RES_DEF = never, RES = never> {
         type: EErrorHandlerTargetType.ids,
         domain: domain.domain,
         ids: ids,
+        identifier: `[matched:ids:${domain.domain}:${ids.join(",")}]`,
       },
       _matcher: (error) => domain.isExact(error) && ids.some((id) => error.hasId(id)),
       _requester: (error) =>
         handler(
-          domain.hydrate(error as unknown as NiceError<DEF, TDomainNiceErrorId<DEF>>) as NiceErrorHydrated<
-            DEF,
-            IDS[number]
-          >,
+          domain.hydrate(
+            error as unknown as NiceError<DEF, TDomainNiceErrorId<DEF>>,
+          ) as NiceErrorHydrated<DEF, IDS[number]>,
         ),
     });
     return this;

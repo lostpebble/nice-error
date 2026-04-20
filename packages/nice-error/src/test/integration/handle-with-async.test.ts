@@ -305,7 +305,7 @@ describe("handleWithAsync — full hydrated error API inside handler", () => {
       }),
     ]);
 
-    expect(results).toEqual([{ handled: true, response: "missing: j-10" }]);
+    expect(results).toEqual(["missing: j-10"]);
   });
 
   it("spy confirms async handler was called with the correct hydrated error shape", async () => {

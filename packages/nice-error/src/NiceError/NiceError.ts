@@ -1,9 +1,6 @@
 import type { NiceErrorDomain } from "../NiceErrorDefined/NiceErrorDefined";
 import type { NiceErrorHandler } from "../NiceErrorHandler/NiceErrorHandler";
-import type {
-  IHandleErrorOptions,
-  THandleResponse,
-} from "../NiceErrorHandler/NiceErrorHandler.types";
+import type { IHandleErrorOptions } from "../NiceErrorHandler/NiceErrorHandler.types";
 import { jsErrorOrCastJsError } from "../utils/jsErrorOrCastJsError";
 import { packError } from "../utils/packError/packError";
 import { EErrorPackType } from "../utils/packError/packError.enums";
@@ -363,21 +360,27 @@ export class NiceError<
   handleWith<RD, R>(
     handlerInput: NiceErrorHandler<RD, R> | ReadonlyArray<NiceErrorHandler<RD, R>>,
     handlerOptions: IHandleErrorOptions = {},
-  ): THandleResponse<R | RD> {
-    const handlersArray = Array.isArray(handlerInput) ? handlerInput : [handlerInput];
+  ): R | RD | undefined {
+    const handlersArray: ReadonlyArray<NiceErrorHandler<RD, R>> = Array.isArray(handlerInput)
+      ? handlerInput
+      : [handlerInput];
 
     for (const handler of handlersArray) {
       const result = handler.handleErrorWithPromiseInspection(this, handlerOptions);
       if (result.matched) {
-        return {
-          handled: true,
-          response: result.isPromise ? result.handlerPromise : result.handlerResponse,
-        };
+        if (result.isPromise) {
+          console.warn(
+            `[NiceError.handleWith] Handler ${result.target.identifier} returned a Promise but was called via \`handleWith\` (synchronous). ` +
+              `The Promise will not be awaited. Use \`handleWithAsync\` for async handlers.`,
+          );
+        }
+
+        return result.isPromise ? undefined : result.handlerResponse;
       }
     }
 
     if (handlerOptions.throwOnUnhandled === true) throw this;
-    return { handled: false };
+    return undefined;
   }
 
   // -------------------------------------------------------------------------
@@ -402,22 +405,21 @@ export class NiceError<
   async handleWithAsync<RD, R>(
     handlerInput: NiceErrorHandler<RD, R> | ReadonlyArray<NiceErrorHandler<RD, R>>,
     handlerOptions: IHandleErrorOptions = {},
-  ): Promise<THandleResponse<R | RD>> {
-    const handlersArray = Array.isArray(handlerInput) ? handlerInput : [handlerInput];
+  ): Promise<R | RD | undefined> {
+    const handlersArray: ReadonlyArray<NiceErrorHandler<RD, R>> = Array.isArray(handlerInput)
+      ? handlerInput
+      : [handlerInput];
 
     for (const handler of handlersArray) {
       const result = handler.handleErrorWithPromiseInspection(this, handlerOptions);
 
       if (result.matched) {
-        return {
-          handled: true,
-          response: result.isPromise ? await result.handlerPromise : result.handlerResponse,
-        };
+        return result.isPromise ? await result.handlerPromise : result.handlerResponse;
       }
     }
 
     if (handlerOptions.throwOnUnhandled === true) throw this;
-    return { handled: false } as THandleResponse<R | RD>;
+    return undefined;
   }
 
   get isPacked(): boolean {

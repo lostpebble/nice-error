@@ -45,7 +45,7 @@ export enum EErrorHandlerTargetType {
   default = "default",
 }
 
-export type TErrorHandlerTarget =
+export type TErrorHandlerTarget = (
   | {
       type: EErrorHandlerTargetType.ids;
       domain: string;
@@ -57,7 +57,10 @@ export type TErrorHandlerTarget =
     }
   | {
       type: EErrorHandlerTargetType.default;
-    };
+    }
+) & {
+  identifier: string; // for debugging/logging — not used for matching
+};
 
 /**
  * A single case in a `handleWith` / `handleWithAsync` call.
@@ -123,5 +126,6 @@ export type THandleResponse<RES = unknown> =
     }
   | {
       handled: true;
+      isPromise: boolean;
       response: RES;
     };
