@@ -1,79 +1,73 @@
 ---
 title: Packing
-description: Batch multiple errors into a single serializable envelope.
+description: Embed a serialized error into error.message or error.cause for opaque boundary crossing.
 ---
 
-Sometimes one operation produces _many_ errors — form validation, bulk imports, or batch writes. `NiceError.pack` lets you serialize a collection as one envelope.
+Some runtimes only propagate `error.message` across boundaries — Cloudflare Durable Objects being a common example. **Packing** embeds the full serialized error into `message` (or `cause`) so it survives the crossing.
 
-## Pack
+## Pack modes
 
 ```ts
-import { NiceError } from "@nice-code/error"
+import { EErrorPackType } from "@nice-code/error"
 
-const errors = [
-  new ValidationError.Field({ field: "email", rule: "format" }),
-  new ValidationError.Field({ field: "password", rule: "length" }),
-]
+// msg_pack (default) — embeds JSON into error.message
+throw error.pack()
+throw error.pack(EErrorPackType.msg_pack)
 
-const packed = NiceError.pack(errors)
-// => { $kind: "nice-error-pack", errors: [ { … }, { … } ] }
+// cause_pack — embeds JSON into error.cause
+throw error.pack(EErrorPackType.cause_pack)
 ```
 
-Send `packed` over the wire as regular JSON.
+## Automatic unpack on `castNiceError`
 
-## Unpack
+On the receiving side, `castNiceError` inspects `error.message` and `error.cause` and unpacks automatically:
 
 ```ts
-const unpacked = NiceError.unpack(packed, [ValidationError])
-
-for (const e of unpacked) {
-  if (ValidationError.Field.is(e)) {
-    setFieldError(e.payload.field, e.payload.rule)
-  }
+// Server or receiving side
+try {
+  await durableObject.doWork()
+} catch (e) {
+  // castNiceError detects the packed JSON and restores the full NiceError
+  const error = castNiceError(e)
+  error.handleWithSync([
+    forDomain(err_billing, (h) => { /* … */ }),
+  ])
 }
 ```
 
-## Integrating with forms
+No explicit `unpack()` call is needed when going through `castNiceError`.
 
-```ts title="validate.ts"
-export function validateSignup(form: Signup): ValidationError.Field[] {
-  const errors: ValidationError.Field[] = []
-  if (!form.email.includes("@")) {
-    errors.push(new ValidationError.Field({ field: "email", rule: "format" }))
-  }
-  if (form.password.length < 8) {
-    errors.push(new ValidationError.Field({ field: "password", rule: "length" }))
-  }
-  return errors
-}
-```
+## Domain-level default
 
-```ts title="handler.ts"
-const errs = validateSignup(form)
-if (errs.length) {
-  return new Response(JSON.stringify(NiceError.pack(errs)), { status: 400 })
-}
-```
-
-## Grouping by domain
+Set a pack strategy once on the domain so every error it creates is automatically packed:
 
 ```ts
-const groups = NiceError.groupByDomain(unpacked)
-// => { validation: [...], rateLimit: [...] }
+import { EErrorPackType } from "@nice-code/error"
+
+const err_durable = defineNiceError({
+  domain: "err_durable",
+  schema: {
+    op_failed: err({ message: "Operation failed" }),
+  },
+})
+
+err_durable.packAs(EErrorPackType.msg_pack)
+
+// Now every fromId / fromContext call packs automatically:
+throw err_durable.fromId("op_failed")  // message already contains packed JSON
 ```
 
-## Merging packs
+## Checking pack state
 
 ```ts
-const merged = NiceError.mergePacks(pack1, pack2, pack3)
+error.isPacked         // boolean
+error.unpack()         // restore the original message / cause (returns this)
 ```
 
-All packs must contain the same `$kind` sentinel, otherwise `mergePacks` throws.
+## When to use packing
 
-## Size cap
+- Cloudflare Durable Objects (only `message` propagates across stubs)
+- Any environment where `Error` objects are re-constructed and non-standard properties are lost
+- Worker boundaries that only serialize the `message` field
 
-Packs are capped at 1,000 errors by default. Override with `{ max }`:
-
-```ts
-NiceError.pack(errors, { max: 10_000 })
-```
+When using a normal HTTP transport with `toJsonObject()` / `castNiceError()`, packing is not needed — use the standard serialization path instead.

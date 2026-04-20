@@ -3,7 +3,7 @@ title: nice-code
 description: Typed, serializable errors and actions for TypeScript.
 template: splash
 hero:
-  tagline: A tiny, zero-dependency toolkit for errors and actions that survive serialization — across your client, your server, and every layer in between.
+  tagline: A tiny toolkit for errors and actions that survive serialization — across your client, your server, and every layer in between.
   actions:
     - text: Quick start
       link: /getting-started/quick-start/
@@ -19,14 +19,17 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
 
 <section class="nc-features">
 
-## The two packages
+## The packages
 
 <CardGrid>
   <Card title="@nice-code/error" icon="warning">
-    Declare error **domains** once, then throw, catch, serialize and narrow them with full type-inference. Multi-ID identity means two errors from the same template are always equal — across client and server.
+    Declare error **domains** once, then throw, catch, serialize, and narrow them with full type inference. Multi-ID errors, pattern matching, and safe transport across any boundary.
   </Card>
   <Card title="@nice-code/action" icon="rocket">
-    Wrap server functions as **actions** with a typed wire-format. Requesters on the client, resolvers on the server, typed errors flowing through both, no codegen.
+    Wrap server functions as **actions** with typed input, output, and errors. Requesters on the client, resolvers on the server — no codegen.
+  </Card>
+  <Card title="@nice-code/common-errors" icon="puzzle">
+    Shared error domains. Standard Schema validation errors and Hono middleware, ready to drop in.
   </Card>
 </CardGrid>
 
@@ -40,22 +43,22 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
 
 <div>
 ### Serialization-first
-Errors round-trip through `JSON.stringify` and come back as the same typed error — with the same identity, payload, and `instanceof` behavior.
+Errors round-trip through `JSON.stringify` and come back as the same typed error — via `toJsonObject()` on the way out, `castNiceError()` on the way in.
 </div>
 
 <div>
-### Zero runtime cost
-3.1&nbsp;kb gzipped. No proxies, no decorators, no build step. Just classes and a tiny helper.
+### Type-safe context
+Each error ID declares its context shape. TypeScript narrows on `.hasId()` and `.hasOneOfIds()`, giving you typed context access with no casts.
 </div>
 
 <div>
-### Type-safe payloads
-Each error variant declares its payload shape. TypeScript narrows on `.is()` and on `switch` over `.code`.
+### Pattern matching built-in
+`handleWithSync` and `handleWithAsync` route errors to the first matching case. `forDomain`, `forId`, `forIds` — no switch statements needed.
 </div>
 
 <div>
 ### Works everywhere
-Node, Bun, Deno, browsers, service workers, React Server Components, edge runtimes. No environment assumptions.
+Node, Bun, Deno, browsers, service workers, edge runtimes, Cloudflare Workers. No environment assumptions.
 </div>
 
 </div>
@@ -67,36 +70,47 @@ Node, Bun, Deno, browsers, service workers, React Server Components, edge runtim
 ## In thirty seconds
 
 ```ts title="errors.ts"
-import { NiceError } from "@nice-code/error"
+import { defineNiceError, err } from "@nice-code/error"
 
-export const BillingError = NiceError.domain("billing", {
-  CardDeclined: { code: "", reason: "" },
-  InsufficientFunds: { required: 0, available: 0 },
-  Expired: { when: new Date() },
+export const err_billing = defineNiceError({
+  domain: "err_billing",
+  schema: {
+    payment_failed: err<{ reason: string }>({
+      message: ({ reason }) => `Payment failed: ${reason}`,
+      httpStatusCode: 402,
+      context: { required: true },
+    }),
+    card_expired: err({ message: "Card has expired", httpStatusCode: 402 }),
+  },
 })
 ```
 
 ```ts title="charge.ts"
-import { BillingError } from "./errors"
+import { err_billing } from "./errors"
 
 export async function charge(amount: number) {
-  if (amount > balance) {
-    throw new BillingError.InsufficientFunds({
-      required: amount,
-      available: balance,
-    })
+  const result = await stripe.charge(amount)
+  if (!result.ok) {
+    throw err_billing.fromId("payment_failed", { reason: result.message })
   }
 }
 ```
 
 ```ts title="handle.ts"
+import { castNiceError, forDomain } from "@nice-code/error"
+import { err_billing } from "./errors"
+
 try {
   await charge(500)
 } catch (e) {
-  if (BillingError.InsufficientFunds.is(e)) {
-    // e.payload is typed { required: number; available: number }
-    showTopUp(e.payload.required - e.payload.available)
-  }
+  const error = castNiceError(e)
+  error.handleWithSync([
+    forDomain(err_billing, (h) => {
+      if (h.hasId("payment_failed")) {
+        showError(h.getContext("payment_failed").reason)
+      }
+    }),
+  ])
 }
 ```
 

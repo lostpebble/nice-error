@@ -83,7 +83,8 @@ export default defineConfig({
           items: [
             { label: "@nice-code/error", link: "/reference/nice-error/" },
             { label: "@nice-code/action", link: "/reference/nice-action/" },
-            { label: "Core", link: "/reference/core/" },
+            { label: "@nice-code/common-errors", link: "/reference/common-errors/" },
+            { label: "Recipes", link: "/reference/core/" },
           ],
         },
       ],

@@ -3,81 +3,141 @@ title: Handling & matching
 description: Idiomatic patterns for catching, narrowing, and handling nice-code errors.
 ---
 
-## The single-variant match
+## Pattern matching with `handleWithSync`
+
+Route an error to the first matching case. Cases are evaluated in order — first match wins, rest are skipped.
 
 ```ts
-try {
-  await chargeCard(amount)
-} catch (e) {
-  if (BillingError.InsufficientFunds.is(e)) {
-    // e.payload is typed { required: number; available: number }
-    openTopUpFlow(e.payload.required - e.payload.available)
-    return
-  }
-  throw e
-}
+import { castNiceError, forDomain, forId, forIds } from "@nice-code/error"
+
+const error = castNiceError(caught)
+
+const handled = error.handleWithSync([
+  forId(err_billing, "payment_failed", (h) => {
+    const { reason } = h.getContext("payment_failed")
+    res.status(402).json({ reason })
+  }),
+  forIds(err_billing, ["card_expired", "insufficient_funds"], (h) => {
+    res.status(402).json({ error: h.message })
+  }),
+  forDomain(err_auth, (h) => res.status(401).json({ error: "Unauthorized" })),
+])
+
+if (!handled) next(error)
 ```
 
-## Match any variant of a domain
+`handleWithSync` returns the handler's return value, or `undefined` if no case matched.
+
+## Case builders
+
+| Function | Matches when… |
+|---|---|
+| `forDomain(domain, handler)` | Error's domain exactly matches `domain` |
+| `forId(domain, id, handler)` | Domain matches and error has the given ID active |
+| `forIds(domain, ids, handler)` | Domain matches and at least one of `ids` is active |
+
+All three hydrate the error before passing it to the handler — `getContext`, `addId`, and `addContext` are all available inside.
+
+## Async handlers
+
+Use `handleWithAsync` when handlers perform async work:
 
 ```ts
-if (BillingError.is(e)) {
-  // e is a BillingError, but payload isn't narrowed yet.
-  switch (e.variant) {
-    case "CardDeclined":    return toast(e.payload.reason)
-    case "InsufficientFunds": return openTopUpFlow(/* … */)
-    case "Expired":         return promptCardUpdate()
-  }
-}
+const handled = await error.handleWithAsync([
+  forDomain(err_payments, async (h) => {
+    await db.logFailedPayment(h)
+    await notifyOps(h.message)
+  }),
+])
 ```
 
-`switch (e.variant)` narrows the payload — inside `"CardDeclined"`, `e.payload` is typed as the card-declined shape, and so on.
+`handleWithAsync` awaits the handler's returned Promise before resolving.
 
-## `match()` helper
+## `NiceErrorHandler` class
 
-For exhaustive handling, use `NiceError.match`:
+For reusable routing logic, build a `NiceErrorHandler` instance and pass it directly:
 
 ```ts
-const message = NiceError.match(e, {
-  "billing/CardDeclined":     (p) => `Card declined: ${p.reason}`,
-  "billing/InsufficientFunds": (p) => `Short by ${p.required - p.available}`,
-  "billing/Expired":           ()  => `Your card has expired`,
-  _: () => `Payment failed`,   // fallback required
+import { NiceErrorHandler } from "@nice-code/error"
+
+const appErrorHandler = new NiceErrorHandler()
+  .forDomain(err_billing, (h) => res.status(h.httpStatusCode).json({ error: h.message }))
+  .forDomain(err_auth,    (h) => res.status(401).json({ error: "Unauthorized" }))
+  .setDefaultHandler((h) => res.status(500).json({ error: "Internal error" }))
+
+// Reuse the same handler for multiple errors
+error1.handleWithSync(appErrorHandler)
+error2.handleWithSync(appErrorHandler)
+```
+
+`setDefaultHandler` fires when no `forDomain` / `forId` / `forIds` case matched.
+
+## `throwOnUnhandled` option
+
+Throw the original error when nothing matched:
+
+```ts
+error.handleWithSync([
+  forDomain(err_billing, (h) => { /* … */ }),
+], { throwOnUnhandled: true })
+```
+
+## `matchFirst` — inline value mapping
+
+Map an error to a return value by ID, without building a full handler:
+
+```ts
+import { matchFirst } from "@nice-code/error"
+
+const message = matchFirst(error, {
+  payment_failed:  ({ reason }) => `Payment failed: ${reason}`,
+  card_expired:    ()           => "Your card has expired",
+  _:               ()           => "A billing error occurred",
 })
 ```
 
-TypeScript checks that every declared variant has a handler (or an `_` fallback).
+`_` is the fallback — runs when no ID-specific handler matched. Returns `undefined` if neither the handlers nor fallback fire.
 
-## Ignoring unrelated throws
+## Manual ID checks
 
-Always re-throw things you don't handle:
+For simple branching without handler machinery:
 
 ```ts
-try {
-  await op()
-} catch (e) {
-  if (NetError.Timeout.is(e)) return retry()
-  throw e   // everything else bubbles up
+const error = castNiceError(caught)
+
+if (err_billing.isExact(error)) {
+  const hydrated = err_billing.hydrate(error)
+
+  if (hydrated.hasId("payment_failed")) {
+    const { reason } = hydrated.getContext("payment_failed")
+    // reason is typed as string
+  }
+
+  if (hydrated.hasOneOfIds(["card_expired", "insufficient_funds"])) {
+    // narrowed to those two IDs
+  }
 }
 ```
 
-## Result-style handling
-
-If you prefer not to throw, wrap the call:
+## The full pipeline with `executeSafe`
 
 ```ts
-import { tryCatch } from "@nice-code/error"
+const result = await domain.action("chargeCard").executeSafe({ amount: 500 })
 
-const [err, user] = await tryCatch(() => getUser(id))
-if (err) {
-  if (UserError.NotFound.is(err)) { /* … */ }
+if (!result.ok) {
+  result.error.handleWithSync([
+    forId(err_billing, "payment_failed", (h) => {
+      showError(h.getContext("payment_failed").reason)
+    }),
+    forDomain(err_billing, (h) => showError(h.message)),
+  ])
   return
 }
-// user is narrowed to the success type
+
+console.log(result.output)
 ```
 
 ## Anti-patterns
 
 - **Don't match on `e.message`.** Messages are human-readable and may change.
-- **Don't match on `instanceof Error`.** Use `NiceError.is(e)`, `Domain.is(e)`, or `Variant.is(e)`.
-- **Don't construct errors with a string payload.** Give them a real shape — future-you will thank you.
+- **Don't catch raw `Error`.** Use `castNiceError(e)` to get a typed `NiceError` before routing.

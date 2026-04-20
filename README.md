@@ -126,7 +126,7 @@ const error = castAndHydrate(caughtValue, err_order);
 import { forDomain, forIds } from "@nice-code/error";
 
 // Route to first matching case
-const handled = error.handleWith([
+const handled = error.handleWithSync([
   forIds(err_billing, ["payment_failed"], (h) => {
     const { reason } = h.getContext("payment_failed");
     res.status(402).json({ reason });
@@ -137,7 +137,7 @@ const handled = error.handleWith([
 
 if (!handled) next(error);
 
-// Async variant
+// Async variant — awaits the handler's returned Promise
 await error.handleWithAsync([
   forDomain(err_billing, async (h) => {
     await db.logFailedPayment(h);
@@ -217,7 +217,7 @@ const result = await user_domain.action("getUser").executeSafe({ userId: "u1" })
 if (result.ok) {
   console.log(result.output.name);
 } else {
-  result.error.handleWith([
+  result.error.handleWithSync([
     forDomain(err_user, (h) => console.error(h.message)),
   ]);
 }
@@ -308,7 +308,7 @@ const wire = primed.toJsonObject();   // plain object
 const json = primed.toJsonString();   // JSON string
 
 // Hydrate on the receiving side
-const hydrated = user_domain.hydrateAction(wire);
+const hydrated = user_domain.hydratePrimed(wire);
 const result = await hydrated.executeSafe();
 ```
 
@@ -339,14 +339,14 @@ const child = root.createChildDomain({ domain: "child.users", actions: { ... } }
 |---|---|
 | `defineNiceError(opts)` | Create a root error domain |
 | `err<C>(meta?)` | Define a schema entry with optional context type |
-| `NiceErrorDefined.createChildDomain(opts)` | Create a child domain |
-| `NiceErrorDefined.fromId(id, ctx?)` | Create a single-ID error |
-| `NiceErrorDefined.fromContext(map)` | Create a multi-ID error |
-| `NiceErrorDefined.hydrate(error)` | Re-hydrate a cast NiceError |
-| `NiceErrorDefined.isExact(err)` | Type guard — exact domain match |
-| `NiceErrorDefined.isThisOrChild(err)` | Ancestry check |
-| `NiceErrorDefined.isParentOf(target)` | Check if domain is parent of another |
-| `NiceErrorDefined.packAs(type)` | Set default pack strategy for domain |
+| `NiceErrorDomain.createChildDomain(opts)` | Create a child domain |
+| `NiceErrorDomain.fromId(id, ctx?)` | Create a single-ID error |
+| `NiceErrorDomain.fromContext(map)` | Create a multi-ID error |
+| `NiceErrorDomain.hydrate(error)` | Re-hydrate a cast NiceError |
+| `NiceErrorDomain.isExact(err)` | Type guard — exact domain match |
+| `NiceErrorDomain.isThisOrChild(err)` | Ancestry check |
+| `NiceErrorDomain.isParentOf(target)` | Check if domain is parent of another |
+| `NiceErrorDomain.packAs(type)` | Set default pack strategy for domain |
 | `NiceError.hasId(id)` | Type guard — narrows to single ID |
 | `NiceError.hasOneOfIds(ids)` | Type guard — narrows to subset of IDs |
 | `NiceError.getContext(id)` | Typed context for an active ID |
@@ -358,16 +358,18 @@ const child = root.createChildDomain({ domain: "child.users", actions: { ... } }
 | `NiceError.toJsonObject()` | Serialize to plain JSON |
 | `NiceError.pack(type?)` | Pack for opaque boundary crossing |
 | `NiceError.unpack()` | Restore from packed state |
-| `NiceError.handleWith(cases)` | Dispatch to first matching case (sync) |
-| `NiceError.handleWithAsync(cases)` | Dispatch to first matching case (async) |
+| `NiceError.handleWithSync(cases, opts?)` | Dispatch to first matching case (sync) |
+| `NiceError.handleWithAsync(cases, opts?)` | Dispatch to first matching case (async) |
+| `NiceErrorHandler` | Reusable handler with chainable `.forDomain()`, `.forId()`, `.forIds()`, `.setDefaultHandler()` |
 | `forDomain(domain, handler)` | Case matching any ID in a domain |
+| `forId(domain, id, handler)` | Case matching a specific single ID |
 | `forIds(domain, ids, handler)` | Case matching specific IDs |
 | `matchFirst(error, handlers)` | Pattern-match an error by ID |
 | `castNiceError(value)` | Cast any value to a NiceError |
 | `castAndHydrate(value, domain)` | Cast + domain check + hydrate |
 | `isNiceErrorObject(value)` | Type guard for serialized NiceError JSON |
-| `InferNiceError<T>` | Infer NiceError type from NiceErrorDefined |
-| `InferNiceErrorHydrated<T>` | Infer NiceErrorHydrated type from NiceErrorDefined |
+| `InferNiceError<T>` | Infer NiceError type from a NiceErrorDomain instance |
+| `InferNiceErrorHydrated<T>` | Infer NiceErrorHydrated type from a NiceErrorDomain instance |
 
 ### @nice-code/action
 
@@ -383,7 +385,7 @@ const child = root.createChildDomain({ domain: "child.users", actions: { ... } }
 | `NiceActionDomain.setActionRequester()` | Register a dispatch handler |
 | `NiceActionDomain.registerResponder(resolver, opts?)` | Register a domain resolver |
 | `NiceActionDomain.addActionListener(fn)` | Register an observer callback |
-| `NiceActionDomain.hydrateAction(wire)` | Deserialize a primed action |
+| `NiceActionDomain.hydratePrimed(wire)` | Deserialize a primed action |
 | `NiceActionDomain.hydrateResponse(wire)` | Deserialize a response |
 | `NiceActionDomain.createChildDomain(opts)` | Create a nested domain |
 | `NiceActionDomain.matchAction(act, id)` | Narrow a primed action to specific ID |
@@ -394,6 +396,8 @@ const child = root.createChildDomain({ domain: "child.users", actions: { ... } }
 | `NiceActionPrimed.executeSafe(envId?)` | Execute storing result |
 | `NiceActionPrimed.toJsonObject()` | Serialize to wire format |
 | `NiceActionPrimed.toJsonString()` | Serialize to JSON string |
+| `NiceActionPrimed.processResponse(wire)` | Deserialize response; throws if `ok: false`, returns output if `ok: true` |
+| `NiceActionRequester.setDefaultHandler(handler)` | Fallback handler when no case matched |
 | `createDomainResolver(domain)` | Create a resolver for a domain |
 | `NiceActionDomainResponder.resolveAction(id, fn)` | Register a resolver function |
 | `createResponderEnvironment(resolvers)` | Create a multi-domain responder |
@@ -404,6 +408,60 @@ const child = root.createChildDomain({ domain: "child.users", actions: { ... } }
 | `TInferActionError<SCH>` | Extract full error union from action schema |
 | `TInferInputFromSchema<SCH>` | Extract input types from action schema |
 | `TInferOutputFromSchema<SCH>` | Extract output types from action schema |
+
+---
+
+## @nice-code/common-errors
+
+Shared error domains for use across both packages.
+
+### Install
+
+```bash
+bun add @nice-code/common-errors
+```
+
+### Validation errors
+
+```ts
+import { err_validation, EValidator } from "@nice-code/common-errors";
+
+// err_validation is a child domain of err_nice (the root)
+// It has one schema entry: EValidator.standard_schema
+// Default httpStatusCode: 400 BAD_REQUEST
+
+const error = err_validation.fromId(EValidator.standard_schema, { issues: [...] });
+```
+
+### Hono integration
+
+```ts
+import { niceSValidator, niceCatchSValidation } from "@nice-code/common-errors/hono";
+import * as v from "valibot";
+
+// Drop-in replacement for Hono's `validator` that throws err_validation on failure
+app.post("/user", niceSValidator("json", v.object({ name: v.string() })), (c) => {
+  const { name } = c.req.valid("json");
+  return c.json({ name });
+});
+```
+
+`niceCatchSValidation` is middleware that catches `err_validation` errors and returns a 400 response.
+
+### Extending validation in your own error domain
+
+```ts
+import { err_validation } from "@nice-code/common-errors";
+
+const err_user = err_validation.createChildDomain({
+  domain: "err_user",
+  schema: {
+    not_found: err({ message: "User not found", httpStatusCode: 404 }),
+  },
+});
+```
+
+---
 
 ## License
 

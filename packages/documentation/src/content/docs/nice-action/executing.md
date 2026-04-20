@@ -1,101 +1,93 @@
 ---
-title: Executing
-description: How actions run end-to-end, from requester to resolver.
+title: Executing actions
+description: How to run actions — from execute() to executeSafe() and the full response cycle.
 ---
 
-The lifecycle of an action call:
+Once a domain has a requester or resolver registered, actions can be executed from anywhere that has access to the domain object.
 
-```
-client: Billing.chargeCard({ amount, currency })
-          │
-          ▼ requester serializes input
-   ┌─────────────────────┐
-   │ POST /api/billing   │
-   │  action: chargeCard │
-   │  input: { ... }     │
-   └─────────────────────┘
-          │
-          ▼
- server: resolver runs
-   ├─ returns output   ────►  serialized, sent back
-   └─ throws NiceError ────►  serialized, sent back with 4xx/5xx
-          │
-          ▼ requester deserializes
- client: output is typed, or error is typed and thrown
-```
-
-## Minimum pieces
-
-- **Server**: one `resolve()` call per action.
-- **Client**: one `createRequester()` call per domain.
-- **Transport**: anything that moves bytes. fetch works out of the box.
-
-## Server resolver
-
-```ts title="server/billing.ts"
-import { Billing } from "@/actions/billing"
-import { BillingError } from "@/errors"
-
-export const resolvers = Billing.resolvers({
-  chargeCard: async ({ amount, currency }, ctx) => {
-    const user = await ctx.requireUser()
-    const card = await ctx.db.getCard(user.id)
-    if (!card) throw new BillingError.NoCardOnFile()
-    return await stripe.charge({ amount, currency, source: card.token })
-  },
-
-  getInvoice: async ({ id }, ctx) => {
-    const inv = await ctx.db.invoice(id)
-    if (!inv) throw new BillingError.InvoiceNotFound({ id })
-    return inv
-  },
-
-  listInvoices: async ({ limit, cursor }, ctx) => {
-    return ctx.db.listInvoices(ctx.user.id, { limit, cursor })
-  },
-})
-```
-
-`resolvers()` is type-checked against the domain definition: missing actions fail at compile time, input/output shapes must match.
-
-## Client requester
-
-```ts title="client/billing.ts"
-import { createRequester } from "@nice-code/action"
-import { Billing } from "@/actions/billing"
-
-export const billing = createRequester(Billing, {
-  transport: fetch,
-  endpoint: "/api/billing",
-})
-
-// later…
-const invoice = await billing.getInvoice({ id: "inv_123" })
-// invoice is fully typed
-```
-
-Errors declared in the domain propagate as typed throws on the client:
+## `execute` — throw on failure
 
 ```ts
-try {
-  await billing.chargeCard({ amount: 5000, currency: "USD" })
-} catch (e) {
-  if (BillingError.NoCardOnFile.is(e)) openAddCardSheet()
-  else throw e
+// Throws if the action fails
+const user = await user_domain.action("getUser").execute({ userId: "u1" })
+```
+
+Returns the raw output type. Throws if the resolver/handler throws.
+
+## `executeSafe` — result discriminated union
+
+```ts
+const result = await user_domain.action("getUser").executeSafe({ userId: "u1" })
+
+if (result.ok) {
+  console.log(result.output.name)  // typed as the action's output type
+} else {
+  result.error.handleWithSync([
+    forId(err_user, "not_found", (h) => {
+      console.error("User not found:", h.getContext("not_found").userId)
+    }),
+    forDomain(err_auth, (h) => console.error("Auth error:", h.message)),
+  ])
 }
 ```
 
-## Cancellation
+`NiceActionResult` is `{ ok: true; output: OUT } | { ok: false; error: ERR }`.
 
-All requester calls accept an `AbortSignal`:
+## `primeAction` — shorthand
 
 ```ts
-const ac = new AbortController()
-const p = billing.listInvoices({ limit: 50 }, { signal: ac.signal })
-// …later
-ac.abort()
+// Equivalent to user_domain.action("getUser").prime({ userId: "u1" })
+const primed = user_domain.primeAction("getUser", { userId: "u1" })
 ```
 
-## Middleware
+## Targeting named environments
 
-Both resolvers and requesters accept middleware — see [Resolvers](/nice-action/resolvers/) and [Requesters](/nice-action/requesters/).
+When multiple execution environments share a domain (e.g. a worker and a main thread):
+
+```ts
+// Register a handler under a specific envId
+user_domain.setActionRequester({ envId: "worker" }).forDomain(user_domain, workerHandler)
+user_domain.setActionRequester({ envId: "local"  }).forDomain(user_domain, localHandler)
+
+// Target specific environment at execute time
+const result = await user_domain.action("getUser").execute({ userId: "u1" }, "worker")
+```
+
+## The full lifecycle
+
+1. **`action("id")`** — get a `NiceAction` for the action ID
+2. **`.prime(input)`** — pair the action with input, creating a `NiceActionPrimed`
+3. **`.execute(envId?)`** — dispatch through the registered requester or responder
+4. On success: returns the raw output
+5. On failure: throws (or returns `{ ok: false, error }` via `executeSafe`)
+
+Internally, before dispatch, the domain validates the input against the schema. An invalid input throws `action_input_validation_failed`.
+
+## Minimum setup
+
+The simplest complete setup uses a resolver directly on the domain:
+
+```ts
+import { createActionDomain, action, createDomainResolver } from "@nice-code/action"
+import * as v from "valibot"
+
+const user_domain = createActionDomain({
+  domain: "user_domain",
+  actions: {
+    getUser: action()
+      .input({ schema: v.object({ userId: v.string() }) })
+      .output({ schema: v.object({ id: v.string(), name: v.string() }) }),
+  },
+})
+
+user_domain.registerResponder(
+  createDomainResolver(user_domain)
+    .resolveAction("getUser", async ({ userId }) => {
+      return db.findUser(userId)
+    })
+)
+
+const user = await user_domain.action("getUser").execute({ userId: "u1" })
+```
+
+For cross-process execution (HTTP, workers), see [Requesters](/nice-action/requesters/) and [Resolvers](/nice-action/resolvers/).

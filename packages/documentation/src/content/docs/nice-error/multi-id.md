@@ -1,68 +1,122 @@
 ---
-title: Multi-ID Errors
-description: Stable error identity across processes, workers, and the wire.
+title: Multi-ID errors
+description: Combine multiple error IDs into a single error instance.
 ---
 
-Traditional errors are compared by reference. Two `new Error("oops")` are different objects. That's fine in-process, but falls apart the moment an error crosses a boundary.
+A `NiceError` can carry **multiple active IDs** at once — useful for compound failure states where more than one thing went wrong simultaneously.
 
-nice-code gives every error a **multi-part stable identity**:
+## Creating multi-ID errors
 
-```
-domain / variant / (optional discriminator)
-```
-
-Two errors with the same identity are treated as the _same error_ — even if one was thrown in a worker, serialized, and re-hydrated on the main thread.
-
-## The identity tuple
+### `fromContext` — multiple IDs at construction time
 
 ```ts
-NiceError.identity(e)
-// => ["auth", "Forbidden", undefined]
-```
-
-For variants that need finer-grained identity, add a **discriminator**:
-
-```ts
-const ValidationError = NiceError.domain("validation", {
-  Field: {
-    field: "",
-    rule: "",
-  },
-}, {
-  discriminator: (e) => `${e.payload.field}:${e.payload.rule}`,
+const error = err_billing.fromContext({
+  payment_failed:     { reason: "card declined" },
+  insufficient_funds: undefined,
 })
 
-const a = new ValidationError.Field({ field: "email", rule: "format" })
-const b = new ValidationError.Field({ field: "email", rule: "format" })
-
-NiceError.equals(a, b)  // true — same field, same rule
+error.getIds()    // ["payment_failed", "insufficient_funds"]
+error.hasMultiple // true
 ```
 
-## Why this matters
+The object keys become the active IDs. Pass `undefined` for IDs with no context.
 
-- **Deduplication**: deduplicate errors in toast notifications, log aggregators, or retry queues.
-- **Matching across boundaries**: a `ValidationError.Field{field:email}` thrown on the server matches the same identity on the client.
-- **Fingerprinting for analytics**: group errors in Sentry / Posthog by identity tuple, not by message or stack.
-
-## Equality rules
+### `addId` — chain onto an existing error
 
 ```ts
-NiceError.equals(a, b)
+const error = err_billing
+  .fromId("payment_failed", { reason: "network timeout" })
+  .addId("card_expired")
+
+error.getIds()    // ["payment_failed", "card_expired"]
+error.hasMultiple // true
 ```
 
-Returns `true` if:
+### `addContext` — add multiple IDs to an existing error
 
-1. `a.domain === b.domain`
-2. `a.variant === b.variant`
-3. Both discriminators match (or both are `undefined`)
+```ts
+const error = err_billing
+  .fromId("payment_failed", { reason: "decline" })
+  .addContext({ card_expired: undefined, insufficient_funds: undefined })
 
-Payloads are **not** compared. Two `NotFound` errors with different `id`s are the same _identity_ but different _instances_.
+error.getIds()  // ["payment_failed", "card_expired", "insufficient_funds"]
+```
 
-## Useful helpers
+## Accessing context on multi-ID errors
 
-| Helper | Returns |
-|---|---|
-| `NiceError.identity(e)` | `[domain, variant, discriminator?]` |
-| `NiceError.equals(a, b)` | `boolean` |
-| `NiceError.code(e)` | `"domain/Variant"` |
-| `NiceError.fingerprint(e)` | stable string, good for cache/log keys |
+Use `hasId` to narrow before calling `getContext`:
+
+```ts
+if (error.hasId("payment_failed")) {
+  const { reason } = error.getContext("payment_failed")  // typed: { reason: string }
+}
+```
+
+`hasOneOfIds` narrows to a subset:
+
+```ts
+if (error.hasOneOfIds(["card_expired", "insufficient_funds"])) {
+  // ACTIVE_IDS narrowed to "card_expired" | "insufficient_funds"
+}
+```
+
+## Matching multi-ID errors in handlers
+
+`forDomain` fires once for the whole error — use `hasId` / `hasOneOfIds` inside to branch:
+
+```ts
+error.handleWithSync([
+  forDomain(err_billing, (h) => {
+    if (h.hasId("payment_failed")) {
+      res.status(402).json({ reason: h.getContext("payment_failed").reason })
+    } else {
+      res.status(402).json({ error: h.message })
+    }
+  }),
+])
+```
+
+`forIds` fires when **at least one** of the given IDs is active:
+
+```ts
+error.handleWithSync([
+  forIds(err_billing, ["card_expired", "insufficient_funds"], (h) => {
+    res.status(402).json({ error: "Card problem" })
+  }),
+  forId(err_billing, "payment_failed", (h) => {
+    res.status(402).json({ reason: h.getContext("payment_failed").reason })
+  }),
+])
+```
+
+## Comparing errors
+
+`error.matches(other)` returns `true` if both errors have the same domain and the same set of active IDs (order-independent). Context values are not compared.
+
+```ts
+const a = err_auth.fromId("invalid_credentials", { username: "alice" })
+const b = err_auth.fromId("invalid_credentials", { username: "bob" })
+a.matches(b)  // true — same domain + same id set, different context
+
+const c = err_auth.fromId("account_locked")
+a.matches(c)  // false — same domain, different id
+```
+
+## Survival across the wire
+
+Multi-ID errors serialize and deserialize cleanly:
+
+```ts
+const original = err_billing.fromContext({
+  payment_failed: { reason: "decline" },
+  card_expired: undefined,
+})
+
+const wire = original.toJsonObject()
+const restored = castNiceError(JSON.parse(JSON.stringify(wire)))
+
+// forIds still fires correctly on the restored error
+restored.handleWithSync([
+  forIds(err_billing, ["card_expired", "insufficient_funds"], (h) => { /* … */ }),
+])
+```

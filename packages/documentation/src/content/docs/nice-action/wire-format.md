@@ -1,20 +1,22 @@
 ---
 title: Wire format
-description: The exact shape of action requests and responses on the wire.
+description: The exact shape of primed actions and responses on the wire.
 ---
 
-nice-code uses a minimal, versioned JSON envelope. If you inspect network traffic in DevTools, here's what you'll see.
+nice-code uses plain JSON objects for transport. Serialize with `toJsonObject()` / `toJsonString()`, reconstruct with `domain.hydratePrimed()` / `domain.hydrateResponse()`.
 
-## Request
+## Primed action (client → server)
 
-```http
-POST /api/billing HTTP/1.1
-content-type: application/nice-action+json
-
+```json
 {
-  "$v": 1,
-  "action": "chargeCard",
-  "input": { "amount": 5000, "currency": "USD" }
+  "type": "primed",
+  "domain": "user_domain",
+  "allDomains": ["user_domain"],
+  "id": "getUser",
+  "cuid": "V1StGXR8Z5jdHi6B",
+  "timeCreated": 1700000000000,
+  "input": { "userId": "u1" },
+  "timePrimed": 1700000001000
 }
 ```
 
@@ -22,73 +24,113 @@ Fields:
 
 | Field | Type | Notes |
 |---|---|---|
-| `$v` | `1` | Protocol version. Clients reject unknown versions. |
-| `action` | `string` | Must exist in the server's domain. |
-| `input` | `object` | Parsed and passed to the resolver. |
+| `type` | `"primed"` | Discriminant for the wire format. |
+| `domain` | `string` | Must match a registered resolver. |
+| `allDomains` | `string[]` | Full ancestry chain. |
+| `id` | `string` | Action ID — must exist in the domain. |
+| `cuid` | `string` | Unique correlation ID (nanoid). |
+| `timeCreated` | `number` | Unix ms when the action was created. |
+| `input` | `object` | Serialized via the schema's `serialize` function (or as-is). |
+| `timePrimed` | `number` | Unix ms when `prime()` was called. |
 
-## Success response
+## Response (server → client)
 
-```http
-HTTP/1.1 200 OK
-content-type: application/nice-action+json
-
+**Success:**
+```json
 {
-  "$v": 1,
+  "type": "response",
+  "domain": "user_domain",
+  "allDomains": ["user_domain"],
+  "id": "getUser",
+  "cuid": "V1StGXR8Z5jdHi6B",
+  "timeCreated": 1700000000000,
+  "input": { "userId": "u1" },
+  "timePrimed": 1700000001000,
+  "timeResponded": 1700000002000,
   "ok": true,
-  "output": { "chargeId": "ch_..." }
+  "output": { "id": "u1", "name": "Alice" }
 }
 ```
 
-## Error response
-
-```http
-HTTP/1.1 400 Bad Request
-content-type: application/nice-action+json
-
+**Failure:**
+```json
 {
-  "$v": 1,
+  "type": "response",
+  "domain": "user_domain",
+  "allDomains": ["user_domain"],
+  "id": "getUser",
+  "cuid": "V1StGXR8Z5jdHi6B",
+  "timeCreated": 1700000000000,
+  "input": { "userId": "u1" },
+  "timePrimed": 1700000001000,
+  "timeResponded": 1700000002000,
   "ok": false,
   "error": {
-    "$kind": "nice-error",
-    "domain": "billing",
-    "variant": "CardDeclined",
-    "payload": { "code": "insufficient_funds", "reason": "insufficient funds" }
+    "name": "NiceError",
+    "def": { "domain": "err_user", "allDomains": ["err_user"] },
+    "ids": ["not_found"],
+    "errorData": { "not_found": { /* … */ } },
+    "message": "User u1 not found",
+    "httpStatusCode": 404,
+    "wasntNice": false,
+    "timeCreated": 1700000002000
   }
 }
 ```
 
-Status code mapping (override with `httpStatus()` — see below):
-
-| Error variant extends | HTTP |
-|---|---|
-| `HttpError.BadRequest`     | 400 |
-| `HttpError.Unauthorized`   | 401 |
-| `HttpError.Forbidden`      | 403 |
-| `HttpError.NotFound`       | 404 |
-| `HttpError.Conflict`       | 409 |
-| `HttpError.RateLimited`    | 429 |
-| _anything else_            | 500 |
-
-## Custom status codes
-
-Declare per-variant overrides on the domain:
+## Serialization and transport
 
 ```ts
-const BillingError = NiceError.domain("billing", {
-  CardDeclined:      { reason: "", code: "" },
-  InsufficientFunds: { required: 0, available: 0 },
-}, {
-  httpStatus: {
-    CardDeclined: 402,          // Payment Required
-    InsufficientFunds: 402,
+// Client side — create and serialize
+const primed = user_domain.action("getUser").prime({ userId: "u1" })
+const wire = primed.toJsonObject()    // plain object
+const json = primed.toJsonString()    // JSON string
+
+// Server side — hydrate and dispatch
+const action = user_domain.hydratePrimed(wire)
+const result = await action.executeSafe()
+
+// Server side — or use createResponderEnvironment for full automation
+const responseWire = await env.dispatch(wire)  // dispatch returns TNiceActionResponse_JsonObject
+
+// Client side — process the response
+const output = primed.processResponse(responseWire)  // throws if ok: false, returns output if ok: true
+
+// Or hydrate manually
+const response = user_domain.hydrateResponse(responseWire)
+if (response.result.ok) {
+  response.result.output  // typed output
+}
+```
+
+## Custom input/output serialization
+
+When input or output types are not JSON-safe, attach serialize/deserialize hooks on the schema:
+
+```ts
+action().input({
+  schema: v.object({ scheduledAt: v.date() }),
+  serialization: {
+    serialize:   ({ scheduledAt }) => ({ iso: scheduledAt.toISOString() }),
+    deserialize: (s: { iso: string }) => ({ scheduledAt: new Date(s.iso) }),
   },
 })
 ```
 
-## Non-JSON payloads
+The `input` field in the wire format carries the `serialize` result. The resolver receives the `deserialize` result.
 
-For binary uploads / streams, pair nice-action with a secondary channel and pass the reference through the action. nice-code intentionally does not handle multipart.
+## `isPrimedActionJsonObject` / `isActionResponseJsonObject`
 
-## Protocol negotiation
+Check the shape of an unknown object before hydrating:
 
-Clients send `accept: application/nice-action+json`. If the server can't speak v1, it replies `406 Not Acceptable` with a `{ "$v": …, "supported": [1] }` body.
+```ts
+import { isPrimedActionJsonObject, isActionResponseJsonObject } from "@nice-code/action"
+
+if (isPrimedActionJsonObject(body)) {
+  const primed = user_domain.hydratePrimed(body)
+}
+
+if (isActionResponseJsonObject(body)) {
+  const response = user_domain.hydrateResponse(body)
+}
+```

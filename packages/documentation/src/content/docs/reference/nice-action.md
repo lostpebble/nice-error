@@ -5,118 +5,216 @@ tableOfContents:
   maxHeadingLevel: 4
 ---
 
-## `NiceAction`
+## `createActionDomain(definition)`
 
-### `NiceAction.domain(name, spec)`
+Create a root action domain.
 
 | Param | Type | Description |
 |---|---|---|
-| `name` | `string` | Domain name (used in wire format). |
-| `spec.errors` | `NiceErrorDomain[]` | Errors this domain can throw. |
-| `spec.actions` | `Record<string, ActionDef>` | Action name → `{ input, output }`. |
+| `definition.domain` | `string` | Domain namespace — e.g. `"user_domain"`. |
+| `definition.actions` | `Record<string, NiceActionSchema>` | Map of action IDs to their schemas. |
 
 Returns a `NiceActionDomain`.
 
-### `NiceActionDomain#resolvers(impl, options?)`
-
-Declare the server implementation.
-
-| Param | Type | Description |
-|---|---|---|
-| `impl` | `Record<Action, Resolver>` | One handler per action. |
-| `options.middleware` | `ResolverMiddleware[]` | Shared cross-cutting layers. |
-
-Returns a `ResolverSet`.
-
-### `NiceActionDomain#actions`, `#errors`, `#name`
-
-Introspection, rarely needed at runtime.
-
 ---
 
-## `createRequester(domain, options)`
+## `action()`
 
-Create a client-side requester.
+Start building an action schema. Chain methods to declare its signature:
+
+### `.input(options)`
 
 | Option | Type | Description |
 |---|---|---|
-| `endpoint` | `string` | URL the transport sends to. |
-| `transport` | `(req: Request) => Promise<Response>` | Defaults to `fetch`. |
-| `middleware` | `RequesterMiddleware[]` | Logging, retry, auth, tracing. |
+| `schema` | `StandardSchemaV1` | Validator (Valibot, Zod, etc.) for the input. |
+| `serialization.serialize` | `(input) => SerdeInput` | Custom serialization for non-JSON-safe input. |
+| `serialization.deserialize` | `(serde: SerdeInput) => Input` | Deserialize on the receiving end. |
 
-Returns an object with one typed method per action.
+### `.output(options)`
 
----
+Same structure as `.input()`. Optional — omit for `void`-output actions.
 
-## Server helpers
+### `.throws(errDomain, ids?)`
 
-### `handleAction(req, { domain, resolvers, ctx })`
+Declare possible errors. Chain multiple times for multiple error domains.
 
-Low-level handler. Parses a `Request`, runs the right resolver, serializes the response.
-
-### `createRouter(routes)`
-
-Dispatch multiple domains from a single entry point.
-
-```ts
-createRouter({
-  "/api/billing": { domain: Billing, resolvers: billingResolvers },
-  "/api/auth":    { domain: Auth,    resolvers: authResolvers },
-})
-```
+| Param | Type | Description |
+|---|---|---|
+| `errDomain` | `NiceErrorDomain` | Error domain this action can throw. |
+| `ids` | `readonly string[]?` | Specific IDs to declare. Omit for all IDs. |
 
 ---
 
-## Middleware
+## `NiceActionDomain<ACT_DOM>`
 
-### `ResolverMiddleware<Ctx>`
+### `NiceActionDomain#action(id)`
 
-```ts
-type ResolverMiddleware<Ctx> = (
-  args: unknown,
-  ctx: Ctx,
-  next: (args: unknown, ctx: Ctx) => Promise<unknown>,
-) => Promise<unknown>
-```
+Get a `NiceAction` for the given action ID. Throws `action_id_not_in_domain` if the ID isn't in the schema.
 
-### `RequesterMiddleware`
+### `NiceActionDomain#primeAction(id, input)`
 
-```ts
-type RequesterMiddleware = (
-  req: Request & { action: string; input: unknown },
-  next: (req: Request) => Promise<Response>,
-) => Promise<Response>
-```
+Shorthand for `action(id).prime(input)`.
+
+### `NiceActionDomain#setActionRequester(options?, handler?)`
+
+Register a `NiceActionRequester` on this domain.
+
+| Param | Type | Description |
+|---|---|---|
+| `options.envId` | `string?` | Named environment. Omit for the default requester. |
+| `handler` | `NiceActionRequester?` | Reuse an existing requester instance. |
+
+Returns a `NiceActionRequester`. Throws `domain_action_requester_conflict` / `environment_already_registered` if already set.
+
+### `NiceActionDomain#registerResponder(resolver, options?)`
+
+Register a `NiceActionDomainResponder` as the fallback execution path.
+
+| Param | Type | Description |
+|---|---|---|
+| `resolver` | `NiceActionDomainResponder` | Resolver to register. |
+| `options.envId` | `string?` | Named environment. |
+
+Returns `this`.
+
+### `NiceActionDomain#addActionListener(fn)`
+
+Register an observer called after every dispatched action. Returns an unsubscribe function.
+
+### `NiceActionDomain#hydratePrimed(wire)`
+
+Reconstruct a `NiceActionPrimed` from its serialized wire format.
+
+### `NiceActionDomain#hydrateResponse(wire)`
+
+Reconstruct a `NiceActionResponse` from its serialized wire format.
+
+### `NiceActionDomain#createChildDomain(opts)`
+
+Create a nested domain. The child's `allDomains` includes the parent's chain.
+
+### `NiceActionDomain#matchAction(act, id)`
+
+Type-narrow a primed action to a specific ID. Returns `NiceActionPrimed` or `null`.
+
+---
+
+## `NiceAction<DOM, ID, SCH>`
+
+### `NiceAction#execute(input, envId?)`
+
+Execute and return the raw output. Throws on failure.
+
+### `NiceAction#executeSafe(input, envId?)`
+
+Execute and return `NiceActionResult`. Never throws.
+
+### `NiceAction#executeToResponse(input, envId?)`
+
+Execute and return a `NiceActionResponse` (carries both action identity and result).
+
+### `NiceAction#prime(input)`
+
+Create a `NiceActionPrimed` with the given input.
+
+### `NiceAction#is(action)`
+
+Type guard: `true` if `action` is a `NiceActionPrimed` for this action ID and domain.
+
+---
+
+## `NiceActionPrimed<DOM, ID, SCH>`
+
+### `NiceActionPrimed#execute(envId?)`
+
+Execute the stored action.
+
+### `NiceActionPrimed#executeSafe(envId?)`
+
+Execute and return `NiceActionResult`.
+
+### `NiceActionPrimed#toJsonObject()`
+
+Serialize to `INiceActionPrimed_JsonObject`.
+
+### `NiceActionPrimed#toJsonString()`
+
+Serialize to a JSON string.
+
+### `NiceActionPrimed#processResponse(wire)`
+
+Process a `TNiceActionResponse_JsonObject`: throws if `ok: false`, returns typed output if `ok: true`.
+
+---
+
+## `NiceActionRequester`
+
+### `NiceActionRequester#forDomain(domain, handler)`
+
+Register a handler for all actions in `domain`.
+
+### `NiceActionRequester#forActionId(domain, id, handler)`
+
+Register a handler for a specific action ID.
+
+### `NiceActionRequester#forActionIds(domain, ids, handler)`
+
+Register a handler for a set of action IDs.
+
+### `NiceActionRequester#setDefaultHandler(handler)`
+
+Fallback handler when no prior case matched.
+
+---
+
+## `createDomainResolver(domain)`
+
+Create a `NiceActionDomainResponder` for `domain`.
+
+## `NiceActionDomainResponder#resolveAction(id, fn)`
+
+Register a resolver function for action `id`. Chainable. Input and return type are inferred from the schema.
+
+---
+
+## `createResponderEnvironment(resolvers)`
+
+Create a `NiceActionResponderEnvironment` from an array of `NiceActionDomainResponder` instances.
+
+## `NiceActionResponderEnvironment#dispatch(wire)`
+
+Dispatch a serialized primed action: hydrate → resolve → return `TNiceActionResponse_JsonObject`.
 
 ---
 
 ## Type helpers
 
-```ts
-import type {
-  ActionInput,
-  ActionOutput,
-  ActionError,
-  ResolverFor,
-  RequesterFor,
-} from "@nice-code/action"
-```
-
-- `ActionInput<Domain, "name">`
-- `ActionOutput<Domain, "name">`
-- `ActionError<Domain>` — union of all error types the domain can throw, plus transport errors
-- `ResolverFor<Domain, "name">`
-- `RequesterFor<Domain>`
+| Type | Description |
+|---|---|
+| `TInferActionError<SCH>` | Union of all error types declared via `.throws()` on a schema. |
+| `TInferInputFromSchema<SCH>` | Infer `Input` and `SerdeInput` from an action schema. |
+| `TInferOutputFromSchema<SCH>` | Infer `Output` and `SerdeOutput` from an action schema. |
+| `NiceActionResult<OUT, ERR>` | `{ ok: true; output: OUT } \| { ok: false; error: ERR }` |
+| `INiceAction_JsonObject` | Serialized `NiceAction` wire format. |
+| `INiceActionPrimed_JsonObject` | Serialized `NiceActionPrimed` wire format. |
+| `TNiceActionResponse_JsonObject` | Serialized `NiceActionResponse` wire format. |
 
 ---
 
-## `ActionError`
+## `err_nice_action` error domain
 
-Transport-level errors that every requester can throw:
+Internal errors thrown by the action system:
 
-| Variant | When |
+| ID | When |
 |---|---|
-| `InternalError` | Resolver threw something not in the domain's error list. |
-| `Timeout`       | Request exceeded the requester's timeout. |
-| `Transport`     | Network-level failure (DNS, abort, connection reset). |
-| `Protocol`      | Response didn't match the nice-action wire format. |
+| `action_id_not_in_domain` | `domain.action("id")` called with unknown ID. |
+| `domain_action_requester_conflict` | `setActionRequester()` called twice on the same domain. |
+| `domain_no_handler` | `execute()` called but no requester or responder is registered. |
+| `hydration_domain_mismatch` | Wire domain doesn't match the domain being hydrated into. |
+| `hydration_action_state_mismatch` | Wire `type` field doesn't match the expected state. |
+| `hydration_action_id_not_found` | Wire action ID isn't in the domain's schema. |
+| `resolver_domain_not_registered` | `env.dispatch()` received a domain with no registered resolver. |
+| `resolver_action_not_registered` | `resolveAction` was not called for the dispatched action ID. |
+| `action_environment_not_found` | `execute(input, envId)` but no handler/resolver with that `envId` exists. |
+| `environment_already_registered` | Named `envId` already has a requester or responder registered. |
+| `action_input_validation_failed` | Input failed schema validation before dispatch. |
