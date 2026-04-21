@@ -22,15 +22,15 @@ import type {
 } from "./ActionHandler.types";
 
 export class ActionHandler {
-  readonly tag?: string;
+  readonly matchTag?: string;
 
-  protected _domains = new Map<string, NiceActionDomain<any>>();
+  readonly _domains = new Map<string, NiceActionDomain<any>>();
   private _resolvers = new Map<string, TActionHandlerDispatchFn>();
   private _cases: IActionHandlerCase[] = [];
   private _defaultHandler?: TActionHandlerDispatchFn;
 
   constructor(config: IActionHandlerConfig = {}) {
-    this.tag = config.tag;
+    this.matchTag = config.matchTag;
   }
 
   /**
@@ -70,7 +70,7 @@ export class ActionHandler {
   ): this {
     this._domains.set(domain.domain, domain);
     this._cases.push({
-      _matcher: (action) => domain.isExactActionDomain(action),
+      _matchKey: `_::${domain.domain}::_`,
       _handler: handler as TActionHandlerDispatchFn,
     });
     return this;
@@ -87,7 +87,7 @@ export class ActionHandler {
   ): this {
     this._domains.set(domain.domain, domain);
     this._cases.push({
-      _matcher: (action) => domain.isExactActionDomain(action) && action.coreAction.id === id,
+      _matchKey: `_::${domain.domain}::${id}`,
       _handler: handler as TActionHandlerDispatchFn,
     });
     return this;
@@ -107,9 +107,7 @@ export class ActionHandler {
   ): this {
     this._domains.set(domain.domain, domain);
     this._cases.push({
-      _matcher: (action) =>
-        domain.isExactActionDomain(action) &&
-        (ids as readonly string[]).includes(action.coreAction.id),
+      _matchKey: `_::${domain.domain}::_`,
       _handler: handler as TActionHandlerDispatchFn,
     });
     return this;

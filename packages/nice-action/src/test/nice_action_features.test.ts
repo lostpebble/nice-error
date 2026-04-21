@@ -22,6 +22,8 @@ import { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
 
 const makeCounterDomain = () =>
   createActionRootDomain({
+    domain: "counter_root",
+  }).createChildDomain({
     domain: "counter",
     actions: {
       increment: action().input({ schema: v.object({ by: v.number() }) }),
@@ -170,6 +172,8 @@ describe("ActionHandler standalone", () => {
   it("same handler instance reused across two different domains", async () => {
     const counterDom = makeCounterDomain();
     const timerDom = createActionRootDomain({
+      domain: "timer_root",
+    }).createChildDomain({
       domain: "timer",
       actions: {
         start: action().input({ schema: v.object({ ms: v.number() }) }),
@@ -270,6 +274,8 @@ describe("NiceActionDomain.addActionListener", () => {
 describe("NiceActionPrimed.toJsonObject", () => {
   it("serializes a JSON-native input without custom serialization", () => {
     const dom = createActionRootDomain({
+      domain: "ser_native_root",
+    }).createChildDomain({
       domain: "ser_native",
       actions: { ping: action().input({ schema: v.object({ msg: v.string() }) }) },
     });
@@ -291,6 +297,8 @@ describe("NiceActionPrimed.toJsonObject", () => {
 
   it("uses the schema's serialize function for non-JSON-native input (Date)", () => {
     const dom = createActionRootDomain({
+      domain: "ser_date_root",
+    }).createChildDomain({
       domain: "ser_date",
       actions: {
         schedule: action().input({
@@ -323,6 +331,8 @@ describe("NiceActionPrimed.toJsonObject", () => {
 describe("NiceAction.toJsonObject", () => {
   it("serializes the action reference without input", () => {
     const dom = createActionRootDomain({
+      domain: "ref_root",
+    }).createChildDomain({
       domain: "ref_dom",
       actions: { fire: action().input({ schema: v.object({ n: v.number() }) }) },
     });
@@ -346,6 +356,8 @@ describe("NiceAction.toJsonObject", () => {
 describe("NiceActionDomain.hydrateAction", () => {
   it("hydrates a JSON-native primed action and executes it", async () => {
     const dom = createActionRootDomain({
+      domain: "hydrate_native_root",
+    }).createChildDomain({
       domain: "hydrate_native",
       actions: { ping: action().input({ schema: v.object({ msg: v.string() }) }) },
     });
@@ -378,6 +390,8 @@ describe("NiceActionDomain.hydrateAction", () => {
 
   it("uses deserialize to restore non-JSON-native input (Date) before execution", async () => {
     const dom = createActionRootDomain({
+      domain: "hydrate_date_root",
+    }).createChildDomain({
       domain: "hydrate_date",
       actions: {
         schedule: action().input({
@@ -414,6 +428,8 @@ describe("NiceActionDomain.hydrateAction", () => {
 
   it("round-trips: toJsonObject → hydrateAction → execute", async () => {
     const dom = createActionRootDomain({
+      domain: "roundtrip_root",
+    }).createChildDomain({
       domain: "roundtrip",
       actions: {
         send: action().input({
@@ -447,6 +463,8 @@ describe("NiceActionDomain.hydrateAction", () => {
 
   it("throws on domain mismatch", () => {
     const dom = createActionRootDomain({
+      domain: "known_dom",
+    }).createChildDomain({
       domain: "correct",
       actions: { a: action().input({ schema: v.object({ x: v.number() }) }) },
     });
@@ -467,6 +485,8 @@ describe("NiceActionDomain.hydrateAction", () => {
 
   it("throws when action id is not found in domain", () => {
     const dom = createActionRootDomain({
+      domain: "known_dom_root",
+    }).createChildDomain({
       domain: "known_dom",
       actions: { known: action().input({ schema: v.object({ x: v.number() }) }) },
     });

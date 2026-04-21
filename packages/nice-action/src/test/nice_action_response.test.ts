@@ -35,6 +35,8 @@ const err_user = defineNiceError({
 
 const makeUserDomain = () =>
   createActionRootDomain({
+    domain: "user_root",
+  }).createChildDomain({
     domain: "user",
     actions: {
       getUser: action()
@@ -369,6 +371,8 @@ describe("NiceActionDomain.hydrateResponse — error cases", () => {
  */
 const makeSerializedDomain = () =>
   createActionRootDomain({
+    domain: "serialized_root",
+  }).createChildDomain({
     domain: "serde_dom",
     actions: {
       createUser: action()

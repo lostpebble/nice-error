@@ -31,6 +31,10 @@ export class ActionRuntimeEnvironment {
     this.timeCreated = Date.now();
   }
 
+  get handlers(): readonly ActionHandler[] {
+    return this._handlers;
+  }
+
   toJsonObject(): IActionRuntimeEnvironment_JsonObject {
     return {
       envId: this.envId,

@@ -87,40 +87,6 @@ export class NiceActionDomain<
     return null;
   }
 
-  async _dispatchAction<P extends NiceActionPrimed<ACT_DOM, string, ACT_DOM["actions"][string]>>(
-    primed: P,
-    envId?: string,
-  ): Promise<unknown> {
-    // envId-specific handler takes first priority when registered.
-    if (envId != null) {
-      const envHandler = this._handlers.get(envId);
-      if (envHandler) {
-        const validatedPrimed = await this._withValidatedInput(primed);
-        const result = await envHandler.dispatchAction(validatedPrimed);
-        for (const listener of this._listeners) await listener(validatedPrimed);
-        return result;
-      }
-      // No envId-specific handler found — fall through to this domain's default handler
-      // so that a domain's own default handler always serves as the fallback.
-    }
-
-    const defaultHandler = this._handlers.get(undefined);
-    if (defaultHandler) {
-      const validatedPrimed = await this._withValidatedInput(primed);
-      const result = await defaultHandler.dispatchAction(validatedPrimed);
-      for (const listener of this._listeners) await listener(validatedPrimed);
-      return result;
-    }
-
-    if (envId != null) {
-      throw err_nice_action.fromId(EErrId_NiceAction.action_environment_not_found, {
-        domain: this.domain,
-        envId,
-      });
-    }
-    throw err_nice_action.fromId(EErrId_NiceAction.domain_no_handler, { domain: this.domain });
-  }
-
   private async _withValidatedInput(
     primed: NiceActionPrimed<any, any, any>,
   ): Promise<NiceActionPrimed<any, any, any>> {

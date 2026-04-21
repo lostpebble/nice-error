@@ -32,6 +32,8 @@ import { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
 
 const makeGreetDomain = () =>
   createActionRootDomain({
+    domain: "test_greet_root",
+  }).createChildDomain({
     domain: "greet",
     actions: {
       greet: action()
@@ -45,6 +47,8 @@ const makeGreetDomain = () =>
 
 const makeDateDomain = () =>
   createActionRootDomain({
+    domain: "test_date_root",
+  }).createChildDomain({
     domain: "date_domain",
     actions: {
       schedule: action()
