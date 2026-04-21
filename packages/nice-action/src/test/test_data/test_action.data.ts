@@ -1,4 +1,4 @@
-import { createActionRootDomain } from "../../ActionDomain/RootDomain/createActionRootDomain";
+import { createActionRootDomain } from "../../ActionDomain/helpers/createRootActionDomain";
 import { action } from "../../ActionSchema/action";
 
 const createTestActionDomain = () => {

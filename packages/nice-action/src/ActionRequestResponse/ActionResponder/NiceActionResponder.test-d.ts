@@ -10,7 +10,7 @@
  */
 import * as v from "valibot";
 import { assertType, expectTypeOf, test } from "vitest";
-import { createActionRootDomain } from "../../ActionDomain/RootDomain/createActionRootDomain";
+import { createActionRootDomain } from "../../ActionDomain/helpers/createRootActionDomain";
 import { action } from "../../ActionSchema/action";
 import { createDomainResponder, type NiceActionDomainResponder } from "./NiceActionResponder";
 import type { TActionResponderFn } from "./NiceActionResponder.types";

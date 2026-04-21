@@ -3,6 +3,7 @@ import { NiceActionDomain } from "./NiceActionDomain";
 import type {
   INiceActionDomain,
   INiceActionDomainChildOptions,
+  TActionListener,
   TNiceActionDomainChildDef,
 } from "./NiceActionDomain.types";
 
@@ -12,6 +13,8 @@ export class NiceActionDomainBase<ACT_DOM extends INiceActionDomain = INiceActio
   readonly domain: ACT_DOM["domain"];
   readonly allDomains: ACT_DOM["allDomains"];
   readonly actions: ACT_DOM["actions"];
+
+  protected _listeners: TActionListener[] = [];
 
   constructor(definition: ACT_DOM) {
     this.domain = definition.domain;
@@ -27,6 +30,7 @@ export class NiceActionDomainBase<ACT_DOM extends INiceActionDomain = INiceActio
     if (this.allDomains.includes(subDomainDef.domain)) {
       throw err_nice_action.fromId(EErrId_NiceAction.domain_already_exists_in_hierarchy, {
         domain: subDomainDef.domain,
+        allParentDomains: this.allDomains,
         parentDomain: this.domain,
       });
     }
@@ -36,5 +40,16 @@ export class NiceActionDomainBase<ACT_DOM extends INiceActionDomain = INiceActio
       domain: subDomainDef.domain,
       actions: subDomainDef.actions,
     });
+  }
+
+  /**
+   * Add an observer that is called after every action dispatched through this domain.
+   * Returns an unsubscribe function — call it to remove the listener.
+   */
+  addActionListener(listener: TActionListener): () => void {
+    this._listeners.push(listener);
+    return () => {
+      this._listeners = this._listeners.filter((l) => l !== listener);
+    };
   }
 }

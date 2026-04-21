@@ -7,8 +7,8 @@
  */
 import * as v from "valibot";
 import { assertType, expectTypeOf, test } from "vitest";
+import { createActionRootDomain } from "../../ActionDomain/helpers/createRootActionDomain";
 import type { INiceActionDomain } from "../../ActionDomain/NiceActionDomain.types";
-import { createActionRootDomain } from "../../ActionDomain/RootDomain/createActionRootDomain";
 import { action } from "../../ActionSchema/action";
 import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
 import { NiceActionRequester } from "./NiceActionRequester";

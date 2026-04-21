@@ -1,4 +1,10 @@
 import { nanoid } from "nanoid";
+import { ActionHandler } from "./ActionHandler/ActionHandler";
+import type {
+  IActionRuntimeEnvironment_JsonObject,
+  IRuntimeMeta,
+} from "./ActionRuntimeEnvironment.types";
+import { getAssumedRuntimeInfo } from "./utils/getAssumedRuntimeEnvironment";
 
 interface IActionRuntimeEnvironment_Constructor_Input {
   envId: string;
@@ -6,6 +12,7 @@ interface IActionRuntimeEnvironment_Constructor_Input {
 
 export class ActionRuntimeEnvironment {
   readonly envId: string;
+
   /**
    * A unique identifier for this runtime environment instance.
    *
@@ -14,10 +21,27 @@ export class ActionRuntimeEnvironment {
    */
   readonly memCuid: string;
   readonly timeCreated: number;
+  readonly runtimeInfo: IRuntimeMeta = getAssumedRuntimeInfo();
+
+  private _handlers: ActionHandler[] = [];
 
   constructor(input: IActionRuntimeEnvironment_Constructor_Input) {
     this.envId = input.envId;
     this.memCuid = `${input.envId}::${nanoid(8)}`;
     this.timeCreated = Date.now();
+  }
+
+  toJsonObject(): IActionRuntimeEnvironment_JsonObject {
+    return {
+      envId: this.envId,
+      memCuid: this.memCuid,
+      timeCreated: this.timeCreated,
+      runtimeInfo: this.runtimeInfo,
+    };
+  }
+
+  addHandler(handler: ActionHandler): this {
+    this._handlers.push(handler);
+    return this;
   }
 }

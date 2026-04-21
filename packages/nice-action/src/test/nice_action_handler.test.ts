@@ -14,8 +14,8 @@
  */
 import * as v from "valibot";
 import { describe, expect, it, vi } from "vitest";
-import { createActionRootDomain } from "../ActionDomain/RootDomain/createActionRootDomain";
-import { ActionHandler } from "../ActionHandler/ActionHandler";
+import { createActionRootDomain } from "../ActionDomain/helpers/createRootActionDomain";
+import { ActionHandler } from "../ActionRuntimeEnvironment/ActionHandler/ActionHandler";
 import { action } from "../ActionSchema/action";
 
 // ---------------------------------------------------------------------------
@@ -24,6 +24,8 @@ import { action } from "../ActionSchema/action";
 
 const makeCounterDomain = () =>
   createActionRootDomain({
+    domain: "test_handler_root",
+  }).createChildDomain({
     domain: "counter",
     actions: {
       increment: action().input({ schema: v.object({ by: v.number() }) }),
@@ -52,6 +54,8 @@ describe("ActionHandler.forDomain", () => {
 
   it("can return a value from the handler", async () => {
     const dom = createActionRootDomain({
+      domain: "test_greet_root",
+    }).createChildDomain({
       domain: "greet",
       actions: {
         greet: action()
@@ -233,6 +237,8 @@ describe("ActionHandler — shared instance", () => {
   it("same handler instance can be registered on two domains", async () => {
     const counterDom = makeCounterDomain();
     const timerDom = createActionRootDomain({
+      domain: "test_handler_root",
+    }).createChildDomain({
       domain: "timer",
       actions: {
         start: action().input({ schema: v.object({ ms: v.number() }) }),
@@ -458,6 +464,8 @@ describe("no handler", () => {
 describe("handler — input validation", () => {
   it("throws action_input_validation_failed when input fails schema via default handler", async () => {
     const dom = createActionRootDomain({
+      domain: "validated_root",
+    }).createChildDomain({
       domain: "validated",
       actions: {
         ping: action().input({ schema: v.object({ count: v.pipe(v.number(), v.minValue(1)) }) }),
@@ -473,6 +481,8 @@ describe("handler — input validation", () => {
 
   it("throws action_input_validation_failed when input fails schema via named envId handler", async () => {
     const dom = createActionRootDomain({
+      domain: "validated_root",
+    }).createChildDomain({
       domain: "validated_named",
       actions: {
         ping: action().input({ schema: v.object({ count: v.pipe(v.number(), v.minValue(1)) }) }),
@@ -491,6 +501,8 @@ describe("handler — input validation", () => {
 
   it("handler receives the validated (transformed) input value", async () => {
     const dom = createActionRootDomain({
+      domain: "validated_root",
+    }).createChildDomain({
       domain: "transformed",
       actions: {
         double: action().input({

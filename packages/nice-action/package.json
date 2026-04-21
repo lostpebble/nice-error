@@ -36,7 +36,8 @@
     "@nice-code/common-errors": "workspace:*",
     "@standard-schema/spec": "^1.1.0",
     "http-status-codes": "^2.3.0",
-    "nanoid": "^5.1.9"
+    "nanoid": "^5.1.9",
+    "std-env": "^4.1.0"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.99.0"

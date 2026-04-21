@@ -10,8 +10,8 @@
 import { castNiceError, defineNiceError, err, forDomain, forIds } from "@nice-code/error";
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
-import { createActionRootDomain } from "../ActionDomain/RootDomain/createActionRootDomain";
-import { ActionHandler } from "../ActionHandler/ActionHandler";
+import { createActionRootDomain } from "../ActionDomain/helpers/createRootActionDomain";
+import { ActionHandler } from "../ActionRuntimeEnvironment/ActionHandler/ActionHandler";
 import { action } from "../ActionSchema/action";
 import { EActionState } from "../NiceAction/NiceAction.enums";
 import { type TNiceActionResponse_JsonObject } from "../NiceAction/NiceAction.types";

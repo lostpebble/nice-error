@@ -1,4 +1,4 @@
-import type { ActionHandler } from "../ActionHandler/ActionHandler";
+import type { ActionHandler } from "../ActionRuntimeEnvironment/ActionHandler/ActionHandler";
 import { EErrId_NiceAction, err_nice_action } from "../errors/err_nice_action";
 import { NiceAction } from "../NiceAction/NiceAction";
 import { EActionState } from "../NiceAction/NiceAction.enums";
@@ -9,17 +9,12 @@ import {
 } from "../NiceAction/NiceAction.types";
 import { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
 import { hydrateNiceActionResponse, NiceActionResponse } from "../NiceAction/NiceActionResponse";
-import type {
-  INiceActionDomain,
-  TActionListener,
-  TInferInputFromSchema,
-} from "./NiceActionDomain.types";
+import type { INiceActionDomain, TInferInputFromSchema } from "./NiceActionDomain.types";
 import { NiceActionDomainBase } from "./NiceActionDomainBase";
 
 export class NiceActionDomain<
   ACT_DOM extends INiceActionDomain = INiceActionDomain,
 > extends NiceActionDomainBase<ACT_DOM> {
-  private _listeners: TActionListener[] = [];
   private _handlers = new Map<string | undefined, ActionHandler>();
 
   constructor(definition: ACT_DOM) {
@@ -90,17 +85,6 @@ export class NiceActionDomain<
       return action as unknown as NiceActionPrimed<ACT_DOM, ID, ACT_DOM["actions"][ID]>;
     }
     return null;
-  }
-
-  /**
-   * Add an observer that is called after every action dispatched through this domain.
-   * Returns an unsubscribe function — call it to remove the listener.
-   */
-  addActionListener(listener: TActionListener): () => void {
-    this._listeners.push(listener);
-    return () => {
-      this._listeners = this._listeners.filter((l) => l !== listener);
-    };
   }
 
   async _dispatchAction<P extends NiceActionPrimed<ACT_DOM, string, ACT_DOM["actions"][string]>>(

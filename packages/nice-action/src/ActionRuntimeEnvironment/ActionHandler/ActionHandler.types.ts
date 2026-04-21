@@ -2,9 +2,9 @@ import type {
   MaybePromise,
   TInferInputFromSchema,
   TInferOutputFromSchema,
-} from "../ActionDomain/NiceActionDomain.types";
-import type { NiceActionSchema } from "../ActionSchema/NiceActionSchema";
-import type { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
+} from "../../ActionDomain/NiceActionDomain.types";
+import type { NiceActionSchema } from "../../ActionSchema/NiceActionSchema";
+import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
 
 export type TActionHandlerDispatchFn = (
   primed: NiceActionPrimed<any, any, any>,
@@ -20,12 +20,13 @@ export interface IActionHandlerCase {
 }
 
 export interface IActionHandlerConfig {
-  /** Handle target identifier — appears in route entries. Defaults to a random nanoid. */
-  ht?: string;
-  /** Runtime label — appears in route entries to identify which environment handled the action. */
-  runtime?: string;
+  /**
+   * An action "match tag" for the handler.
+   *
+   * This can be used to specify which handler should be used for a given
+   * action.
+   */
+  tag?: string;
 }
 
-export type TActionHandlerDispatchResult =
-  | { handled: true; output: unknown }
-  | { handled: false };
+export type TActionHandlerDispatchResult = { handled: true; output: unknown } | { handled: false };

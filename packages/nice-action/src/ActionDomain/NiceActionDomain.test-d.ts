@@ -10,8 +10,8 @@ import { expect, expectTypeOf, test, vi } from "vitest";
 import { action } from "../ActionSchema/action";
 import type { TInferActionError } from "../ActionSchema/NiceActionSchema";
 import { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
+import { createActionRootDomain } from "./helpers/createRootActionDomain";
 import type { INiceActionDomain, TPossibleDomainIdList } from "./NiceActionDomain.types";
-import { createActionRootDomain } from "./RootDomain/createActionRootDomain";
 
 // ---------------------------------------------------------------------------
 // Domain structure — domain / allDomains base types

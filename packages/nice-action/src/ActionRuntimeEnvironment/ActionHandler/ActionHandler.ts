@@ -1,19 +1,18 @@
 import { castNiceError } from "@nice-code/error";
-import { nanoid } from "nanoid";
-import type { NiceActionDomain } from "../ActionDomain/NiceActionDomain";
+import type { NiceActionDomain } from "../../ActionDomain/NiceActionDomain";
 import type {
   INiceActionDomain,
   TActionHandlerForDomain,
   TActionIdHandlerForDomain,
-} from "../ActionDomain/NiceActionDomain.types";
-import { EErrId_NiceAction, err_nice_action } from "../errors/err_nice_action";
-import { EActionRouteStep } from "../NiceAction/NiceAction.enums";
+} from "../../ActionDomain/NiceActionDomain.types";
+import { EErrId_NiceAction, err_nice_action } from "../../errors/err_nice_action";
+import { EActionRouteStep } from "../../NiceAction/NiceAction.enums";
 import type {
   INiceActionPrimed_JsonObject,
   TNiceActionResponse_JsonObject,
-} from "../NiceAction/NiceAction.types";
-import type { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
-import { NiceActionResponse } from "../NiceAction/NiceActionResponse";
+} from "../../NiceAction/NiceAction.types";
+import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
+import { NiceActionResponse } from "../../NiceAction/NiceActionResponse";
 import type {
   IActionHandlerCase,
   IActionHandlerConfig,
@@ -23,8 +22,7 @@ import type {
 } from "./ActionHandler.types";
 
 export class ActionHandler {
-  readonly ht: string;
-  readonly runtime?: string;
+  readonly tag?: string;
 
   protected _domains = new Map<string, NiceActionDomain<any>>();
   private _resolvers = new Map<string, TActionHandlerDispatchFn>();
@@ -32,8 +30,7 @@ export class ActionHandler {
   private _defaultHandler?: TActionHandlerDispatchFn;
 
   constructor(config: IActionHandlerConfig = {}) {
-    this.ht = config.ht ?? nanoid();
-    this.runtime = config.runtime;
+    this.tag = config.tag;
   }
 
   /**
@@ -120,7 +117,8 @@ export class ActionHandler {
 
   /**
    * Register a fallback handler that fires when no resolver or case matches.
-   * Only one default handler can be registered — calling this twice replaces the previous.
+   * Only one default handler can be registered — calling this twice replaces
+   * the previous.
    */
   setDefaultHandler(handler: TActionHandlerDispatchFn): this {
     this._defaultHandler = handler;
@@ -128,13 +126,13 @@ export class ActionHandler {
   }
 
   /**
-   * Try to dispatch a primed action to a registered resolver or case.
-   * Returns `{ handled: false }` if nothing matches — does not throw.
-   * Errors from handlers propagate naturally.
+   * Try to dispatch a primed action to a registered resolver or case. Returns
+   * `{ handled: false }` if nothing matches — does not throw. Errors from
+   * handlers propagate naturally.
    *
    * Subclasses can override `dispatchAction` to extend with fallback behavior
-   * (e.g. transport forwarding in ActionConnect) while still calling this method
-   * for the local-first dispatch attempt.
+   * (e.g. transport forwarding in ActionConnect) while still calling this
+   * method for the local-first dispatch attempt.
    */
   async _tryDispatch(
     primed: NiceActionPrimed<any, any, any>,
@@ -204,9 +202,7 @@ export class ActionHandler {
    * });
    * ```
    */
-  async handleWire(
-    wire: INiceActionPrimed_JsonObject,
-  ): Promise<TNiceActionResponse_JsonObject> {
+  async handleWire(wire: INiceActionPrimed_JsonObject): Promise<TNiceActionResponse_JsonObject> {
     const domain = this._domains.get(wire.domain);
     if (domain == null) {
       throw err_nice_action.fromId(EErrId_NiceAction.resolver_domain_not_registered, {
@@ -232,7 +228,9 @@ export class ActionHandler {
       const validatedPrimed = await domain.validatePrimed(primed);
       const result = await this._tryDispatch(validatedPrimed);
       // Always handled at this point (we checked above)
-      return validatedPrimed.setOutput((result as { handled: true; output: unknown }).output as any).toJsonObject();
+      return validatedPrimed
+        .setOutput((result as { handled: true; output: unknown }).output as any)
+        .toJsonObject();
     } catch (e) {
       return new NiceActionResponse(primed, {
         ok: false,

@@ -10,7 +10,7 @@ it("SUC - Action Runtime Handling", () => {
 
   const actionRuntimeEnvironment = new ActionRuntimeEnvironment({
     envId: "test_env",
-  });
+  }).addHandler();
 
   test_act_domain.setRuntimeEnvironment(actionRuntimeEnvironment);
 });

@@ -9,8 +9,8 @@ import { defineNiceError, err, forDomain } from "@nice-code/error";
 import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import * as v from "valibot";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createActionRootDomain } from "../ActionDomain/RootDomain/createActionRootDomain";
-import { ActionHandler } from "../ActionHandler/ActionHandler";
+import { createActionRootDomain } from "../ActionDomain/helpers/createRootActionDomain";
+import { ActionHandler } from "../ActionRuntimeEnvironment/ActionHandler/ActionHandler";
 import { action } from "../ActionSchema/action";
 import { niceActionQueryKey, useNiceMutation, useNiceQuery } from "./index";
 
