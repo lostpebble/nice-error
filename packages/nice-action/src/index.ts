@@ -1,4 +1,3 @@
-export { createActionDomain } from "./ActionDomain/createActionDomain";
 export { NiceActionDomain } from "./ActionDomain/NiceActionDomain";
 export type {
   INiceActionDomain,
@@ -15,6 +14,7 @@ export type {
   TPossibleDomainId,
   TPossibleDomainIdList,
 } from "./ActionDomain/NiceActionDomain.types";
+export { createActionRootDomain as createActionDomain } from "./ActionDomain/RootDomain/createActionRootDomain";
 export { ActionHandler } from "./ActionHandler/ActionHandler";
 export type {
   IActionHandlerCase,
@@ -24,8 +24,8 @@ export type {
   TActionHandlerResolverFn,
 } from "./ActionHandler/ActionHandler.types";
 export { action } from "./ActionSchema/action";
-export { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
 export type { TInferActionError } from "./ActionSchema/NiceActionSchema";
+export { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
 export type {
   TNiceActionSerializationDefinition,
   TNiceActonSchemaInputOptions,

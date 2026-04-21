@@ -11,38 +11,32 @@ import { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
 import { hydrateNiceActionResponse, NiceActionResponse } from "../NiceAction/NiceActionResponse";
 import type {
   INiceActionDomain,
-  INiceActionDomainChildOptions,
   TActionListener,
   TInferInputFromSchema,
-  TNiceActionDomainChildDef,
 } from "./NiceActionDomain.types";
+import { NiceActionDomainBase } from "./NiceActionDomainBase";
 
-export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDomain>
-  implements INiceActionDomain<ACT_DOM["allDomains"], ACT_DOM["actions"]>
-{
-  readonly domain: ACT_DOM["domain"];
-  readonly allDomains: ACT_DOM["allDomains"];
-  readonly actions: ACT_DOM["actions"];
+export class NiceActionDomain<
+  ACT_DOM extends INiceActionDomain = INiceActionDomain,
+> extends NiceActionDomainBase<ACT_DOM> {
   private _listeners: TActionListener[] = [];
   private _handlers = new Map<string | undefined, ActionHandler>();
 
   constructor(definition: ACT_DOM) {
-    this.domain = definition.domain;
-    this.allDomains = definition.allDomains;
-    this.actions = definition.actions;
+    super(definition);
   }
 
-  createChildDomain<SUB_DOM extends INiceActionDomainChildOptions>(
-    subDomainDef: SUB_DOM & {
-      [K in Exclude<keyof SUB_DOM, keyof INiceActionDomainChildOptions>]: never;
-    },
-  ): NiceActionDomain<TNiceActionDomainChildDef<ACT_DOM, SUB_DOM>> {
-    return new NiceActionDomain<TNiceActionDomainChildDef<ACT_DOM, SUB_DOM>>({
-      allDomains: [subDomainDef.domain, ...this.allDomains],
-      domain: subDomainDef.domain,
-      actions: subDomainDef.actions,
-    });
-  }
+  // createChildDomain<SUB_DOM extends INiceActionDomainChildOptions>(
+  //   subDomainDef: SUB_DOM & {
+  //     [K in Exclude<keyof SUB_DOM, keyof INiceActionDomainChildOptions>]: never;
+  //   },
+  // ): NiceActionDomain<TNiceActionDomainChildDef<ACT_DOM, SUB_DOM>> {
+  //   return new NiceActionDomain<TNiceActionDomainChildDef<ACT_DOM, SUB_DOM>>({
+  //     allDomains: [subDomainDef.domain, ...this.allDomains],
+  //     domain: subDomainDef.domain,
+  //     actions: subDomainDef.actions,
+  //   });
+  // }
 
   primeUnknown(
     actionId: ACT_DOM["allDomains"][number],

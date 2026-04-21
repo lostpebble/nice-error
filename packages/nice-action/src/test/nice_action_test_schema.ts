@@ -1,9 +1,9 @@
 import type { JSONSerializableValue } from "@nice-code/error";
 import * as v from "valibot";
-import { createActionDomain } from "../ActionDomain/createActionDomain";
+import { createActionRootDomain } from "../ActionDomain/RootDomain/createActionRootDomain";
 import { action } from "../ActionSchema/action";
 
-export const demo_domain = createActionDomain({
+export const demo_domain = createActionRootDomain({
   domain: "demo_domain",
   actions: {
     action1: action().input({

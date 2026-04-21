@@ -7,14 +7,14 @@
  */
 import * as v from "valibot";
 import { describe, expect, it, vi } from "vitest";
-import { createActionDomain } from "../ActionDomain/createActionDomain";
+import { createActionRootDomain } from "../ActionDomain/RootDomain/createActionRootDomain";
 import { ActionHandler } from "../ActionHandler/ActionHandler";
 import { action } from "../ActionSchema/action";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 const makeUserDomain = () =>
-  createActionDomain({
+  createActionRootDomain({
     domain: "user",
     actions: {
       getUser: action()
@@ -153,7 +153,7 @@ describe("envId dispatch — error when no handler found", () => {
 
 describe("child domain — own handler takes priority", () => {
   it("child default handler is used when the envId is only registered on the parent", async () => {
-    const root = createActionDomain({
+    const root = createActionRootDomain({
       domain: "root",
       actions: { ping: action().input({ schema: v.object({ v: v.string() }) }) },
     });
@@ -168,9 +168,12 @@ describe("child domain — own handler takes priority", () => {
     });
 
     // "remote" envId is registered on root but NOT on child
-    root.setHandler(new ActionHandler().forDomain(root, () => ({ result: "from-root-remote" })), {
-      envId: "remote",
-    });
+    root.setHandler(
+      new ActionHandler().forDomain(root, () => ({ result: "from-root-remote" })),
+      {
+        envId: "remote",
+      },
+    );
 
     // Child has only a default handler
     child.setHandler(
@@ -183,7 +186,7 @@ describe("child domain — own handler takes priority", () => {
   });
 
   it("child envId handler wins when both child default and child envId are registered", async () => {
-    const root = createActionDomain({
+    const root = createActionRootDomain({
       domain: "root",
       actions: { ping: action().input({ schema: v.object({ v: v.string() }) }) },
     });

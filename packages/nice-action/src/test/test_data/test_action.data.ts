@@ -1,8 +1,8 @@
-import { createActionDomain } from "../../ActionDomain/createActionDomain";
+import { createActionRootDomain } from "../../ActionDomain/RootDomain/createActionRootDomain";
 import { action } from "../../ActionSchema/action";
 
 const createTestActionDomain = () => {
-  const test_act_domain = createActionDomain({
+  const test_act_domain = createActionRootDomain({
     domain: "test_domain",
     actions: {},
   });

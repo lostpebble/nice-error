@@ -20,7 +20,7 @@
  */
 import * as v from "valibot";
 import { describe, expect, it, vi } from "vitest";
-import { createActionDomain } from "../ActionDomain/createActionDomain";
+import { createActionRootDomain } from "../ActionDomain/RootDomain/createActionRootDomain";
 import { ActionHandler } from "../ActionHandler/ActionHandler";
 import { action } from "../ActionSchema/action";
 import { EActionState } from "../NiceAction/NiceAction.enums";
@@ -31,7 +31,7 @@ import { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
 // ---------------------------------------------------------------------------
 
 const makeGreetDomain = () =>
-  createActionDomain({
+  createActionRootDomain({
     domain: "greet",
     actions: {
       greet: action()
@@ -44,7 +44,7 @@ const makeGreetDomain = () =>
   });
 
 const makeDateDomain = () =>
-  createActionDomain({
+  createActionRootDomain({
     domain: "date_domain",
     actions: {
       schedule: action()

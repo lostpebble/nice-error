@@ -7,8 +7,8 @@
  */
 import * as v from "valibot";
 import { assertType, expectTypeOf, test } from "vitest";
-import { createActionDomain } from "../../ActionDomain/createActionDomain";
 import type { INiceActionDomain } from "../../ActionDomain/NiceActionDomain.types";
+import { createActionRootDomain } from "../../ActionDomain/RootDomain/createActionRootDomain";
 import { action } from "../../ActionSchema/action";
 import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
 import { NiceActionRequester } from "./NiceActionRequester";
@@ -17,7 +17,7 @@ import { NiceActionRequester } from "./NiceActionRequester";
 // Shared domain for all handler type tests
 // ---------------------------------------------------------------------------
 
-const dom = createActionDomain({
+const dom = createActionRootDomain({
   domain: "handler_type_test",
   actions: {
     setName: action().input({ schema: v.object({ name: v.string() }) }),
@@ -71,7 +71,7 @@ test("[forActionIds] single-item list narrows to that action's type", () => {
 // ---------------------------------------------------------------------------
 
 test("[forDomain] act.input is the union of all action input types in the domain", () => {
-  const specificDom = createActionDomain({
+  const specificDom = createActionRootDomain({
     domain: "specific",
     actions: {
       a: action().input({ schema: v.object({ x: v.number() }) }),

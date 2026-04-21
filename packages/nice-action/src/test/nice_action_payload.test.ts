@@ -19,7 +19,7 @@
  */
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
-import { createActionDomain } from "../ActionDomain/createActionDomain";
+import { createActionRootDomain } from "../ActionDomain/RootDomain/createActionRootDomain";
 import { ActionHandler } from "../ActionHandler/ActionHandler";
 import { action } from "../ActionSchema/action";
 import { EActionState } from "../NiceAction/NiceAction.enums";
@@ -31,7 +31,7 @@ import { NiceActionResponse } from "../NiceAction/NiceActionResponse";
 // ---------------------------------------------------------------------------
 
 const createTestActionDomain = () =>
-  createActionDomain({
+  createActionRootDomain({
     domain: "test_domain",
     actions: {
       send_message: action()
@@ -213,7 +213,7 @@ describe("NiceAction.is()", () => {
   });
 
   it("returns false for a primed action with a different id", () => {
-    const dom = createActionDomain({
+    const dom = createActionRootDomain({
       domain: "multi_dom",
       actions: {
         foo: action().input({ schema: v.object({ x: v.number() }) }),
@@ -238,11 +238,11 @@ describe("NiceAction.is()", () => {
   });
 
   it("returns false for a primed action from a different domain with the same id", () => {
-    const domA = createActionDomain({
+    const domA = createActionRootDomain({
       domain: "domain_a",
       actions: { ping: action().input({ schema: v.object({ x: v.number() }) }) },
     });
-    const domB = createActionDomain({
+    const domB = createActionRootDomain({
       domain: "domain_b",
       actions: { ping: action().input({ schema: v.object({ x: v.number() }) }) },
     });
@@ -267,11 +267,11 @@ describe("NiceActionDomain.isExactActionDomain()", () => {
   });
 
   it("returns false for a primed action from a different domain", () => {
-    const domA = createActionDomain({
+    const domA = createActionRootDomain({
       domain: "domain_a",
       actions: { ping: action().input({ schema: v.object({ x: v.number() }) }) },
     });
-    const domB = createActionDomain({
+    const domB = createActionRootDomain({
       domain: "domain_b",
       actions: { ping: action().input({ schema: v.object({ x: v.number() }) }) },
     });
@@ -304,7 +304,7 @@ describe("NiceActionDomain.matchAction()", () => {
   });
 
   it("returns null when the action id does not match", () => {
-    const dom = createActionDomain({
+    const dom = createActionRootDomain({
       domain: "multi",
       actions: {
         foo: action().input({ schema: v.object({ x: v.number() }) }),
@@ -317,11 +317,11 @@ describe("NiceActionDomain.matchAction()", () => {
   });
 
   it("returns null for a primed action from a different domain", () => {
-    const domA = createActionDomain({
+    const domA = createActionRootDomain({
       domain: "domain_a",
       actions: { ping: action().input({ schema: v.object({ x: v.number() }) }) },
     });
-    const domB = createActionDomain({
+    const domB = createActionRootDomain({
       domain: "domain_b",
       actions: { ping: action().input({ schema: v.object({ x: v.number() }) }) },
     });
@@ -331,7 +331,7 @@ describe("NiceActionDomain.matchAction()", () => {
   });
 
   it("can be used inside a handler to narrow input type", async () => {
-    const dom = createActionDomain({
+    const dom = createActionRootDomain({
       domain: "narrowing",
       actions: {
         increment: action().input({ schema: v.object({ by: v.number() }) }),
@@ -452,7 +452,7 @@ describe("NiceActionDomain.hydrateAction — error cases", () => {
 
 describe("Child domain allDomains in serialized payload", () => {
   it("allDomains in child domain includes both child and parent domain ids", () => {
-    const parent = createActionDomain({
+    const parent = createActionRootDomain({
       domain: "parent",
       actions: { ping: action().input({ schema: v.object({ v: v.string() }) }) },
     });
@@ -466,7 +466,7 @@ describe("Child domain allDomains in serialized payload", () => {
   });
 
   it("primed action payload from child domain includes full allDomains hierarchy", () => {
-    const parent = createActionDomain({
+    const parent = createActionRootDomain({
       domain: "parent",
       actions: { ping: action().input({ schema: v.object({ v: v.string() }) }) },
     });
@@ -484,7 +484,7 @@ describe("Child domain allDomains in serialized payload", () => {
   });
 
   it("hydrateAction on child domain reconstructs primed action with correct allDomains", () => {
-    const parent = createActionDomain({
+    const parent = createActionRootDomain({
       domain: "parent",
       actions: { ping: action().input({ schema: v.object({ v: v.string() }) }) },
     });
@@ -511,7 +511,7 @@ describe("Child domain allDomains in serialized payload", () => {
 
 describe("Payload round-trip with custom serialization (Date)", () => {
   const makeDateDomain = () =>
-    createActionDomain({
+    createActionRootDomain({
       domain: "date_domain",
       actions: {
         schedule: action()
@@ -623,7 +623,7 @@ describe("Payload round-trip with custom serialization (Date)", () => {
 
 describe("Input validation failure in resolver path", () => {
   it("throws action_input_validation_failed when resolver receives invalid input shape", async () => {
-    const dom = createActionDomain({
+    const dom = createActionRootDomain({
       domain: "validation_dom",
       actions: {
         greet: action()
@@ -655,7 +655,7 @@ describe("Input validation failure in resolver path", () => {
 
 describe("Multi-action domain payload", () => {
   const makeMultiDomain = () =>
-    createActionDomain({
+    createActionRootDomain({
       domain: "multi",
       actions: {
         create: action()

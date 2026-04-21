@@ -14,7 +14,7 @@
  */
 import * as v from "valibot";
 import { describe, expect, it, vi } from "vitest";
-import { createActionDomain } from "../ActionDomain/createActionDomain";
+import { createActionRootDomain } from "../ActionDomain/RootDomain/createActionRootDomain";
 import { ActionHandler } from "../ActionHandler/ActionHandler";
 import { action } from "../ActionSchema/action";
 
@@ -23,7 +23,7 @@ import { action } from "../ActionSchema/action";
 // ---------------------------------------------------------------------------
 
 const makeCounterDomain = () =>
-  createActionDomain({
+  createActionRootDomain({
     domain: "counter",
     actions: {
       increment: action().input({ schema: v.object({ by: v.number() }) }),
@@ -51,7 +51,7 @@ describe("ActionHandler.forDomain", () => {
   });
 
   it("can return a value from the handler", async () => {
-    const dom = createActionDomain({
+    const dom = createActionRootDomain({
       domain: "greet",
       actions: {
         greet: action()
@@ -232,7 +232,7 @@ describe("ActionHandler — first-match-wins", () => {
 describe("ActionHandler — shared instance", () => {
   it("same handler instance can be registered on two domains", async () => {
     const counterDom = makeCounterDomain();
-    const timerDom = createActionDomain({
+    const timerDom = createActionRootDomain({
       domain: "timer",
       actions: {
         start: action().input({ schema: v.object({ ms: v.number() }) }),
@@ -279,7 +279,10 @@ describe("named environment — handler envId", () => {
     const dom = makeCounterDomain();
     const log = vi.fn();
 
-    dom.setHandler(new ActionHandler().forDomain(dom, () => log("worker")), { envId: "worker" });
+    dom.setHandler(
+      new ActionHandler().forDomain(dom, () => log("worker")),
+      { envId: "worker" },
+    );
 
     // No default handler registered → should throw
     await expect(dom.action("increment").execute({ by: 1 })).rejects.toThrow();
@@ -290,8 +293,14 @@ describe("named environment — handler envId", () => {
     const dom = makeCounterDomain();
     const log = vi.fn();
 
-    dom.setHandler(new ActionHandler().forDomain(dom, () => log("a")), { envId: "a" });
-    dom.setHandler(new ActionHandler().forDomain(dom, () => log("b")), { envId: "b" });
+    dom.setHandler(
+      new ActionHandler().forDomain(dom, () => log("a")),
+      { envId: "a" },
+    );
+    dom.setHandler(
+      new ActionHandler().forDomain(dom, () => log("b")),
+      { envId: "b" },
+    );
 
     await dom.action("increment").execute({ by: 1 }, "a");
     await dom.action("increment").execute({ by: 1 }, "b");
@@ -304,7 +313,10 @@ describe("named environment — handler envId", () => {
     const log = vi.fn();
 
     dom.setHandler(new ActionHandler().forDomain(dom, () => log("default")));
-    dom.setHandler(new ActionHandler().forDomain(dom, () => log("named")), { envId: "named" });
+    dom.setHandler(
+      new ActionHandler().forDomain(dom, () => log("named")),
+      { envId: "named" },
+    );
 
     await dom.action("increment").execute({ by: 1 });
     await dom.action("increment").execute({ by: 1 }, "named");
@@ -314,7 +326,10 @@ describe("named environment — handler envId", () => {
 
   it("throws action_environment_not_found when envId is unknown and no default handler exists", async () => {
     const dom = makeCounterDomain();
-    dom.setHandler(new ActionHandler().forDomain(dom, () => {}), { envId: "named" });
+    dom.setHandler(
+      new ActionHandler().forDomain(dom, () => {}),
+      { envId: "named" },
+    );
 
     await expect(dom.action("increment").execute({ by: 1 }, "missing")).rejects.toThrow(
       /no handler or resolver registered with environment id/i,
@@ -336,7 +351,9 @@ describe("named environment — handler envId", () => {
     const dom = makeCounterDomain();
     dom.setHandler(new ActionHandler(), { envId: "dup" });
 
-    expect(() => dom.setHandler(new ActionHandler(), { envId: "dup" })).toThrow(/already registered/i);
+    expect(() => dom.setHandler(new ActionHandler(), { envId: "dup" })).toThrow(
+      /already registered/i,
+    );
   });
 
   it("throws domain_action_handler_conflict when default handler registered twice", () => {
@@ -358,8 +375,12 @@ describe("resolve() vs forDomain() priority", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .resolve(dom, "increment", () => { log("resolver"); })
-        .forDomain(dom, () => { log("handler"); }),
+        .resolve(dom, "increment", () => {
+          log("resolver");
+        })
+        .forDomain(dom, () => {
+          log("handler");
+        }),
     );
 
     await dom.action("increment").execute({ by: 1 });
@@ -373,8 +394,12 @@ describe("resolve() vs forDomain() priority", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .forDomain(dom, () => { log("handler"); })
-        .resolve(dom, "increment", () => { log("resolver"); }),
+        .forDomain(dom, () => {
+          log("handler");
+        })
+        .resolve(dom, "increment", () => {
+          log("resolver");
+        }),
     );
 
     await dom.action("increment").execute({ by: 1 });
@@ -392,7 +417,10 @@ describe("action listeners — envId dispatch", () => {
     const dom = makeCounterDomain();
     const seen = vi.fn();
 
-    dom.setHandler(new ActionHandler().forDomain(dom, () => {}), { envId: "env" });
+    dom.setHandler(
+      new ActionHandler().forDomain(dom, () => {}),
+      { envId: "env" },
+    );
     dom.addActionListener((act) => seen(act.coreAction.id));
 
     await dom.action("increment").execute({ by: 1 }, "env");
@@ -429,7 +457,7 @@ describe("no handler", () => {
 
 describe("handler — input validation", () => {
   it("throws action_input_validation_failed when input fails schema via default handler", async () => {
-    const dom = createActionDomain({
+    const dom = createActionRootDomain({
       domain: "validated",
       actions: {
         ping: action().input({ schema: v.object({ count: v.pipe(v.number(), v.minValue(1)) }) }),
@@ -444,14 +472,17 @@ describe("handler — input validation", () => {
   });
 
   it("throws action_input_validation_failed when input fails schema via named envId handler", async () => {
-    const dom = createActionDomain({
+    const dom = createActionRootDomain({
       domain: "validated_named",
       actions: {
         ping: action().input({ schema: v.object({ count: v.pipe(v.number(), v.minValue(1)) }) }),
       },
     });
 
-    dom.setHandler(new ActionHandler().forDomain(dom, () => {}), { envId: "worker" });
+    dom.setHandler(
+      new ActionHandler().forDomain(dom, () => {}),
+      { envId: "worker" },
+    );
 
     await expect(dom.action("ping").execute({ count: 0 }, "worker")).rejects.toThrow(
       /input validation failed/i,
@@ -459,7 +490,7 @@ describe("handler — input validation", () => {
   });
 
   it("handler receives the validated (transformed) input value", async () => {
-    const dom = createActionDomain({
+    const dom = createActionRootDomain({
       domain: "transformed",
       actions: {
         double: action().input({

@@ -1,6 +1,6 @@
 import * as v from "valibot";
 import { describe, expect, it, vi } from "vitest";
-import { createActionDomain } from "../ActionDomain/createActionDomain";
+import { createActionRootDomain } from "../ActionDomain/RootDomain/createActionRootDomain";
 import { ActionHandler } from "../ActionHandler/ActionHandler";
 import { action } from "../ActionSchema/action";
 
@@ -12,7 +12,7 @@ describe("NiceAction — basic domain", () => {
   it("creates a domain, registers a handler, executes an action", async () => {
     const mockFn = vi.fn();
 
-    const domain = createActionDomain({
+    const domain = createActionRootDomain({
       domain: "basic",
       actions: { ping: action().input({ schema: v.object({ msg: v.string() }) }) },
     });
@@ -30,7 +30,7 @@ describe("NiceAction — basic domain", () => {
   });
 
   it("returns a value from the handler via output schema", async () => {
-    const greetDomain = createActionDomain({
+    const greetDomain = createActionRootDomain({
       domain: "greet",
       actions: {
         greet: action()
@@ -59,7 +59,7 @@ describe("NiceAction — serialization", () => {
   it("uses serialize/deserialize hooks for non-JSON-native input (Date)", async () => {
     const received = vi.fn();
 
-    const dateDomain = createActionDomain({
+    const dateDomain = createActionRootDomain({
       domain: "date_domain",
       actions: {
         schedule: action().input({
@@ -86,7 +86,7 @@ describe("NiceAction — serialization", () => {
   });
 
   it("action schema input is typed correctly after matchAction narrowing", async () => {
-    const domain = createActionDomain({
+    const domain = createActionRootDomain({
       domain: "typed",
       actions: {
         send: action().input({ schema: v.object({ count: v.number(), label: v.string() }) }),
@@ -119,7 +119,7 @@ describe("NiceAction — serialization", () => {
 
 describe("NiceAction — multiple actions per domain", () => {
   it("dispatches to the correct branch per action id", async () => {
-    const multiDomain = createActionDomain({
+    const multiDomain = createActionRootDomain({
       domain: "multi",
       actions: {
         increment: action().input({ schema: v.object({ by: v.number() }) }),
@@ -155,7 +155,7 @@ describe("NiceAction — multiple actions per domain", () => {
 
 describe("NiceAction — child domains", () => {
   it("child domain actions route through child handler", async () => {
-    const root = createActionDomain({
+    const root = createActionRootDomain({
       domain: "root",
       actions: { ping: action().input({ schema: v.object({ v: v.string() }) }) },
     });
@@ -185,7 +185,7 @@ describe("NiceAction — child domains", () => {
 
 describe("NiceAction — error handling", () => {
   it("throws when execute is called with no handler registered", async () => {
-    const bare = createActionDomain({
+    const bare = createActionRootDomain({
       domain: "bare",
       actions: { noop: action().input({ schema: v.object({ x: v.number() }) }) },
     });
@@ -194,7 +194,7 @@ describe("NiceAction — error handling", () => {
   });
 
   it("throws when setHandler is called twice for the same default slot", () => {
-    const conflict = createActionDomain({
+    const conflict = createActionRootDomain({
       domain: "conflict",
       actions: { a: action().input({ schema: v.object({ x: v.number() }) }) },
     });
@@ -205,7 +205,7 @@ describe("NiceAction — error handling", () => {
   });
 
   it("throws when action id does not exist in domain", () => {
-    const dom = createActionDomain({
+    const dom = createActionRootDomain({
       domain: "dom",
       actions: { known: action().input({ schema: v.object({ x: v.number() }) }) },
     });
@@ -222,7 +222,7 @@ describe("NiceActionPrimed — primed re-execution", () => {
   it("execute() on NiceActionPrimed dispatches with stored input", async () => {
     const calls = vi.fn();
 
-    const dom = createActionDomain({
+    const dom = createActionRootDomain({
       domain: "primed_test",
       actions: { fire: action().input({ schema: v.object({ n: v.number() }) }) },
     });
@@ -250,7 +250,7 @@ describe("NiceActionPrimed — primed re-execution", () => {
 
 describe("NiceAction — async handler", () => {
   it("supports async handler returning a Promise", async () => {
-    const dom = createActionDomain({
+    const dom = createActionRootDomain({
       domain: "async_dom",
       actions: {
         fetch: action()

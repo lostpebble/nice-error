@@ -28,9 +28,16 @@ export interface INiceActionDomain<
   IDS extends TPossibleDomainIdList = TPossibleDomainIdList,
   SCH extends TNiceActionDomainSchema = TNiceActionDomainSchema,
 > {
-  domain: IDS[0];
+  domain: IDS[0] & string;
   allDomains: IDS;
   actions: SCH;
+}
+
+export interface INiceActionRootDomain<ID extends TPossibleDomainId = TPossibleDomainId>
+  extends INiceActionDomain<[ID], {}> {
+  domain: ID;
+  allDomains: [ID];
+  actions: {};
 }
 
 /**
