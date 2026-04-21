@@ -12,7 +12,8 @@ import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { createActionDomain } from "../ActionDomain/createActionDomain";
 import { action } from "../ActionSchema/action";
-import { EActionState, type TNiceActionResponse_JsonObject } from "../NiceAction/NiceAction.types";
+import { EActionState } from "../NiceAction/NiceAction.enums";
+import { type TNiceActionResponse_JsonObject } from "../NiceAction/NiceAction.types";
 import { NiceActionResponse } from "../NiceAction/NiceActionResponse";
 
 // ---------------------------------------------------------------------------
@@ -298,7 +299,7 @@ describe("NiceActionDomain.hydrateResponse — error cases", () => {
   it("throws hydration_domain_mismatch when domain does not match", async () => {
     const dom = makeUserDomain();
     const wire: TNiceActionResponse_JsonObject = {
-      type: EActionState.response,
+      type: EActionState.resolved,
       domain: "wrong_domain",
       allDomains: ["wrong_domain"],
       id: "getUser",
@@ -317,7 +318,7 @@ describe("NiceActionDomain.hydrateResponse — error cases", () => {
   it("throws hydration_action_id_not_found when actionId is unknown", async () => {
     const dom = makeUserDomain();
     const wire: TNiceActionResponse_JsonObject = {
-      type: EActionState.response,
+      type: EActionState.resolved,
       domain: "user",
       allDomains: ["user"],
       id: "nonExistentAction",

@@ -1,5 +1,5 @@
 import { err, err_nice } from "@nice-code/error";
-import type { EActionState } from "../NiceAction/NiceAction.types";
+import type { EActionState } from "../NiceAction/NiceAction.enums";
 
 export enum EErrId_NiceAction {
   action_id_not_in_domain = "action_id_not_in_domain",

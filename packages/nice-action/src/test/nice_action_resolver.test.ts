@@ -30,7 +30,7 @@ import {
   NiceActionResponderEnvironment,
 } from "../ActionRequestResponse/ActionResponder/NiceActionResponderEnvironment";
 import { action } from "../ActionSchema/action";
-import { EActionState } from "../NiceAction/NiceAction.types";
+import { EActionState } from "../NiceAction/NiceAction.enums";
 import { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
 
 // ---------------------------------------------------------------------------

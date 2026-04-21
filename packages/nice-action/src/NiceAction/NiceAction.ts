@@ -8,8 +8,9 @@ import type {
   TInferOutputFromSchema,
 } from "../ActionDomain/NiceActionDomain.types";
 import type { TInferActionError } from "../ActionSchema/NiceActionSchema";
+import { EActionState } from "./NiceAction.enums";
+import type { IActionRouteEntry } from "./NiceAction.route.types";
 import {
-  EActionState,
   type INiceAction,
   type INiceAction_JsonObject,
   type INiceActionPrimed_JsonObject,
@@ -30,18 +31,20 @@ export class NiceAction<
   readonly _actionDomain: NiceActionDomain<DOM>;
   readonly timeCreated: number;
   readonly cuid: string;
+  readonly route: IActionRouteEntry[];
 
   constructor(
     readonly actionDomain: NiceActionDomain<DOM>,
     readonly schema: SCH,
     readonly id: ID,
-    hydrationData?: Pick<INiceAction_JsonObject<DOM, ID>, "cuid" | "timeCreated">,
+    hydrationData?: Pick<INiceAction_JsonObject<DOM, ID>, "cuid" | "timeCreated" | "route">,
   ) {
     this._actionDomain = actionDomain;
     this.domain = actionDomain.domain;
     this.allDomains = actionDomain.allDomains;
     this.timeCreated = hydrationData?.timeCreated ?? Date.now();
     this.cuid = hydrationData?.cuid ?? nanoid();
+    this.route = hydrationData?.route ?? [];
   }
 
   /**
@@ -56,6 +59,7 @@ export class NiceAction<
       id: this.id,
       timeCreated: this.timeCreated,
       cuid: this.cuid,
+      route: this.route,
     };
   }
 
@@ -95,6 +99,13 @@ export class NiceAction<
     hydrationData?: Pick<INiceActionPrimed_JsonObject<DOM, ID>, "timePrimed">,
   ): NiceActionPrimed<DOM, ID, SCH> {
     return new NiceActionPrimed(this, input, hydrationData);
+  }
+
+  addRouteEntry(routeEntry: Omit<IActionRouteEntry, "time">) {
+    this.route.push({
+      ...routeEntry,
+      time: Date.now(),
+    });
   }
 
   /**

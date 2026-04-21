@@ -12,7 +12,8 @@ import { describe, expect, it, vi } from "vitest";
 import { createActionDomain } from "../ActionDomain/createActionDomain";
 import { NiceActionRequester } from "../ActionRequestResponse/ActionRequester/NiceActionRequester";
 import { action } from "../ActionSchema/action";
-import { EActionState, type INiceActionPrimed_JsonObject } from "../NiceAction/NiceAction.types";
+import { EActionState } from "../NiceAction/NiceAction.enums";
+import { type INiceActionPrimed_JsonObject } from "../NiceAction/NiceAction.types";
 import { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
 
 // ---------------------------------------------------------------------------

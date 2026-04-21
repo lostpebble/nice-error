@@ -35,6 +35,7 @@ export type {
 } from "./ActionSchema/NiceActionSchema.types";
 export { EErrId_NiceAction, err_nice_action } from "./errors/err_nice_action";
 export { NiceAction } from "./NiceAction/NiceAction";
+export { EActionState } from "./NiceAction/NiceAction.enums";
 export type {
   INiceAction,
   INiceAction_JsonObject,
@@ -42,7 +43,6 @@ export type {
   NiceActionResult,
   TNiceActionResponse_JsonObject,
 } from "./NiceAction/NiceAction.types";
-export { EActionState } from "./NiceAction/NiceAction.types";
 export { NiceActionPrimed } from "./NiceAction/NiceActionPrimed";
 export { NiceActionResponse } from "./NiceAction/NiceActionResponse";
 export * from "./utils/isActionResponseJsonObject";

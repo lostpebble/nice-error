@@ -2,8 +2,8 @@ import { NiceActionRequester } from "../ActionRequestResponse/ActionRequester/Ni
 import type { NiceActionDomainResponder } from "../ActionRequestResponse/ActionResponder/NiceActionResponder";
 import { EErrId_NiceAction, err_nice_action } from "../errors/err_nice_action";
 import { NiceAction } from "../NiceAction/NiceAction";
+import { EActionState } from "../NiceAction/NiceAction.enums";
 import {
-  EActionState,
   type INiceAction_JsonObject,
   type INiceActionPrimed_JsonObject,
   type TNiceActionResponse_JsonObject,
@@ -67,7 +67,7 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
 
   action<ID extends keyof ACT_DOM["actions"] & string>(
     id: ID,
-    hydrationData?: Pick<INiceAction_JsonObject<ACT_DOM, ID>, "cuid" | "timeCreated">,
+    hydrationData?: Pick<INiceAction_JsonObject<ACT_DOM, ID>, "cuid" | "timeCreated" | "route">,
   ): NiceAction<ACT_DOM, ID, ACT_DOM["actions"][ID]> {
     const actionSchema = this.actions[id];
     if (!actionSchema) {
@@ -208,6 +208,7 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
     const coreAction = this.action(id, {
       cuid: serialized.cuid,
       timeCreated: serialized.timeCreated,
+      route: serialized.route,
     });
 
     const rawInput = coreAction.schema.deserializeInput(serialized.input);
@@ -228,9 +229,9 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
     keyof ACT_DOM["actions"] & string,
     ACT_DOM["actions"][R["id"] & keyof ACT_DOM["actions"]]
   > {
-    if (serialized.type !== EActionState.response) {
+    if (serialized.type !== EActionState.resolved) {
       throw err_nice_action.fromId(EErrId_NiceAction.hydration_action_state_mismatch, {
-        expected: EActionState.response,
+        expected: EActionState.resolved,
         received: serialized.type,
       });
     }
@@ -253,6 +254,7 @@ export class NiceActionDomain<ACT_DOM extends INiceActionDomain = INiceActionDom
     const coreAction = this.action(id, {
       cuid: serialized.cuid,
       timeCreated: serialized.timeCreated,
+      route: serialized.route,
     });
 
     return hydrateNiceActionResponse(serialized, coreAction);

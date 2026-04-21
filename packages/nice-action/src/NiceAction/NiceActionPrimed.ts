@@ -6,8 +6,8 @@ import type {
 } from "../ActionDomain/NiceActionDomain.types";
 import type { TInferActionError } from "../ActionSchema/NiceActionSchema";
 import type { NiceAction } from "./NiceAction";
+import { EActionState } from "./NiceAction.enums";
 import {
-  EActionState,
   type INiceAction,
   type INiceActionPrimed_JsonObject,
   type NiceActionResult,

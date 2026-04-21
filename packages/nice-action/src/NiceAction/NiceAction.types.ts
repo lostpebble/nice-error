@@ -4,12 +4,8 @@ import type {
   TInferInputFromSchema,
   TInferOutputFromSchema,
 } from "../ActionDomain/NiceActionDomain.types";
-
-export enum EActionState {
-  empty = "empty",
-  primed = "primed",
-  response = "response",
-}
+import type { EActionState } from "./NiceAction.enums";
+import type { IActionRouteEntry } from "./NiceAction.route.types";
 
 export interface INiceAction<
   DOM extends INiceActionDomain,
@@ -22,10 +18,10 @@ export interface INiceAction<
   cuid: string;
   timeCreated: number;
 }
+
 /**
  * Wire format for a serialized NiceActionPrimed — safe to JSON.stringify / transmit.
  */
-
 export type INiceAction_JsonObject<
   DOM extends INiceActionDomain = INiceActionDomain,
   ID extends keyof DOM["actions"] & string = keyof DOM["actions"] & string,
@@ -36,6 +32,7 @@ export type INiceAction_JsonObject<
   id: ID;
   cuid: string;
   timeCreated: number;
+  route: IActionRouteEntry[];
 };
 
 /**
@@ -84,7 +81,7 @@ export interface INiceActionResponse_JsonObject_Base<
   DOM extends INiceActionDomain,
   ID extends keyof DOM["actions"] & string,
 > extends Omit<INiceActionPrimed_JsonObject<DOM, ID>, "type"> {
-  type: EActionState.response;
+  type: EActionState.resolved;
   timeResponded: number;
 }
 

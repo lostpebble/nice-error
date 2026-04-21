@@ -5,8 +5,8 @@ import type {
 } from "../ActionDomain/NiceActionDomain.types";
 import type { TInferActionError } from "../ActionSchema/NiceActionSchema";
 import type { NiceAction } from "./NiceAction";
+import { EActionState } from "./NiceAction.enums";
 import {
-  EActionState,
   type INiceAction,
   type NiceActionResult,
   type TNiceActionResponse_JsonObject,
@@ -19,7 +19,7 @@ export class NiceActionResponse<
   SCH extends DOM["actions"][ID],
 > implements Omit<INiceAction<DOM, ID>, "schema" | "cuid" | "timeCreated">
 {
-  readonly type = EActionState.response;
+  readonly type = EActionState.resolved;
   readonly domain: DOM["domain"];
   readonly allDomains: DOM["allDomains"];
   readonly id: ID;
@@ -53,7 +53,7 @@ export class NiceActionResponse<
     if (this.result.ok) {
       return {
         ...base,
-        type: EActionState.response,
+        type: EActionState.resolved,
         ok: true,
         output: this.primed.coreAction.schema.serializeOutput(this.result.output),
         timeResponded: this.timeResponded,
@@ -62,7 +62,7 @@ export class NiceActionResponse<
 
     return {
       ...base,
-      type: EActionState.response,
+      type: EActionState.resolved,
       ok: false,
       error: this.result.error.toJsonObject(),
       timeResponded: this.timeResponded,

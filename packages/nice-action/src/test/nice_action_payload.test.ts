@@ -22,7 +22,7 @@ import { describe, expect, it } from "vitest";
 import { createActionDomain } from "../ActionDomain/createActionDomain";
 import { createDomainResponder } from "../ActionRequestResponse/ActionResponder/NiceActionResponder";
 import { action } from "../ActionSchema/action";
-import { EActionState } from "../NiceAction/NiceAction.types";
+import { EActionState } from "../NiceAction/NiceAction.enums";
 import { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
 import { NiceActionResponse } from "../NiceAction/NiceActionResponse";
 
@@ -140,7 +140,7 @@ describe("Nice Action as an API Payload", () => {
     const responseJson = actionResponse.toJsonObject(); // Should not throw
 
     expect(responseJson).toEqual({
-      type: EActionState.response,
+      type: EActionState.resolved,
       ok: true,
       output: {
         lastFiveMessages: ["Hello", "Hi", "Hey", "Hola", "Bonjour"],
