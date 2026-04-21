@@ -59,7 +59,7 @@ export class NiceAction<
       id: this.id,
       timeCreated: this.timeCreated,
       cuid: this.cuid,
-      route: this.route,
+      ...(this.route.length > 0 ? { route: this.route } : {}),
     };
   }
 

@@ -20,7 +20,7 @@
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { createActionDomain } from "../ActionDomain/createActionDomain";
-import { createDomainResponder } from "../ActionRequestResponse/ActionResponder/NiceActionResponder";
+import { ActionHandler } from "../ActionHandler/ActionHandler";
 import { action } from "../ActionSchema/action";
 import { EActionState } from "../NiceAction/NiceAction.enums";
 import { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
@@ -340,10 +340,12 @@ describe("NiceActionDomain.matchAction()", () => {
     });
 
     let capturedBy: number | undefined;
-    dom.setActionRequester().forDomain(dom, (act) => {
-      const inc = dom.matchAction(act, "increment");
-      if (inc) capturedBy = inc.input.by;
-    });
+    dom.setHandler(
+      new ActionHandler().forDomain(dom, (act) => {
+        const inc = dom.matchAction(act, "increment");
+        if (inc) capturedBy = inc.input.by;
+      }),
+    );
 
     await dom.action("increment").execute({ by: 7 });
     expect(capturedBy).toBe(7);
@@ -492,7 +494,7 @@ describe("Child domain allDomains in serialized payload", () => {
       actions: { pong: action().input({ schema: v.object({ v: v.string() }) }) },
     });
 
-    child.setActionRequester().forDomain(child, () => {});
+    child.setHandler(new ActionHandler().forDomain(child, () => {}));
 
     const wire = child.primeAction("pong", { v: "hello" }).toJsonObject();
     const hydrated = child.hydratePrimed(wire);
@@ -610,7 +612,6 @@ describe("Payload round-trip with custom serialization (Date)", () => {
       expect(hydrated.result.output.confirmed).toBe(true);
     }
 
-    // Input also deserialized
     expect(hydrated.primed.input.at).toBeInstanceOf(Date);
     expect(hydrated.primed.input.at.toISOString()).toBe(ts.toISOString());
   });
@@ -631,8 +632,8 @@ describe("Input validation failure in resolver path", () => {
       },
     });
 
-    dom.registerResponder(
-      createDomainResponder(dom).resolveAction("greet", ({ name }) => ({ greeting: `hi ${name}` })),
+    dom.setHandler(
+      new ActionHandler().resolve(dom, "greet", ({ name }) => ({ greeting: `hi ${name}` })),
     );
 
     // Force invalid input through wire format — bypass TypeScript types
@@ -746,9 +747,11 @@ describe("Full JSON.stringify / JSON.parse transport", () => {
   it("primed action survives complete wire transport and can still execute", async () => {
     const dom = createTestActionDomain();
 
-    dom.setActionRequester().forActionId(dom, "send_message", (act) => ({
-      lastFiveMessages: [act.input.message],
-    }));
+    dom.setHandler(
+      new ActionHandler().forAction(dom, "send_message", (act) => ({
+        lastFiveMessages: [act.input.message],
+      })),
+    );
 
     const originalWire = dom
       .primeAction("send_message", { message: "transport test", channel: "ch" })
@@ -765,9 +768,11 @@ describe("Full JSON.stringify / JSON.parse transport", () => {
   it("response payload survives complete wire transport and can be hydrated", async () => {
     const dom = createTestActionDomain();
 
-    dom.setActionRequester().forActionId(dom, "send_message", () => ({
-      lastFiveMessages: ["a", "b", "c", "d", "e"],
-    }));
+    dom.setHandler(
+      new ActionHandler().forAction(dom, "send_message", () => ({
+        lastFiveMessages: ["a", "b", "c", "d", "e"],
+      })),
+    );
 
     const response = await dom
       .action("send_message")

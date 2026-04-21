@@ -1,4 +1,4 @@
-import { createDomainResolver, createResponderEnvironment } from "@nice-code/action";
+import { ActionHandler } from "@nice-code/action";
 import { act_domain_demo, EErrId_DemoAction, err_demo_action } from "demo-shared";
 
 // ---------------------------------------------------------------------------
@@ -18,38 +18,40 @@ const USERS: Record<string, { id: string; username: string; email: string }> = {
 const messageStore: Array<{ message: string; messageTime: Date }> = [];
 
 // ---------------------------------------------------------------------------
-// Domain resolver
+// Register demo resolvers on any ActionHandler (or subclass)
 // ---------------------------------------------------------------------------
 
-export const demoDomainResolver = createDomainResolver(act_domain_demo)
-  .resolveAction("greet", async ({ name }) => {
-    return { message: `Hello, ${name}! Greetings from the server.` };
-  })
-  .resolveAction("add_numbers", async ({ a, b }) => {
-    return { sum: a + b };
-  })
-  .resolveAction("get_user", async ({ userId }) => {
-    const user = USERS[userId];
-    if (user == null) {
-      throw err_demo_action.fromId(EErrId_DemoAction.user_not_found, { userId });
-    }
-    return user;
-  })
-  .resolveAction("divide", async ({ dividend, divisor }) => {
-    if (divisor === 0) {
-      throw err_demo_action.fromId(EErrId_DemoAction.division_by_zero);
-    }
-    const result = dividend / divisor;
-    return { result, isExact: Number.isInteger(result) };
-  })
-  .resolveAction("add_message", async ({ message }) => {
-    messageStore.push({ message, messageTime: new Date() });
-    const lastFiveMessages = messageStore.slice(-5);
-    return { lastFiveMessages };
-  });
+export function registerDemoResolvers<T extends ActionHandler>(handler: T): T {
+  return handler
+    .resolve(act_domain_demo, "greet", async ({ name }) => {
+      return { message: `Hello, ${name}! Greetings from the server.` };
+    })
+    .resolve(act_domain_demo, "add_numbers", async ({ a, b }) => {
+      return { sum: a + b };
+    })
+    .resolve(act_domain_demo, "get_user", async ({ userId }) => {
+      const user = USERS[userId];
+      if (user == null) {
+        throw err_demo_action.fromId(EErrId_DemoAction.user_not_found, { userId });
+      }
+      return user;
+    })
+    .resolve(act_domain_demo, "divide", async ({ dividend, divisor }) => {
+      if (divisor === 0) {
+        throw err_demo_action.fromId(EErrId_DemoAction.division_by_zero);
+      }
+      const result = dividend / divisor;
+      return { result, isExact: Number.isInteger(result) };
+    })
+    .resolve(act_domain_demo, "add_message", async ({ message }) => {
+      messageStore.push({ message, messageTime: new Date() });
+      const lastFiveMessages = messageStore.slice(-5);
+      return { lastFiveMessages };
+    });
+}
 
 // ---------------------------------------------------------------------------
-// Resolver environment (handles multi-domain routing by wire.domain)
+// Shared handler for HTTP endpoint (Hono / Cloudflare Worker)
 // ---------------------------------------------------------------------------
 
-export const demoResolverEnvironment = createResponderEnvironment([demoDomainResolver]);
+export const demoActionHandler = registerDemoResolvers(new ActionHandler());

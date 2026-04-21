@@ -1,12 +1,8 @@
 import {
-  type INiceActionDomain,
+  ActionHandler,
   type INiceActionPrimed_JsonObject,
   isActionResponseJsonObject,
   isPrimedActionJsonObject,
-  type NiceActionDomain,
-  type NiceActionDomainResponder,
-  type NiceActionPrimed,
-  type NiceActionRequester,
   NiceActionResponse,
   type TNiceActionResponse_JsonObject,
 } from "@nice-code/action";
@@ -14,35 +10,48 @@ import { castNiceError } from "@nice-code/error";
 import type {
   IActionConnectConfig,
   IActionConnectTransport,
-  IConnectorRegistrationOptions,
   IDispatchOptions,
   IPendingRequest,
-  IRequesterRegistrationOptions,
 } from "./ActionConnect.types";
 
 type TWirePrimedMessage = INiceActionPrimed_JsonObject & { ncEnv?: string };
 
-interface IResponderEntry {
-  responder: NiceActionDomainResponder<INiceActionDomain>;
-  environment: string | undefined;
-}
-
-interface IRequesterEntry {
-  requester: NiceActionRequester;
-  environment: string | undefined;
-  domainMap: Map<string, NiceActionDomain<INiceActionDomain>>;
-}
-
 const DEFAULT_TIMEOUT = 30_000;
 
-export class ActionConnect {
+/**
+ * ActionConnect — a plug-and-play ActionHandler for cross-environment action routing.
+ *
+ * Extends ActionHandler with transport management so actions dispatched through a
+ * domain are transparently forwarded over WebSocket or HTTP when no local resolver
+ * matches. Register resolvers via the inherited `.resolve()` / `.forDomain()` /
+ * `.forAction()` methods, then attach to a domain with `domain.setHandler(connect)`.
+ *
+ * @example — client (forwards unresolved actions to server)
+ * ```ts
+ * const connect = new ActionConnect({ role: "client", httpFallbackUrl: "/api/actions" });
+ * connect.setTransport(socket);
+ * myDomain.setHandler(connect);
+ * // Now myDomain.action("x").execute(input) transparently sends over the transport.
+ * ```
+ *
+ * @example — server (resolves incoming actions locally)
+ * ```ts
+ * const connect = new ActionConnect({ role: "server" });
+ * connect
+ *   .resolve(myDomain, "createUser", async ({ name }) => ({ id: await db.insert(name) }))
+ *   .resolve(myDomain, "deleteUser", async ({ id }) => { await db.delete(id); });
+ * myDomain.setHandler(connect);
+ * connect.setTransport(serverSocket);
+ * // Incoming actions via onMessage() are dispatched locally.
+ * ```
+ */
+export class ActionConnect extends ActionHandler {
   private _config: IActionConnectConfig;
   private _pendingRequests = new Map<string, IPendingRequest>();
-  private _responderEntries: IResponderEntry[] = [];
-  private _requesterEntries: IRequesterEntry[] = [];
   private _transports = new Map<string | undefined, IActionConnectTransport>();
 
   constructor(config: IActionConnectConfig) {
+    super({ ht: config.ht, runtime: config.runtime });
     this._config = {
       enableHttpFallback: true,
       requestTimeout: DEFAULT_TIMEOUT,
@@ -55,25 +64,69 @@ export class ActionConnect {
     return this;
   }
 
-  registerResponder(
-    responder: NiceActionDomainResponder<INiceActionDomain>,
-    options?: IConnectorRegistrationOptions,
-  ): this {
-    this._responderEntries.push({ responder, environment: options?.environment });
-    return this;
+  /**
+   * Dispatch a primed action. Tries local resolvers/cases first (inherited from
+   * ActionHandler). If nothing matches, forwards via the registered transport.
+   *
+   * This override is what makes ActionConnect a transparent forwarder: setting it
+   * as a domain's handler causes unresolved actions to automatically flow to transport.
+   */
+  override async dispatchAction(primed: Parameters<ActionHandler["dispatchAction"]>[0]): Promise<unknown> {
+    const local = await this._tryDispatch(primed);
+    if (local.handled) return local.output;
+    return this._dispatchViaTransport(primed);
   }
 
-  registerRequester(requester: NiceActionRequester, options: IRequesterRegistrationOptions): this {
-    const domainMap = new Map<string, NiceActionDomain<INiceActionDomain>>();
-    for (const domain of options.domains) {
-      domainMap.set(domain.domain, domain);
-    }
-    this._requesterEntries.push({ requester, environment: options.environment, domainMap });
-    return this;
-  }
-
+  /**
+   * Explicitly send a primed action via transport, bypassing local resolvers.
+   * Useful when you need direct transport access with environment routing.
+   */
   async dispatch(
-    action: NiceActionPrimed<any, any, any>,
+    action: Parameters<ActionHandler["dispatchAction"]>[0],
+    options?: IDispatchOptions,
+  ): Promise<unknown> {
+    return this._dispatchViaTransport(action, options);
+  }
+
+  /**
+   * Handle an incoming wire message (primed action or response).
+   *
+   * - If it's a response: resolves the corresponding pending `dispatch` promise.
+   * - If it's a primed action: dispatches it locally via registered resolvers/cases
+   *   and sends a response back on `replyTransport` (or the default transport).
+   */
+  async onMessage(
+    rawMessage: string,
+    options?: { replyTransport?: IActionConnectTransport },
+  ): Promise<void> {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(rawMessage);
+    } catch {
+      return;
+    }
+
+    if (isActionResponseJsonObject(parsed)) {
+      this._handleResponse(parsed);
+      return;
+    }
+
+    if (isPrimedActionJsonObject(parsed)) {
+      const ncEnv = (parsed as TWirePrimedMessage).ncEnv;
+      await this._handleIncomingPrimed(parsed, ncEnv, options?.replyTransport);
+    }
+  }
+
+  disconnect(): void {
+    for (const [, pending] of this._pendingRequests) {
+      clearTimeout(pending.timer);
+      pending.reject(new Error("ActionConnect disconnected"));
+    }
+    this._pendingRequests.clear();
+  }
+
+  private async _dispatchViaTransport(
+    action: Parameters<ActionHandler["dispatchAction"]>[0],
     options?: IDispatchOptions,
   ): Promise<unknown> {
     const wire = action.toJsonObject();
@@ -125,36 +178,6 @@ export class ActionConnect {
     });
   }
 
-  async onMessage(
-    rawMessage: string,
-    options?: { replyTransport?: IActionConnectTransport },
-  ): Promise<void> {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(rawMessage);
-    } catch {
-      return;
-    }
-
-    if (isActionResponseJsonObject(parsed)) {
-      this._handleResponse(parsed);
-      return;
-    }
-
-    if (isPrimedActionJsonObject(parsed)) {
-      const ncEnv = (parsed as TWirePrimedMessage).ncEnv;
-      await this._handlePrimed(parsed, ncEnv, options?.replyTransport);
-    }
-  }
-
-  disconnect(): void {
-    for (const [, pending] of this._pendingRequests) {
-      clearTimeout(pending.timer);
-      pending.reject(new Error("ActionConnect disconnected"));
-    }
-    this._pendingRequests.clear();
-  }
-
   private _resolveRequest(cuid: string, responseWire: TNiceActionResponse_JsonObject): void {
     const pending = this._pendingRequests.get(cuid);
     if (pending == null) return;
@@ -180,61 +203,49 @@ export class ActionConnect {
     this._resolveRequest(wire.cuid, wire);
   }
 
-  private async _handlePrimed(
+  /**
+   * Handle an incoming primed-action wire message.
+   * Dispatches locally (no transport fallback) and sends the response.
+   */
+  /**
+   * Handle an incoming primed-action wire message.
+   * Dispatches locally (no transport fallback) and sends the response.
+   * The `ncEnv` field is preserved for informational/routing purposes but
+   * handler selection is managed at domain registration time via `setHandler({ envId })`.
+   */
+  private async _handleIncomingPrimed(
     wire: INiceActionPrimed_JsonObject,
-    environment: string | undefined,
+    _ncEnv: string | undefined,
     replyTransport: IActionConnectTransport | undefined,
   ): Promise<void> {
-    const envCandidates: Array<string | undefined> =
-      environment != null ? [environment, undefined] : [undefined];
-
-    for (const env of envCandidates) {
-      const responderEntry = this._responderEntries.find(
-        (e) => e.environment === env && e.responder.domainId === wire.domain,
-      );
-      if (responderEntry != null) {
-        await this._dispatchToResponder(responderEntry.responder, wire, replyTransport);
-        return;
-      }
-
-      const requesterEntry = this._requesterEntries.find(
-        (e) => e.environment === env && e.domainMap.has(wire.domain),
-      );
-      if (requesterEntry != null) {
-        await this._dispatchToRequester(requesterEntry, wire, replyTransport);
-        return;
-      }
-    }
-  }
-
-  private async _dispatchToResponder(
-    responder: NiceActionDomainResponder<INiceActionDomain>,
-    wire: INiceActionPrimed_JsonObject,
-    replyTransport: IActionConnectTransport | undefined,
-  ): Promise<void> {
-    const response = await responder._dispatch(wire as Parameters<typeof responder._dispatch>[0]);
-    this._sendReply(JSON.stringify(response.toJsonObject()), replyTransport);
-  }
-
-  private async _dispatchToRequester(
-    entry: IRequesterEntry,
-    wire: INiceActionPrimed_JsonObject,
-    replyTransport: IActionConnectTransport | undefined,
-  ): Promise<void> {
-    const domain = entry.domainMap.get(wire.domain);
+    const domain = this._domains.get(wire.domain);
     if (domain == null) return;
 
-    const primed = domain.hydratePrimed(wire);
     let responseWire: TNiceActionResponse_JsonObject;
+    let primed: ReturnType<typeof domain.hydratePrimed> | undefined;
 
     try {
-      const output = await entry.requester.handleAction(primed);
-      responseWire = primed.setOutput(output).toJsonObject();
+      primed = domain.hydratePrimed(wire);
+      const validatedPrimed = await domain.validatePrimed(primed);
+
+      // Use _tryDispatch (not dispatchAction) to avoid transport fallback on the receiving side.
+      const result = await this._tryDispatch(validatedPrimed);
+
+      if (result.handled) {
+        responseWire = validatedPrimed.setOutput(result.output as any).toJsonObject();
+      } else {
+        const error = castNiceError(
+          new Error(
+            `ActionConnect: no local handler for action "${wire.id}" in domain "${wire.domain}"`,
+          ),
+        );
+        responseWire = new NiceActionResponse(validatedPrimed, { ok: false, error }).toJsonObject();
+      }
     } catch (e) {
-      const niceError = castNiceError(e);
+      if (primed == null) return; // hydration failed — nothing to reply with
       responseWire = new NiceActionResponse(primed, {
         ok: false,
-        error: niceError as ReturnType<typeof castNiceError>,
+        error: castNiceError(e),
       }).toJsonObject();
     }
 

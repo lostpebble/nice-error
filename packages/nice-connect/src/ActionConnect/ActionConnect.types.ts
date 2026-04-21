@@ -1,11 +1,11 @@
-import type { INiceActionDomain, NiceActionDomain, NiceActionPrimed } from "@nice-code/action";
+import type { IActionHandlerConfig, NiceActionPrimed } from "@nice-code/action";
 
 export enum EActionConnectRole {
   client = "client",
   server = "server",
 }
 
-export interface IActionConnectConfig {
+export interface IActionConnectConfig extends IActionHandlerConfig {
   /** Whether this node is a client (frontend) or server (backend). Determines HTTP fallback eligibility. */
   role: EActionConnectRole;
   /** URL for HTTP fallback POST requests. Required when role is "client" and HTTP fallback is enabled. */
@@ -14,16 +14,6 @@ export interface IActionConnectConfig {
   enableHttpFallback?: boolean;
   /** Timeout in milliseconds for pending dispatched requests. Default: 30_000 */
   requestTimeout?: number;
-}
-
-export interface IConnectorRegistrationOptions {
-  /** Scope this connector to a named environment. Inbound actions carry an optional ncEnv field to select it. */
-  environment?: string;
-}
-
-export interface IRequesterRegistrationOptions extends IConnectorRegistrationOptions {
-  /** Domains used to hydrate incoming wire primed actions before passing to the requester. */
-  domains: NiceActionDomain<INiceActionDomain>[];
 }
 
 export interface IActionConnectTransport {
@@ -39,6 +29,6 @@ export interface IPendingRequest {
 }
 
 export interface IDispatchOptions {
-  /** Route this dispatch to a specific named environment's transport and handlers. */
+  /** Route this dispatch to a specific named environment's transport. */
   environment?: string;
 }

@@ -5,7 +5,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { demo_err_nice, EErrId_DemoNiceBackend, errorGlobalEnv } from "../../errors/demo_err_nice";
-import { demoResolverEnvironment } from "../../nice_actions/demo_resolver";
+import { demoActionHandler } from "../../nice_actions/demo_resolver";
 import { vTestValidationObject } from "../validation/test_valibot_validation.schema";
 
 const honoApi = new Hono();
@@ -71,7 +71,7 @@ honoApi.post(
 
 honoApi.on(["POST", "OPTIONS"], "/resolve_action", cors(), async (c) => {
   const wire = await c.req.json();
-  const response = await demoResolverEnvironment.dispatch(wire);
+  const response = await demoActionHandler.handleWire(wire);
   return c.json(response);
 });
 

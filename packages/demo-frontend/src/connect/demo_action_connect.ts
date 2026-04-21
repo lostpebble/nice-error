@@ -7,9 +7,9 @@
  * Usage: swap `demo_requester` for `connect_requester` in main.tsx to route
  * all domain actions through ActionConnect instead of direct HTTP POST.
  */
-import { NiceActionRequester } from "@nice-code/action";
+import { ActionHandler } from "@nice-code/action";
 import type { IActionConnectTransport } from "@nice-code/connect";
-import { ActionConnect, TConnectRole } from "@nice-code/connect";
+import { ActionConnect, EActionConnectRole } from "@nice-code/connect";
 import { BACKEND_BASE_URL, WS_BACKEND_URL } from "../frontend_env";
 
 const ws = new WebSocket(`${WS_BACKEND_URL}/ws`);
@@ -24,7 +24,7 @@ const wsTransport: IActionConnectTransport = {
 };
 
 export const actionConnect = new ActionConnect({
-  role: TConnectRole.client,
+  role: EActionConnectRole.client,
   httpFallbackUrl: `${BACKEND_BASE_URL}/resolve_action`,
   enableHttpFallback: true,
 }).setTransport(wsTransport);
@@ -43,6 +43,6 @@ ws.onerror = (e) => {
   console.warn("[ActionConnect] WS error", e);
 };
 
-export const connect_requester = new NiceActionRequester().setDefaultHandler((action) =>
+export const connect_requester = new ActionHandler().setDefaultHandler((action) =>
   actionConnect.dispatch(action),
 );

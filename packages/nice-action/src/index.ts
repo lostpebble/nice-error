@@ -15,19 +15,17 @@ export type {
   TPossibleDomainId,
   TPossibleDomainIdList,
 } from "./ActionDomain/NiceActionDomain.types";
-export { NiceActionRequester } from "./ActionRequestResponse/ActionRequester/NiceActionRequester";
-export {
-  createDomainResponder as createDomainResolver,
-  NiceActionDomainResponder,
-} from "./ActionRequestResponse/ActionResponder/NiceActionResponder";
-export type { TActionResponderFn } from "./ActionRequestResponse/ActionResponder/NiceActionResponder.types";
-export {
-  createResponderEnvironment,
-  NiceActionResponderEnvironment,
-} from "./ActionRequestResponse/ActionResponder/NiceActionResponderEnvironment";
+export { ActionHandler } from "./ActionHandler/ActionHandler";
+export type {
+  IActionHandlerCase,
+  IActionHandlerConfig,
+  TActionHandlerDispatchFn,
+  TActionHandlerDispatchResult,
+  TActionHandlerResolverFn,
+} from "./ActionHandler/ActionHandler.types";
 export { action } from "./ActionSchema/action";
-export type { TInferActionError } from "./ActionSchema/NiceActionSchema";
 export { NiceActionSchema } from "./ActionSchema/NiceActionSchema";
+export type { TInferActionError } from "./ActionSchema/NiceActionSchema";
 export type {
   TNiceActionSerializationDefinition,
   TNiceActonSchemaInputOptions,
@@ -35,7 +33,15 @@ export type {
 } from "./ActionSchema/NiceActionSchema.types";
 export { EErrId_NiceAction, err_nice_action } from "./errors/err_nice_action";
 export { NiceAction } from "./NiceAction/NiceAction";
-export { EActionState } from "./NiceAction/NiceAction.enums";
+export {
+  EActionRequestExpectation,
+  EActionRouteStep,
+  EActionState,
+} from "./NiceAction/NiceAction.enums";
+export type {
+  IActionRouteEntry,
+  IActionRouteEntry_RequestStart,
+} from "./NiceAction/NiceAction.route.types";
 export type {
   INiceAction,
   INiceAction_JsonObject,

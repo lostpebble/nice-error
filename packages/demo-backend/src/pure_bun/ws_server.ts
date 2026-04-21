@@ -8,16 +8,14 @@
  * are routed back to the correct client.
  */
 import type { IActionConnectTransport } from "@nice-code/connect";
-import { ActionConnect, TConnectRole } from "@nice-code/connect";
-import { demoDomainResolver } from "../nice_actions/demo_resolver";
+import { ActionConnect, EActionConnectRole } from "@nice-code/connect";
+import { registerDemoResolvers } from "../nice_actions/demo_resolver";
 
 const PORT = 4567;
 
 // One server-side ActionConnect instance shared across connections.
 // Each call to onMessage supplies a per-connection replyTransport.
-const serverConnect = new ActionConnect({ role: TConnectRole.server }).registerResponder(
-  demoDomainResolver,
-);
+const serverConnect = registerDemoResolvers(new ActionConnect({ role: EActionConnectRole.server }));
 
 const server = Bun.serve({
   port: PORT,

@@ -25,6 +25,7 @@ import {
 import * as v from "valibot";
 import { describe, expect, it, vi } from "vitest";
 import { createActionDomain } from "../ActionDomain/createActionDomain";
+import { ActionHandler } from "../ActionHandler/ActionHandler";
 import { action } from "../ActionSchema/action";
 
 // ---------------------------------------------------------------------------
@@ -550,9 +551,9 @@ describe("executeSafe + handler — full pipeline", () => {
     const dom = makeOrderDomain();
     const calls: string[] = [];
 
-    dom.setActionRequester().forActionId(dom, "shipOrder", () => {
+    dom.setHandler(new ActionHandler().forAction(dom, "shipOrder", () => {
       throw err_order.fromId("not_found", { orderId: "ord-pipe" });
-    });
+    }));
 
     const result = await dom.action("shipOrder").executeSafe({ orderId: "ord-pipe" });
 
@@ -575,9 +576,9 @@ describe("executeSafe + handler — full pipeline", () => {
     const dom = makeOrderDomain();
     const log: string[] = [];
 
-    dom.setActionRequester().forActionId(dom, "cancelOrder", () => {
+    dom.setHandler(new ActionHandler().forAction(dom, "cancelOrder", () => {
       throw err_order.fromId("cancelled");
-    });
+    }));
 
     const result = await dom.action("cancelOrder").executeSafe({ orderId: "ord-async" });
 
@@ -598,9 +599,9 @@ describe("executeSafe + handler — full pipeline", () => {
     const dom = makeOrderDomain();
     const calls: string[] = [];
 
-    dom.setActionRequester().forActionId(dom, "shipOrder", () => {
+    dom.setHandler(new ActionHandler().forAction(dom, "shipOrder", () => {
       throw err_inventory.fromId("out_of_stock", { sku: "SKU-X", requested: 3 });
-    });
+    }));
 
     const result = await dom.action("shipOrder").executeSafe({ orderId: "ord-inv" });
 
@@ -625,9 +626,9 @@ describe("executeSafe + handler — full pipeline", () => {
     const dom = makeOrderDomain();
     const calls: string[] = [];
 
-    dom.setActionRequester().forActionId(dom, "shipOrder", () => {
+    dom.setHandler(new ActionHandler().forAction(dom, "shipOrder", () => {
       throw err_system.fromId("unexpected");
-    });
+    }));
 
     const result = await dom.action("shipOrder").executeSafe({ orderId: "ord-sys" });
 
@@ -654,12 +655,12 @@ describe("executeSafe + handler — full pipeline", () => {
     const dom = makeOrderDomain();
     const calls: string[] = [];
 
-    dom.setActionRequester().forActionId(dom, "shipOrder", () => {
+    dom.setHandler(new ActionHandler().forAction(dom, "shipOrder", () => {
       throw err_order.fromContext({
         payment_required: undefined,
         not_found: { orderId: "ord-compound" },
       });
-    });
+    }));
 
     const result = await dom.action("shipOrder").executeSafe({ orderId: "ord-compound" });
 

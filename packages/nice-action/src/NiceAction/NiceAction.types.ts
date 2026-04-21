@@ -32,7 +32,8 @@ export type INiceAction_JsonObject<
   id: ID;
   cuid: string;
   timeCreated: number;
-  route: IActionRouteEntry[];
+  /** Route entries are only included in the wire format when non-empty. */
+  route?: IActionRouteEntry[];
 };
 
 /**

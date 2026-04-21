@@ -1,6 +1,7 @@
 import * as v from "valibot";
 import { describe, expect, it, vi } from "vitest";
 import { createActionDomain } from "../ActionDomain/createActionDomain";
+import { ActionHandler } from "../ActionHandler/ActionHandler";
 import { action } from "../ActionSchema/action";
 
 // ---------------------------------------------------------------------------
@@ -16,10 +17,12 @@ describe("NiceAction — basic domain", () => {
       actions: { ping: action().input({ schema: v.object({ msg: v.string() }) }) },
     });
 
-    domain.setActionRequester().forDomain(domain, (act) => {
-      const ping = domain.matchAction(act, "ping");
-      if (ping) mockFn(ping.input.msg);
-    });
+    domain.setHandler(
+      new ActionHandler().forDomain(domain, (act) => {
+        const ping = domain.matchAction(act, "ping");
+        if (ping) mockFn(ping.input.msg);
+      }),
+    );
 
     await domain.action("ping").execute({ msg: "hello" });
 
@@ -36,10 +39,12 @@ describe("NiceAction — basic domain", () => {
       },
     });
 
-    greetDomain.setActionRequester().forDomain(greetDomain, (act) => {
-      const greet = greetDomain.matchAction(act, "greet");
-      if (greet) return { greeting: `Hello, ${greet.input.name}!` };
-    });
+    greetDomain.setHandler(
+      new ActionHandler().forDomain(greetDomain, (act) => {
+        const greet = greetDomain.matchAction(act, "greet");
+        if (greet) return { greeting: `Hello, ${greet.input.name}!` };
+      }),
+    );
 
     const result = await greetDomain.action("greet").execute({ name: "World" });
     expect(result).toEqual({ greeting: "Hello, World!" });
@@ -67,10 +72,12 @@ describe("NiceAction — serialization", () => {
       },
     });
 
-    dateDomain.setActionRequester().forDomain(dateDomain, (act) => {
-      const schedule = dateDomain.matchAction(act, "schedule");
-      if (schedule) received(schedule.input.timeStart);
-    });
+    dateDomain.setHandler(
+      new ActionHandler().forDomain(dateDomain, (act) => {
+        const schedule = dateDomain.matchAction(act, "schedule");
+        if (schedule) received(schedule.input.timeStart);
+      }),
+    );
 
     const ts = new Date("2024-06-15T12:00:00Z");
     await dateDomain.action("schedule").execute({ timeStart: ts });
@@ -89,14 +96,15 @@ describe("NiceAction — serialization", () => {
     let capturedCount: number | undefined;
     let capturedLabel: string | undefined;
 
-    domain.setActionRequester().forDomain(domain, (act) => {
-      const send = domain.matchAction(act, "send");
-      if (send) {
-        // TypeScript compile error here if input types are wrong
-        capturedCount = send.input.count;
-        capturedLabel = send.input.label;
-      }
-    });
+    domain.setHandler(
+      new ActionHandler().forDomain(domain, (act) => {
+        const send = domain.matchAction(act, "send");
+        if (send) {
+          capturedCount = send.input.count;
+          capturedLabel = send.input.label;
+        }
+      }),
+    );
 
     await domain.action("send").execute({ count: 42, label: "items" });
 
@@ -121,17 +129,18 @@ describe("NiceAction — multiple actions per domain", () => {
 
     const log = vi.fn();
 
-    // matchAction returns a narrowed value — no sequential narrowing pitfall
-    multiDomain.setActionRequester().forDomain(multiDomain, (act) => {
-      const increment = multiDomain.matchAction(act, "increment");
-      if (increment) {
-        log(`increment:${increment.input.by}`);
-        return;
-      }
+    multiDomain.setHandler(
+      new ActionHandler().forDomain(multiDomain, (act) => {
+        const increment = multiDomain.matchAction(act, "increment");
+        if (increment) {
+          log(`increment:${increment.input.by}`);
+          return;
+        }
 
-      const reset = multiDomain.matchAction(act, "reset");
-      if (reset) log(`reset:${reset.input.to}`);
-    });
+        const reset = multiDomain.matchAction(act, "reset");
+        if (reset) log(`reset:${reset.input.to}`);
+      }),
+    );
 
     await multiDomain.action("increment").execute({ by: 5 });
     await multiDomain.action("reset").execute({ to: 0 });
@@ -158,10 +167,12 @@ describe("NiceAction — child domains", () => {
 
     const childLog = vi.fn();
 
-    child.setActionRequester().forDomain(child, (act) => {
-      const pong = child.matchAction(act, "pong");
-      if (pong) childLog(pong.input.v);
-    });
+    child.setHandler(
+      new ActionHandler().forDomain(child, (act) => {
+        const pong = child.matchAction(act, "pong");
+        if (pong) childLog(pong.input.v);
+      }),
+    );
 
     await child.action("pong").execute({ v: "response" });
     expect(childLog).toHaveBeenCalledWith("response");
@@ -182,15 +193,15 @@ describe("NiceAction — error handling", () => {
     await expect(bare.action("noop").execute({ x: 1 })).rejects.toThrow(/no action handler/i);
   });
 
-  it("throws when setActionHandler is called twice", () => {
+  it("throws when setHandler is called twice for the same default slot", () => {
     const conflict = createActionDomain({
       domain: "conflict",
       actions: { a: action().input({ schema: v.object({ x: v.number() }) }) },
     });
 
-    conflict.setActionRequester();
+    conflict.setHandler(new ActionHandler());
 
-    expect(() => conflict.setActionRequester()).toThrow(/already has a handler/i);
+    expect(() => conflict.setHandler(new ActionHandler())).toThrow(/already has a handler/i);
   });
 
   it("throws when action id does not exist in domain", () => {
@@ -216,10 +227,12 @@ describe("NiceActionPrimed — primed re-execution", () => {
       actions: { fire: action().input({ schema: v.object({ n: v.number() }) }) },
     });
 
-    dom.setActionRequester().forDomain(dom, (act) => {
-      const fire = dom.matchAction(act, "fire");
-      if (fire) calls(fire.input.n);
-    });
+    dom.setHandler(
+      new ActionHandler().forDomain(dom, (act) => {
+        const fire = dom.matchAction(act, "fire");
+        if (fire) calls(fire.input.n);
+      }),
+    );
 
     const coreAction = dom.action("fire");
     const { NiceActionPrimed } = await import("../NiceAction/NiceActionPrimed");
@@ -246,13 +259,15 @@ describe("NiceAction — async handler", () => {
       },
     });
 
-    dom.setActionRequester().forDomain(dom, async (act) => {
-      const fetch = dom.matchAction(act, "fetch");
-      if (fetch) {
-        await Promise.resolve(); // simulate async work
-        return { greeting: `Hi, ${fetch.input.name}` };
-      }
-    });
+    dom.setHandler(
+      new ActionHandler().forDomain(dom, async (act) => {
+        const fetch = dom.matchAction(act, "fetch");
+        if (fetch) {
+          await Promise.resolve();
+          return { greeting: `Hi, ${fetch.input.name}` };
+        }
+      }),
+    );
 
     const result = await dom.action("fetch").execute({ name: "Alice" });
     expect(result).toEqual({ greeting: "Hi, Alice" });

@@ -1,7 +1,7 @@
-import { NiceActionRequester } from "@nice-code/action";
+import { ActionHandler } from "@nice-code/action";
 import { BACKEND_BASE_URL } from "../frontend_env";
 
-export const demo_requester = new NiceActionRequester().setDefaultHandler(async (action) => {
+export const demo_requester = new ActionHandler().setDefaultHandler(async (action) => {
   const res = await fetch(`${BACKEND_BASE_URL}/resolve_action`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
