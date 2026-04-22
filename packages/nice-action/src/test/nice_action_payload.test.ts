@@ -363,10 +363,10 @@ describe("NiceActionDomain.matchAction()", () => {
 
     let capturedBy: number | undefined;
     dom.setHandler(
-      new ActionHandler().forDomain(dom, (act) => {
+      new ActionHandler().forDomain(dom, { execution: (act) => {
         const inc = dom.matchAction(act, "increment");
         if (inc) capturedBy = inc.input.by;
-      }),
+      } }),
     );
 
     await dom.action("increment").execute({ by: 7 });
@@ -522,7 +522,7 @@ describe("Child domain allDomains in serialized payload", () => {
       actions: { pong: action().input({ schema: v.object({ v: v.string() }) }) },
     });
 
-    child.setHandler(new ActionHandler().forDomain(child, () => {}));
+    child.setHandler(new ActionHandler().forDomain(child, { execution: () => {} }));
 
     const wire = child.primeAction("pong", { v: "hello" }).toJsonObject();
     const hydrated = child.hydratePrimed(wire);
@@ -665,7 +665,7 @@ describe("Input validation failure in resolver path", () => {
     });
 
     dom.setHandler(
-      new ActionHandler().resolve(dom, "greet", ({ name }) => ({ greeting: `hi ${name}` })),
+      new ActionHandler().forAction(dom, "greet", { execution: (primed) => ({ greeting: `hi ${primed.input.name}` }) }),
     );
 
     // Force invalid input through wire format — bypass TypeScript types
@@ -782,9 +782,9 @@ describe("Full JSON.stringify / JSON.parse transport", () => {
     const dom = createTestActionDomain();
 
     dom.setHandler(
-      new ActionHandler().forAction(dom, "send_message", (act) => ({
-        lastFiveMessages: [act.message],
-      })),
+      new ActionHandler().forAction(dom, "send_message", { execution: (primed) => ({
+        lastFiveMessages: [primed.input.message],
+      }) }),
     );
 
     const originalWire = dom
@@ -803,9 +803,9 @@ describe("Full JSON.stringify / JSON.parse transport", () => {
     const dom = createTestActionDomain();
 
     dom.setHandler(
-      new ActionHandler().forAction(dom, "send_message", () => ({
+      new ActionHandler().forAction(dom, "send_message", { execution: () => ({
         lastFiveMessages: ["a", "b", "c", "d", "e"],
-      })),
+      }) }),
     );
 
     const response = await dom

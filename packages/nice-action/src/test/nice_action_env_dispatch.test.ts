@@ -33,18 +33,16 @@ describe("matchTag dispatch — named handler is used when registered", () => {
     const domain = makeUserDomain();
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getUser", (act) => ({
-        id: act.userId,
-        source: "remote",
-      })),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: (primed) => ({ id: primed.input.userId, source: "remote" }),
+      }),
       { matchTag: "remote" },
     );
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getUser", (act) => ({
-        id: act.userId,
-        source: "local",
-      })),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: (primed) => ({ id: primed.input.userId, source: "local" }),
+      }),
     );
 
     const result = await domain.action("getUser").execute({ userId: "u1" }, "remote");
@@ -55,18 +53,16 @@ describe("matchTag dispatch — named handler is used when registered", () => {
     const domain = makeUserDomain();
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getUser", (act) => ({
-        id: act.userId,
-        source: "remote",
-      })),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: (primed) => ({ id: primed.input.userId, source: "remote" }),
+      }),
       { matchTag: "remote" },
     );
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getUser", (act) => ({
-        id: act.userId,
-        source: "local",
-      })),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: (primed) => ({ id: primed.input.userId, source: "local" }),
+      }),
     );
 
     const result = await domain.action("getUser").execute({ userId: "u1" });
@@ -81,10 +77,9 @@ describe("matchTag dispatch — falls back to default handler when matchTag abse
     const domain = makeUserDomain();
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getUser", (act) => ({
-        id: act.userId,
-        source: "local",
-      })),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: (primed) => ({ id: primed.input.userId, source: "local" }),
+      }),
     );
 
     // "remote" is never registered on domain — should fall back to default
@@ -92,18 +87,17 @@ describe("matchTag dispatch — falls back to default handler when matchTag abse
     expect(result).toEqual({ id: "u1", source: "local" });
   });
 
-  it("default handler with resolve() is used when matchTag is not registered", async () => {
+  it("default handler with forAction() is used when matchTag is not registered", async () => {
     const domain = makeUserDomain();
 
     domain.setHandler(
-      new ActionHandler().resolve(domain, "getUser", (input) => ({
-        id: input.userId,
-        source: "default-resolver",
-      })),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: (primed) => ({ id: primed.input.userId, source: "default-handler" }),
+      }),
     );
 
     const result = await domain.action("getUser").execute({ userId: "u1" }, "unknownEnv");
-    expect(result).toEqual({ id: "u1", source: "default-resolver" });
+    expect(result).toEqual({ id: "u1", source: "default-handler" });
   });
 
   it("matchTag-keyed handler wins over default handler", async () => {
@@ -111,23 +105,21 @@ describe("matchTag dispatch — falls back to default handler when matchTag abse
 
     // matchTag-keyed handler
     domain.setHandler(
-      new ActionHandler().resolve(domain, "getUser", (input) => ({
-        id: input.userId,
-        source: "env-resolver",
-      })),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: (primed) => ({ id: primed.input.userId, source: "env-handler" }),
+      }),
       { matchTag: "solver" },
     );
 
     // default handler (would also match)
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getUser", (act) => ({
-        id: act.userId,
-        source: "default-req",
-      })),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: (primed) => ({ id: primed.input.userId, source: "default-req" }),
+      }),
     );
 
     const result = await domain.action("getUser").execute({ userId: "u1" }, "solver");
-    expect(result).toEqual({ id: "u1", source: "env-resolver" });
+    expect(result).toEqual({ id: "u1", source: "env-handler" });
   });
 });
 
@@ -168,7 +160,9 @@ describe("child domain — own handler takes priority", () => {
 
     // Child has only a default handler — "remote" is not registered on child
     child.setHandler(
-      new ActionHandler().forAction(child, "pong", (act) => ({ result: `child:${act.v}` })),
+      new ActionHandler().forAction(child, "pong", {
+        execution: (primed) => ({ result: `child:${primed.input.v}` }),
+      }),
     );
 
     // Child dispatch with "remote" matchTag — child's default handler should win
@@ -190,12 +184,16 @@ describe("child domain — own handler takes priority", () => {
 
     // child has BOTH a "remote" matchTag handler AND a default handler
     child.setHandler(
-      new ActionHandler().forAction(child, "pong", (act) => ({ result: `remote:${act.v}` })),
+      new ActionHandler().forAction(child, "pong", {
+        execution: (primed) => ({ result: `remote:${primed.input.v}` }),
+      }),
       { matchTag: "remote" },
     );
 
     child.setHandler(
-      new ActionHandler().forAction(child, "pong", (act) => ({ result: `local:${act.v}` })),
+      new ActionHandler().forAction(child, "pong", {
+        execution: (primed) => ({ result: `local:${primed.input.v}` }),
+      }),
     );
 
     const remoteResult = await child.action("pong").execute({ v: "x" }, "remote");
@@ -216,10 +214,9 @@ describe("matchTag fallback — action listeners still fire", () => {
     domain.addActionListener((act) => listenerCalls(act.id));
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getUser", (act) => ({
-        id: act.userId,
-        source: "local",
-      })),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: (primed) => ({ id: primed.input.userId, source: "local" }),
+      }),
     );
 
     await domain.action("getUser").execute({ userId: "u1" }, "unregistered-env");

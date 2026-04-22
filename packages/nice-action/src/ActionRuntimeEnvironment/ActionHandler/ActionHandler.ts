@@ -18,8 +18,12 @@ import type {
 } from "./ActionHandler.types";
 
 type TStoredHandlers = {
-  execution?(primed: NiceActionPrimed<any, any, any>): MaybePromise<NiceActionResponse<any, any> | TNiceActionResponse_JsonObject<any, any> | undefined>;
-  response?(response: NiceActionResponse<any, any>): MaybePromise<NiceActionResponse<any, any> | TNiceActionResponse_JsonObject<any, any> | undefined>;
+  execution?(primed: NiceActionPrimed<any, any, any>): MaybePromise<any>;
+  response?(
+    response: NiceActionResponse<any, any>,
+  ): MaybePromise<
+    NiceActionResponse<any, any> | TNiceActionResponse_JsonObject<any, any> | undefined
+  >;
 };
 
 export class ActionHandler {
@@ -36,21 +40,21 @@ export class ActionHandler {
 
   private getHandlersForAction(
     action: INiceAction<any, any>,
-    matchTag?: string,
+    matchTag: string = "_",
   ): TStoredHandlers | undefined {
     if (matchTag !== this.matchTag) {
       return undefined;
     }
 
-    const matchKeysToTry: TMatchHandlerKey[] = [
+    const keys: TMatchHandlerKey[] = [
       `${matchTag}::${action.domain}::${action.id}`,
       `${matchTag}::${action.domain}::_`,
     ];
 
-    for (const key of matchKeysToTry) {
-      const handlers = this._handlersByKey.get(key);
-      if (handlers) {
-        return handlers;
+    for (const key of keys) {
+      const handler = this._handlersByKey.get(key);
+      if (handler != null) {
+        return handler;
       }
     }
 
@@ -126,7 +130,9 @@ export class ActionHandler {
   forDomainSwitch<FOR_DOM extends INiceActionDomain>(
     domain: NiceActionDomain<FOR_DOM>,
     cases: {
-      [ID in keyof FOR_DOM["actions"] & string]?: TExecutionAndResponseHandlers<INiceAction<FOR_DOM, ID>>;
+      [ID in keyof FOR_DOM["actions"] & string]?: TExecutionAndResponseHandlers<
+        INiceAction<FOR_DOM, ID>
+      >;
     },
   ): this {
     this._domains.set(domain.domain, domain);
@@ -186,11 +192,13 @@ export class ActionHandler {
     } else if (rawResult != null && isActionResponseJsonObject(rawResult)) {
       const domain = this._domains.get(primed.domain);
       if (domain == null) {
-        throw err_nice_action.fromId(EErrId_NiceAction.domain_no_handler, { domain: primed.domain });
+        throw err_nice_action.fromId(EErrId_NiceAction.domain_no_handler, {
+          domain: primed.domain,
+        });
       }
       response = domain.hydrateResponse(rawResult);
     } else {
-      response = primed.setResponse(undefined);
+      response = primed.setResponse(rawResult as any);
     }
 
     return { handled: true, response };

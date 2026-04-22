@@ -221,7 +221,7 @@ describe("ActionHandler — first-match-wins", () => {
     expect(log).not.toHaveBeenCalledWith("catchall");
   });
 
-  it("forDomain registered before forAction catches the action", async () => {
+  it("forDomain registered before forAction but (more specific) forAction takes priority", async () => {
     const dom = makeCounterDomain();
     const log = vi.fn();
 
@@ -232,8 +232,8 @@ describe("ActionHandler — first-match-wins", () => {
     );
 
     await dom.action("increment").execute({ by: 1 });
-    expect(log).toHaveBeenCalledWith("catchall");
-    expect(log).not.toHaveBeenCalledWith("specific");
+    expect(log).toHaveBeenCalledWith("specific");
+    expect(log).not.toHaveBeenCalledWith("catchall");
   });
 });
 
@@ -297,10 +297,9 @@ describe("named environment — handler envId", () => {
     const dom = makeCounterDomain();
     const log = vi.fn();
 
-    dom.setHandler(
-      new ActionHandler().forDomain(dom, { execution: () => log("worker") }),
-      { matchTag: "worker" },
-    );
+    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => log("worker") }), {
+      matchTag: "worker",
+    });
 
     // No default handler registered → should throw
     await expect(dom.action("increment").execute({ by: 1 })).rejects.toThrow();
@@ -311,14 +310,12 @@ describe("named environment — handler envId", () => {
     const dom = makeCounterDomain();
     const log = vi.fn();
 
-    dom.setHandler(
-      new ActionHandler().forDomain(dom, { execution: () => log("a") }),
-      { matchTag: "a" },
-    );
-    dom.setHandler(
-      new ActionHandler().forDomain(dom, { execution: () => log("b") }),
-      { matchTag: "b" },
-    );
+    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => log("a") }), {
+      matchTag: "a",
+    });
+    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => log("b") }), {
+      matchTag: "b",
+    });
 
     await dom.action("increment").execute({ by: 1 }, "a");
     await dom.action("increment").execute({ by: 1 }, "b");
@@ -331,10 +328,9 @@ describe("named environment — handler envId", () => {
     const log = vi.fn();
 
     dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => log("default") }));
-    dom.setHandler(
-      new ActionHandler().forDomain(dom, { execution: () => log("named") }),
-      { matchTag: "named" },
-    );
+    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => log("named") }), {
+      matchTag: "named",
+    });
 
     await dom.action("increment").execute({ by: 1 });
     await dom.action("increment").execute({ by: 1 }, "named");
@@ -344,10 +340,9 @@ describe("named environment — handler envId", () => {
 
   it("throws action_environment_not_found when envId is unknown and no default handler exists", async () => {
     const dom = makeCounterDomain();
-    dom.setHandler(
-      new ActionHandler().forDomain(dom, { execution: () => {} }),
-      { matchTag: "named" },
-    );
+    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => {} }), {
+      matchTag: "named",
+    });
 
     await expect(dom.action("increment").execute({ by: 1 }, "missing")).rejects.toThrow(
       /no handler or resolver registered with environment id/i,
@@ -385,42 +380,6 @@ describe("named environment — handler envId", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 8. resolve() vs forDomain() priority within a single ActionHandler
-// ---------------------------------------------------------------------------
-
-describe("resolve() vs forDomain() priority", () => {
-  it("resolve() fires before forDomain() when registered after", async () => {
-    const dom = makeCounterDomain();
-    const log = vi.fn();
-
-    dom.setHandler(
-      new ActionHandler()
-        .resolve(dom, "increment", { execution: () => log("resolver") })
-        .forDomain(dom, { execution: () => log("handler") }),
-    );
-
-    await dom.action("increment").execute({ by: 1 });
-    expect(log).toHaveBeenCalledWith("resolver");
-    expect(log).not.toHaveBeenCalledWith("handler");
-  });
-
-  it("resolve() fires before forDomain() even when forDomain() is registered first", async () => {
-    const dom = makeCounterDomain();
-    const log = vi.fn();
-
-    dom.setHandler(
-      new ActionHandler()
-        .forDomain(dom, { execution: () => log("handler") })
-        .resolve(dom, "increment", { execution: () => log("resolver") }),
-    );
-
-    await dom.action("increment").execute({ by: 1 });
-    expect(log).toHaveBeenCalledWith("resolver");
-    expect(log).not.toHaveBeenCalledWith("handler");
-  });
-});
-
-// ---------------------------------------------------------------------------
 // 9. Action listeners fire regardless of dispatch path
 // ---------------------------------------------------------------------------
 
@@ -429,10 +388,9 @@ describe("action listeners — envId dispatch", () => {
     const dom = makeCounterDomain();
     const seen = vi.fn();
 
-    dom.setHandler(
-      new ActionHandler().forDomain(dom, { execution: () => {} }),
-      { matchTag: "env" },
-    );
+    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => {} }), {
+      matchTag: "env",
+    });
     dom.addActionListener((act) => seen(act.coreAction.id));
 
     await dom.action("increment").execute({ by: 1 }, "env");
@@ -495,10 +453,9 @@ describe("handler — input validation", () => {
       },
     });
 
-    dom.setHandler(
-      new ActionHandler().forDomain(dom, { execution: () => {} }),
-      { matchTag: "worker" },
-    );
+    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => {} }), {
+      matchTag: "worker",
+    });
 
     await expect(dom.action("ping").execute({ count: 0 }, "worker")).rejects.toThrow(
       /input validation failed/i,

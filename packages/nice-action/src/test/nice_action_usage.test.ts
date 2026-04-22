@@ -20,10 +20,10 @@ describe("NiceAction — basic domain", () => {
     });
 
     domain.setHandler(
-      new ActionHandler().forDomain(domain, (act) => {
+      new ActionHandler().forDomain(domain, { execution: (act) => {
         const ping = domain.matchAction(act, "ping");
         if (ping) mockFn(ping.input.msg);
-      }),
+      } }),
     );
 
     await domain.action("ping").execute({ msg: "hello" });
@@ -44,10 +44,10 @@ describe("NiceAction — basic domain", () => {
     });
 
     greetDomain.setHandler(
-      new ActionHandler().forDomain(greetDomain, (act) => {
+      new ActionHandler().forDomain(greetDomain, { execution: (act) => {
         const greet = greetDomain.matchAction(act, "greet");
         if (greet) return { greeting: `Hello, ${greet.input.name}!` };
-      }),
+      } }),
     );
 
     const result = await greetDomain.action("greet").execute({ name: "World" });
@@ -79,10 +79,10 @@ describe("NiceAction — serialization", () => {
     });
 
     dateDomain.setHandler(
-      new ActionHandler().forDomain(dateDomain, (act) => {
+      new ActionHandler().forDomain(dateDomain, { execution: (act) => {
         const schedule = dateDomain.matchAction(act, "schedule");
         if (schedule) received(schedule.input.timeStart);
-      }),
+      } }),
     );
 
     const ts = new Date("2024-06-15T12:00:00Z");
@@ -105,13 +105,13 @@ describe("NiceAction — serialization", () => {
     let capturedLabel: string | undefined;
 
     domain.setHandler(
-      new ActionHandler().forDomain(domain, (act) => {
+      new ActionHandler().forDomain(domain, { execution: (act) => {
         const send = domain.matchAction(act, "send");
         if (send) {
           capturedCount = send.input.count;
           capturedLabel = send.input.label;
         }
-      }),
+      } }),
     );
 
     await domain.action("send").execute({ count: 42, label: "items" });
@@ -140,7 +140,7 @@ describe("NiceAction — multiple actions per domain", () => {
     const log = vi.fn();
 
     multiDomain.setHandler(
-      new ActionHandler().forDomain(multiDomain, (act) => {
+      new ActionHandler().forDomain(multiDomain, { execution: (act) => {
         const increment = multiDomain.matchAction(act, "increment");
         if (increment) {
           log(`increment:${increment.input.by}`);
@@ -149,7 +149,7 @@ describe("NiceAction — multiple actions per domain", () => {
 
         const reset = multiDomain.matchAction(act, "reset");
         if (reset) log(`reset:${reset.input.to}`);
-      }),
+      } }),
     );
 
     await multiDomain.action("increment").execute({ by: 5 });
@@ -177,10 +177,10 @@ describe("NiceAction — child domains", () => {
     const childLog = vi.fn();
 
     child.setHandler(
-      new ActionHandler().forDomain(child, (act) => {
+      new ActionHandler().forDomain(child, { execution: (act) => {
         const pong = child.matchAction(act, "pong");
         if (pong) childLog(pong.input.v);
-      }),
+      } }),
     );
 
     await child.action("pong").execute({ v: "response" });
@@ -245,10 +245,10 @@ describe("NiceActionPrimed — primed re-execution", () => {
     });
 
     dom.setHandler(
-      new ActionHandler().forDomain(dom, (act) => {
+      new ActionHandler().forDomain(dom, { execution: (act) => {
         const fire = dom.matchAction(act, "fire");
         if (fire) calls(fire.input.n);
-      }),
+      } }),
     );
 
     const coreAction = dom.action("fire");
@@ -279,13 +279,13 @@ describe("NiceAction — async handler", () => {
     });
 
     dom.setHandler(
-      new ActionHandler().forDomain(dom, async (act) => {
+      new ActionHandler().forDomain(dom, { execution: async (act) => {
         const fetch = dom.matchAction(act, "fetch");
         if (fetch) {
           await Promise.resolve();
           return { greeting: `Hi, ${fetch.input.name}` };
         }
-      }),
+      } }),
     );
 
     const result = await dom.action("fetch").execute({ name: "Alice" });

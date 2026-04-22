@@ -29,8 +29,9 @@ export class NiceActionSchema<
     return v.nullish(this.inputOptions?.schema);
   }
 
-  get outputSchema(): StandardSchemaV1 {
-    return v.nullish(this.outputOptions?.schema);
+  get outputSchema(): StandardSchemaV1 | undefined {
+    if (this.outputOptions?.schema == null) return undefined;
+    return v.nullish(this.outputOptions.schema);
   }
 
   /**

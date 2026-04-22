@@ -1,4 +1,7 @@
-import type { MaybePromise } from "../../ActionDomain/NiceActionDomain.types";
+import type {
+  MaybePromise,
+  TInferOutputFromSchema,
+} from "../../ActionDomain/NiceActionDomain.types";
 import type {
   INiceAction,
   TNiceActionResponse_JsonObject,
@@ -11,15 +14,20 @@ export type TAtLeastOne<T extends object> = {
 }[keyof T];
 
 /**
- * Format: `${matchTag | "_"}::${domainName | "_"}::${actionName | "_"}`
+ * Format: `${matchTag | "_"}::${domainName}::${actionName | "_"}`
  */
-export type TMatchHandlerKey = `${string}::${string}::${string}`;
+export type TMatchHandlerKey = `${string | "_"}::${string}::${string | "_"}`;
 
 export type THandleActionExecutionFn<A extends INiceAction<any, any>> =
   A extends INiceAction<infer DOM, infer IDS>
     ? (
         primed: NiceActionPrimed<DOM, IDS>,
-      ) => MaybePromise<NiceActionResponse<DOM, IDS> | TNiceActionResponse_JsonObject<DOM, IDS> | undefined>
+      ) => MaybePromise<
+        | NiceActionResponse<DOM, IDS>
+        | TNiceActionResponse_JsonObject<DOM, IDS>
+        | TInferOutputFromSchema<DOM["actions"][IDS]>["Output"]
+        | void
+      >
     : never;
 
 export type THandleActionResponseFn<A extends INiceAction<any, any>> =

@@ -227,10 +227,11 @@ export class NiceActionDomain<
     matchTag?: string,
   ): Promise<unknown> {
     // Try exact-tag handler registered on this domain
-    const exactHandler = this._handlersByTag.get(matchTag ?? "_");
-    if (exactHandler != null) {
+    const taggedHandler = this._handlersByTag.get(matchTag ?? "_");
+
+    if (taggedHandler != null) {
       const validatedPrimed = await this._withValidatedInput(primed);
-      const response = await exactHandler.dispatchAction(validatedPrimed);
+      const response = await taggedHandler.dispatchAction(validatedPrimed);
       for (const listener of this._listeners) await listener(validatedPrimed);
       if (response.result.ok) return response.result.output;
       throw response.result.error;
