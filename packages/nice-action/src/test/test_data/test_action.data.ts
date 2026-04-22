@@ -1,3 +1,4 @@
+import * as v from "valibot";
 import { createActionRootDomain } from "../../ActionDomain/helpers/createRootActionDomain";
 import { action } from "../../ActionSchema/action";
 
@@ -21,7 +22,11 @@ export const createTestDomains = () => {
   const test_act_domain_user_comment = test_domain_root.createChildDomain({
     domain: "user_comment",
     actions: {
-      [ETestActId_UserComment.new_comment]: action(),
+      [ETestActId_UserComment.new_comment]: action().input({
+        schema: v.object({
+          text: v.string(),
+        }),
+      }),
     },
   });
 
