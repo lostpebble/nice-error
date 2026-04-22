@@ -83,9 +83,10 @@ export class NiceActionRootDomain<
       const handler = this._runtimeEnvironment.getHandlerForTag(effectiveTag);
       if (handler != null) {
         const validatedPrimed = await this._withValidatedInput(primed);
-        const result = await handler.dispatchAction(validatedPrimed);
+        const response = await handler.dispatchAction(validatedPrimed);
         for (const listener of this._listeners) await listener(validatedPrimed);
-        return result;
+        if (response.result.ok) return response.result.output;
+        throw response.result.error;
       }
     }
 

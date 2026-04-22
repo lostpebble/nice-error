@@ -2,9 +2,14 @@ import type { NiceActionDomain } from "../../ActionDomain/NiceActionDomain";
 import type { INiceActionDomain } from "../../ActionDomain/NiceActionDomain.types";
 import { EErrId_NiceAction, err_nice_action } from "../../errors/err_nice_action";
 import { EActionState } from "../../NiceAction/NiceAction.enums";
-import type { INiceAction, INiceActionPrimed_JsonObject } from "../../NiceAction/NiceAction.types";
+import type {
+  INiceAction,
+  INiceActionPrimed_JsonObject,
+  TNiceActionResponse_JsonObject,
+} from "../../NiceAction/NiceAction.types";
 import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
 import { NiceActionResponse } from "../../NiceAction/NiceActionResponse";
+import { isActionResponseJsonObject } from "../../utils/isActionResponseJsonObject";
 import type {
   IActionHandlerConfig,
   TExecutionAndResponseHandlers,
@@ -48,10 +53,10 @@ export class ActionHandler {
   }
 
   /**
-   * Register a handler for all actions in a domain (first-match-wins among cases).
+   * Register a handler for all actions in a domain.
    * Receives the full primed action — use `domain.matchAction()` to narrow by id.
    * Useful for forwarding all domain actions to a remote endpoint.
-   * Lower priority than `forAction`/`resolve`.
+   * Lower priority than `forAction`.
    */
   forDomain<FOR_DOM extends INiceActionDomain>(
     domain: NiceActionDomain<FOR_DOM>,
@@ -66,9 +71,9 @@ export class ActionHandler {
   }
 
   /**
-   * Register a typed handler for a specific action ID (first-match-wins with `forDomain`).
-   * The handler receives just the typed input. Use `resolve()` instead if you need
-   * this handler to always win over any preceding `forDomain` registration.
+   * Register a typed handler for a specific action ID.
+   * The handler receives the full primed action with narrowed input type.
+   * Takes priority over `forDomain` for the same domain.
    */
   forAction<ACT_DOM extends INiceActionDomain, ID extends keyof ACT_DOM["actions"] & string>(
     domain: NiceActionDomain<ACT_DOM>,
@@ -80,25 +85,6 @@ export class ActionHandler {
     this._handlersByKey.set(matchKey, handlers);
     return this;
   }
-
-  /**
-   * Register a typed resolver for a specific action ID with highest priority —
-   * always fires before any `forDomain` case regardless of registration order.
-   * Receives just the typed input.
-   */
-  // resolve<ACT_DOM extends INiceActionDomain, ID extends keyof ACT_DOM["actions"] & string>(
-  //   domain: NiceActionDomain<ACT_DOM>,
-  //   actionId: ID,
-  //   fn: TActionHandlerResolverFn<ACT_DOM["actions"][ID]>,
-  // ): this {
-  //   this._domains.set(domain.domain, domain);
-  //   this._resolvers.push({
-  //     _matchKey: `${domain.domain}::${actionId}`,
-  //     _matcher: (primed) => primed.domain === domain.domain && primed.id === actionId,
-  //     _handler: (primed) => (fn as (input: unknown) => unknown)(primed.input),
-  //   });
-  //   return this;
-  // }
 
   /**
    * Register a handler for multiple action IDs (first-match-wins among cases).
@@ -121,9 +107,8 @@ export class ActionHandler {
   }
 
   /**
-   * Register a fallback handler that fires when no resolver or case matches.
-   * Only one default handler can be registered — calling this twice replaces
-   * the previous.
+   * Register a fallback handler that fires when no case matches.
+   * Calling this twice replaces the previous.
    */
   setDefaultHandler(handlers: TExecutionAndResponseHandlers<INiceAction<any, any>>): this {
     this._defaultHandler = handlers;
@@ -139,13 +124,16 @@ export class ActionHandler {
       if (result === undefined) {
         return { handled: true, response };
       }
-      return {
-        handled: true,
-        response:
-          result instanceof NiceActionResponse
-            ? result
-            : response.primed.coreAction.domain.hydrateResponse(result),
-      };
+      if (result instanceof NiceActionResponse) {
+        return { handled: true, response: result };
+      }
+      const domain = this._domains.get(response.domain);
+      if (domain == null) {
+        throw err_nice_action.fromId(EErrId_NiceAction.domain_no_handler, {
+          domain: response.domain,
+        });
+      }
+      return { handled: true, response: domain.hydrateResponse(result) };
     }
     return { handled: false };
   }
@@ -155,33 +143,31 @@ export class ActionHandler {
    * Returns `{ handled: false }` if nothing matches — does not throw.
    */
   private async _tryExecute(primed: NiceActionPrimed<any, any, any>): Promise<THandleActionResult> {
-    // if (response == null) {
-    //   return primed.setResponse(undefined);
-    // }
+    const handlers = this.getHandlersForAction(primed.coreAction, this.matchTag);
+    if (handlers?.execution == null) {
+      return { handled: false };
+    }
 
-    // return response instanceof NiceActionResponse ? response : domain.hydrateResponse(response);
-    // for (const r of this._resolvers) {
-    //   if (!r._matcher(primed)) continue;
-    //   const output = await r._handler(primed);
-    //   return { handled: true, output };
-    // }
+    const rawResult = await handlers.execution(primed);
 
-    // for (const c of this._cases) {
-    //   if (!c._matcher(primed)) continue;
-    //   const output = await c._handler(primed);
-    //   return { handled: true, output };
-    // }
+    let response: NiceActionResponse<any, any>;
+    if (rawResult instanceof NiceActionResponse) {
+      response = rawResult;
+    } else if (rawResult != null && isActionResponseJsonObject(rawResult)) {
+      const domain = this._domains.get(primed.domain);
+      if (domain == null) {
+        throw err_nice_action.fromId(EErrId_NiceAction.domain_no_handler, { domain: primed.domain });
+      }
+      response = domain.hydrateResponse(rawResult);
+    } else {
+      response = primed.setResponse(undefined);
+    }
 
-    // if (this._defaultHandler != null) {
-    //   const output = await this._defaultHandler(primed);
-    //   return { handled: true, output };
-    // }
-
-    return { handled: false };
+    return { handled: true, response };
   }
 
   /**
-   * Dispatch a primed action. Throws `domain_no_handler` if no handler matches.
+   * Dispatch a primed action. Throws if no execution handler matches.
    */
   async dispatchAction(primed: NiceActionPrimed<any, any>): Promise<NiceActionResponse<any, any>> {
     const result = await this._tryExecute(primed);
@@ -193,24 +179,27 @@ export class ActionHandler {
   }
 
   /**
-   * Dispatch a wire-format primed action and return a wire-format response.
-   * Used for server-side HTTP/WebSocket handlers — catches resolver errors and
+   * Dispatch a wire-format action (primed or resolved) and return a response.
+   * Used for server-side HTTP/WebSocket handlers — catches execution errors and
    * serializes them into the response (`ok: false`) rather than propagating.
    *
    * Throws (does not wrap) for structural errors:
-   * - `resolver_domain_not_registered` — domain not known to this handler
+   * - `domain_no_handler` — domain not known to this handler
    * - `hydration_*` — the wire payload is malformed
-   * - `resolver_action_not_registered` — no case for this action id
+   * - `no_action_execution_handler` — no execution case for this action id (primed path)
+   * - `no_action_response_handler` — no response case for this action id (resolved path)
    *
    * @example
    * ```ts
    * app.post("/actions", async (req, res) => {
    *   const response = await handler.handleWire(req.body);
-   *   res.json(response);
+   *   res.json(response.toJsonObject());
    * });
    * ```
    */
-  async handleWire(wire: INiceActionPrimed_JsonObject): Promise<NiceActionResponse<any, any>> {
+  async handleWire(
+    wire: INiceActionPrimed_JsonObject | TNiceActionResponse_JsonObject,
+  ): Promise<NiceActionResponse<any, any>> {
     const domain = this._domains.get(wire.domain);
     if (domain == null) {
       throw err_nice_action.fromId(EErrId_NiceAction.domain_no_handler, {
@@ -219,60 +208,28 @@ export class ActionHandler {
     }
 
     if (wire.type === EActionState.primed) {
-      // For primed actions, we can validate the input before dispatching to save wasted handler execution.
-      const primed = domain.hydratePrimed(wire);
-      // const handlers = this.getHandlersForAction(primed.coreAction, this.matchTag);
-
-      // if (handlers == null || handlers.execution == null) {
-      //   throw err_nice_action.fromId(EErrId_NiceAction.no_action_execution_handler, {
-      //     domain: wire.domain,
-      //     actionId: wire.id,
-      //   });
-      // }
-
+      const primed = domain.hydratePrimed(wire as INiceActionPrimed_JsonObject);
       return await this.dispatchAction(primed);
     }
 
     if (wire.type === EActionState.resolved) {
-      // For resolved actions, we have to skip straight to dispatch since we don't have the input to validate.
-      const primed = domain.hydratePrimed(wire);
-      const handlers = this.getHandlersForAction(primed.coreAction, this.matchTag);
-
-      if (handlers == null || handlers.response == null) {
+      const response = domain.hydrateResponse(wire as TNiceActionResponse_JsonObject);
+      const result = await this._tryHandleResponse(response);
+      if (!result.handled) {
         throw err_nice_action.fromId(EErrId_NiceAction.no_action_response_handler, {
           domain: wire.domain,
           actionId: wire.id,
         });
       }
+      return result.response;
     }
 
+    const unknownWire = wire as any;
     throw err_nice_action.fromId(EErrId_NiceAction.handle_wire_not_primed_or_response, {
-      domain: wire.domain,
-      actionId: wire.id,
-      actionState: wire.type,
+      domain: unknownWire.domain,
+      actionId: unknownWire.id,
+      actionState: unknownWire.type,
     });
-
-    // const allCases = [...this._resolvers, ...this._cases];
-    // const hasCase = allCases.some((c) => c._matcher(primed));
-    // if (!hasCase && this._defaultHandler == null) {
-    //   throw err_nice_action.fromId(EErrId_NiceAction.no_action_execution_handler, {
-    //     domain: wire.domain,
-    //     actionId: wire.id,
-    //   });
-    // }
-
-    // try {
-    //   const validatedPrimed = await domain.validatePrimed(primed);
-    //   const result = await this._tryExecute(validatedPrimed);
-    //   return validatedPrimed
-    //     .setOutput((result as { handled: true; output: unknown }).output as any)
-    //     .toJsonObject();
-    // } catch (e) {
-    //   return new NiceActionResponse(primed, {
-    //     ok: false,
-    //     error: castNiceError(e),
-    //   }).toJsonObject();
-    // }
   }
 
   /**

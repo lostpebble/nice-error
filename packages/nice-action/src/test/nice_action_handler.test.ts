@@ -43,7 +43,9 @@ describe("ActionHandler.forDomain", () => {
     const dom = makeCounterDomain();
     const log = vi.fn();
 
-    dom.setHandler(new ActionHandler().forDomain(dom, (act) => log(act.coreAction.id)));
+    dom.setHandler(
+      new ActionHandler().forDomain(dom, { execution: (primed) => log(primed.coreAction.id) }),
+    );
 
     await dom.action("increment").execute({ by: 1 });
     await dom.action("decrement").execute({ by: 2 });
@@ -65,9 +67,11 @@ describe("ActionHandler.forDomain", () => {
     });
 
     dom.setHandler(
-      new ActionHandler().forDomain(dom, (act) => {
-        const g = dom.matchAction(act, "greet");
-        if (g) return { message: `hi ${g.input.name}` };
+      new ActionHandler().forDomain(dom, {
+        execution: (primed) => {
+          const g = dom.matchAction(primed, "greet");
+          if (g) return { message: `hi ${g.input.name}` };
+        },
       }),
     );
 
@@ -87,9 +91,9 @@ describe("ActionHandler.forAction", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .forAction(dom, "increment", (act) => log(`inc:${act.by}`))
-        .forAction(dom, "decrement", (act) => log(`dec:${act.by}`))
-        .forAction(dom, "reset", (act) => log(`rst:${act.to}`)),
+        .forAction(dom, "increment", { execution: (primed) => log(`inc:${primed.input.by}`) })
+        .forAction(dom, "decrement", { execution: (primed) => log(`dec:${primed.input.by}`) })
+        .forAction(dom, "reset", { execution: (primed) => log(`rst:${primed.input.to}`) }),
     );
 
     await dom.action("increment").execute({ by: 3 });
@@ -99,13 +103,15 @@ describe("ActionHandler.forAction", () => {
     expect(log.mock.calls).toEqual([["inc:3"], ["dec:1"], ["rst:0"]]);
   });
 
-  it("act.input is narrowed so domain-specific fields are accessible", async () => {
+  it("primed.input is narrowed so domain-specific fields are accessible", async () => {
     const dom = makeCounterDomain();
     let capturedBy: number | undefined;
 
     dom.setHandler(
-      new ActionHandler().forAction(dom, "increment", (act) => {
-        capturedBy = act.by;
+      new ActionHandler().forAction(dom, "increment", {
+        execution: (primed) => {
+          capturedBy = primed.input.by;
+        },
       }),
     );
 
@@ -115,7 +121,7 @@ describe("ActionHandler.forAction", () => {
 
   it("throws when no forAction case matches the executed id", async () => {
     const dom = makeCounterDomain();
-    dom.setHandler(new ActionHandler().forAction(dom, "increment", () => {}));
+    dom.setHandler(new ActionHandler().forAction(dom, "increment", { execution: () => {} }));
 
     await expect(dom.action("reset").execute({ to: 0 })).rejects.toThrow(/no action handler/i);
   });
@@ -132,8 +138,10 @@ describe("ActionHandler.forActionIds", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .forActionIds(dom, ["increment", "decrement"] as const, (act) => log(act.coreAction.id))
-        .forAction(dom, "reset", () => {}),
+        .forActionIds(dom, ["increment", "decrement"] as const, {
+          execution: (primed) => log(primed.coreAction.id),
+        })
+        .forAction(dom, "reset", { execution: () => {} }),
     );
 
     await dom.action("increment").execute({ by: 1 });
@@ -148,8 +156,8 @@ describe("ActionHandler.forActionIds", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .forActionIds(dom, ["increment", "decrement"] as const, () => log("batch"))
-        .forAction(dom, "reset", () => log("reset")),
+        .forActionIds(dom, ["increment", "decrement"] as const, { execution: () => log("batch") })
+        .forAction(dom, "reset", { execution: () => log("reset") }),
     );
 
     await dom.action("reset").execute({ to: 0 });
@@ -169,8 +177,8 @@ describe("ActionHandler.setDefaultHandler", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .forAction(dom, "increment", () => {})
-        .setDefaultHandler((act) => log(`default:${act.coreAction.id}`)),
+        .forAction(dom, "increment", { execution: () => {} })
+        .setDefaultHandler({ execution: (primed) => log(`default:${primed.coreAction.id}`) }),
     );
 
     await dom.action("reset").execute({ to: 0 });
@@ -183,8 +191,8 @@ describe("ActionHandler.setDefaultHandler", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .forAction(dom, "increment", () => log("specific"))
-        .setDefaultHandler(() => log("default")),
+        .forAction(dom, "increment", { execution: () => log("specific") })
+        .setDefaultHandler({ execution: () => log("default") }),
     );
 
     await dom.action("increment").execute({ by: 1 });
@@ -204,8 +212,8 @@ describe("ActionHandler — first-match-wins", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .forAction(dom, "increment", () => log("specific"))
-        .forDomain(dom, () => log("catchall")),
+        .forAction(dom, "increment", { execution: () => log("specific") })
+        .forDomain(dom, { execution: () => log("catchall") }),
     );
 
     await dom.action("increment").execute({ by: 1 });
@@ -219,8 +227,8 @@ describe("ActionHandler — first-match-wins", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .forDomain(dom, () => log("catchall"))
-        .forAction(dom, "increment", () => log("specific")),
+        .forDomain(dom, { execution: () => log("catchall") })
+        .forAction(dom, "increment", { execution: () => log("specific") }),
     );
 
     await dom.action("increment").execute({ by: 1 });
@@ -248,9 +256,11 @@ describe("ActionHandler — shared instance", () => {
     const log = vi.fn();
 
     const handler = new ActionHandler()
-      .forAction(counterDom, "increment", (act) => log(`counter:${act.by}`))
-      .forAction(timerDom, "start", (act) => log(`timer:${act.ms}`))
-      .setDefaultHandler((act) => log(`fallback:${act.coreAction.id}`));
+      .forAction(counterDom, "increment", {
+        execution: (primed) => log(`counter:${primed.input.by}`),
+      })
+      .forAction(timerDom, "start", { execution: (primed) => log(`timer:${primed.input.ms}`) })
+      .setDefaultHandler({ execution: (primed) => log(`fallback:${primed.coreAction.id}`) });
 
     counterDom.setHandler(handler);
     timerDom.setHandler(handler);
@@ -273,7 +283,9 @@ describe("named environment — handler envId", () => {
     const log = vi.fn();
 
     dom.setHandler(
-      new ActionHandler().forAction(dom, "increment", (act) => log(`worker:${act.by}`)),
+      new ActionHandler().forAction(dom, "increment", {
+        execution: (primed) => log(`worker:${primed.input.by}`),
+      }),
       { matchTag: "worker" },
     );
 
@@ -286,7 +298,7 @@ describe("named environment — handler envId", () => {
     const log = vi.fn();
 
     dom.setHandler(
-      new ActionHandler().forDomain(dom, () => log("worker")),
+      new ActionHandler().forDomain(dom, { execution: () => log("worker") }),
       { matchTag: "worker" },
     );
 
@@ -300,11 +312,11 @@ describe("named environment — handler envId", () => {
     const log = vi.fn();
 
     dom.setHandler(
-      new ActionHandler().forDomain(dom, () => log("a")),
+      new ActionHandler().forDomain(dom, { execution: () => log("a") }),
       { matchTag: "a" },
     );
     dom.setHandler(
-      new ActionHandler().forDomain(dom, () => log("b")),
+      new ActionHandler().forDomain(dom, { execution: () => log("b") }),
       { matchTag: "b" },
     );
 
@@ -318,9 +330,9 @@ describe("named environment — handler envId", () => {
     const dom = makeCounterDomain();
     const log = vi.fn();
 
-    dom.setHandler(new ActionHandler().forDomain(dom, () => log("default")));
+    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => log("default") }));
     dom.setHandler(
-      new ActionHandler().forDomain(dom, () => log("named")),
+      new ActionHandler().forDomain(dom, { execution: () => log("named") }),
       { matchTag: "named" },
     );
 
@@ -333,7 +345,7 @@ describe("named environment — handler envId", () => {
   it("throws action_environment_not_found when envId is unknown and no default handler exists", async () => {
     const dom = makeCounterDomain();
     dom.setHandler(
-      new ActionHandler().forDomain(dom, () => {}),
+      new ActionHandler().forDomain(dom, { execution: () => {} }),
       { matchTag: "named" },
     );
 
@@ -383,12 +395,8 @@ describe("resolve() vs forDomain() priority", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .resolve(dom, "increment", () => {
-          log("resolver");
-        })
-        .forDomain(dom, () => {
-          log("handler");
-        }),
+        .resolve(dom, "increment", { execution: () => log("resolver") })
+        .forDomain(dom, { execution: () => log("handler") }),
     );
 
     await dom.action("increment").execute({ by: 1 });
@@ -402,12 +410,8 @@ describe("resolve() vs forDomain() priority", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .forDomain(dom, () => {
-          log("handler");
-        })
-        .resolve(dom, "increment", () => {
-          log("resolver");
-        }),
+        .forDomain(dom, { execution: () => log("handler") })
+        .resolve(dom, "increment", { execution: () => log("resolver") }),
     );
 
     await dom.action("increment").execute({ by: 1 });
@@ -426,7 +430,7 @@ describe("action listeners — envId dispatch", () => {
     const seen = vi.fn();
 
     dom.setHandler(
-      new ActionHandler().forDomain(dom, () => {}),
+      new ActionHandler().forDomain(dom, { execution: () => {} }),
       { matchTag: "env" },
     );
     dom.addActionListener((act) => seen(act.coreAction.id));
@@ -439,7 +443,7 @@ describe("action listeners — envId dispatch", () => {
     const dom = makeCounterDomain();
     const seen = vi.fn();
 
-    dom.setHandler(new ActionHandler().forDomain(dom, () => {}));
+    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => {} }));
     dom.addActionListener(() => seen());
 
     await dom.action("reset").execute({ to: 0 });
@@ -474,7 +478,7 @@ describe("handler — input validation", () => {
       },
     });
 
-    dom.setHandler(new ActionHandler().forDomain(dom, () => {}));
+    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => {} }));
 
     await expect(dom.action("ping").execute({ count: 0 })).rejects.toThrow(
       /input validation failed/i,
@@ -492,7 +496,7 @@ describe("handler — input validation", () => {
     });
 
     dom.setHandler(
-      new ActionHandler().forDomain(dom, () => {}),
+      new ActionHandler().forDomain(dom, { execution: () => {} }),
       { matchTag: "worker" },
     );
 
@@ -520,8 +524,10 @@ describe("handler — input validation", () => {
 
     let received: unknown;
     dom.setHandler(
-      new ActionHandler().forDomain(dom, (act) => {
-        received = act.input;
+      new ActionHandler().forDomain(dom, {
+        execution: (primed) => {
+          received = primed.input;
+        },
       }),
     );
 
@@ -533,7 +539,11 @@ describe("handler — input validation", () => {
     const dom = makeCounterDomain();
     const log = vi.fn();
 
-    dom.setHandler(new ActionHandler().forAction(dom, "increment", (act) => log(act.by)));
+    dom.setHandler(
+      new ActionHandler().forAction(dom, "increment", {
+        execution: (primed) => log(primed.input.by),
+      }),
+    );
 
     await dom.action("increment").execute({ by: 5 });
     expect(log).toHaveBeenCalledWith(5);

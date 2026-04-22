@@ -6,49 +6,35 @@ import type {
 import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
 import type { NiceActionResponse } from "../../NiceAction/NiceActionResponse";
 
+export type TAtLeastOne<T extends object> = {
+  [K in keyof T]-?: Required<Pick<T, K>> & Partial<Omit<T, K>>;
+}[keyof T];
+
 /**
  * Format: `${matchTag | "_"}::${domainName | "_"}::${actionName | "_"}`
  */
 export type TMatchHandlerKey = `${string}::${string}::${string}`;
 
-export type THandleActionExecutionFn<A extends INiceAction<any, any>> = (
-  primed: NiceActionPrimed<A["domain"], A["id"]>,
-) => A extends INiceAction<infer DOM, infer IDS>
-  ? MaybePromise<
-      NiceActionResponse<DOM, IDS> | TNiceActionResponse_JsonObject<DOM, IDS> | undefined
-    >
-  : never;
+export type THandleActionExecutionFn<A extends INiceAction<any, any>> =
+  A extends INiceAction<infer DOM, infer IDS>
+    ? (
+        primed: NiceActionPrimed<DOM, IDS>,
+      ) => MaybePromise<NiceActionResponse<DOM, IDS> | TNiceActionResponse_JsonObject<DOM, IDS> | undefined>
+    : never;
 
-export type THandleActionResponseFn<A extends INiceAction<any, any>> = (
-  response: NiceActionResponse<A["domain"], A["id"]>,
-) => A extends INiceAction<infer DOM, infer IDS>
-  ? MaybePromise<
-      NiceActionResponse<DOM, IDS> | TNiceActionResponse_JsonObject<DOM, IDS> | undefined
-    >
-  : never;
+export type THandleActionResponseFn<A extends INiceAction<any, any>> =
+  A extends INiceAction<infer DOM, infer IDS>
+    ? (
+        response: NiceActionResponse<DOM, IDS>,
+      ) => MaybePromise<
+        NiceActionResponse<DOM, IDS> | TNiceActionResponse_JsonObject<DOM, IDS> | undefined
+      >
+    : never;
 
-export type TExecutionAndResponseHandlers<A extends INiceAction<any, any>> =
-  | {
-      execution: THandleActionExecutionFn<A>;
-      response?: THandleActionResponseFn<A>;
-    }
-  | {
-      execution?: THandleActionExecutionFn<A>;
-      response: THandleActionResponseFn<A>;
-    }
-  | {
-      execution: THandleActionExecutionFn<A>;
-      response: THandleActionResponseFn<A>;
-    };
-
-// export type TActionHandlerResolverFn<SCH extends NiceActionSchema<any, any, any>> = (
-//   input: TInferInputFromSchema<SCH>["Input"],
-// ) => MaybePromise<TInferOutputFromSchema<SCH>["Output"]>;
-
-// export interface IActionHandlerCase {
-//   readonly _matchKey: TMatchHandlerKey;
-//   readonly _handler: TActionHandlerDispatchFn;
-// }
+export type TExecutionAndResponseHandlers<A extends INiceAction<any, any>> = TAtLeastOne<{
+  execution: THandleActionExecutionFn<A>;
+  response: THandleActionResponseFn<A>;
+}>;
 
 export interface IActionHandlerConfig {
   /**

@@ -230,9 +230,10 @@ export class NiceActionDomain<
     const exactHandler = this._handlersByTag.get(matchTag ?? "_");
     if (exactHandler != null) {
       const validatedPrimed = await this._withValidatedInput(primed);
-      const result = await exactHandler.dispatchAction(validatedPrimed);
+      const response = await exactHandler.dispatchAction(validatedPrimed);
       for (const listener of this._listeners) await listener(validatedPrimed);
-      return result;
+      if (response.result.ok) return response.result.output;
+      throw response.result.error;
     }
 
     // If a specific matchTag was requested but not found, fall back to the
@@ -241,9 +242,10 @@ export class NiceActionDomain<
       const defaultHandler = this._handlersByTag.get("_");
       if (defaultHandler != null) {
         const validatedPrimed = await this._withValidatedInput(primed);
-        const result = await defaultHandler.dispatchAction(validatedPrimed);
+        const response = await defaultHandler.dispatchAction(validatedPrimed);
         for (const listener of this._listeners) await listener(validatedPrimed);
-        return result;
+        if (response.result.ok) return response.result.output;
+        throw response.result.error;
       }
     }
 

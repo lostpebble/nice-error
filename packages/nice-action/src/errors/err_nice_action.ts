@@ -67,7 +67,7 @@ export const err_nice_action = err_nice.createChildDomain({
       actionId: string;
     }>({
       message: ({ domain, actionId }) =>
-        `No execution handler registered for action "${actionId}" in domain "${domain}".`,
+        `No action handler registered for "${actionId}" in domain "${domain}": no execution handler matched.`,
     }),
     [EErrId_NiceAction.no_action_response_handler]: err<{
       domain: string;
