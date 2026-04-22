@@ -55,7 +55,7 @@ export class NiceActionRootDomain<
     if (this._runtimeEnvironment != null) {
       throw err_nice_action.fromId(EErrId_NiceAction.environment_already_registered, {
         domain: this.domain,
-        envId: this._runtimeEnvironment.envId,
+        matchTag: this._runtimeEnvironment.envId,
       });
     }
 
@@ -92,7 +92,7 @@ export class NiceActionRootDomain<
     if (matchTag != null) {
       throw err_nice_action.fromId(EErrId_NiceAction.action_environment_not_found, {
         domain: this.domain,
-        envId: matchTag,
+        matchTag: matchTag,
       });
     }
     throw err_nice_action.fromId(EErrId_NiceAction.domain_no_handler, { domain: this.domain });

@@ -260,19 +260,19 @@ export class NiceActionDomain<
    * `environment_already_registered` if any other tag is registered twice.
    */
   setHandler(handler: ActionHandler, options?: { matchTag?: string }): this {
-    const tag = options?.matchTag ?? handler.matchTag;
-    if (this._handlersByTag.has(tag)) {
-      if (tag === "_") {
+    const matchTag = options?.matchTag ?? handler.matchTag;
+    if (this._handlersByTag.has(matchTag)) {
+      if (matchTag === "_") {
         throw err_nice_action.fromId(EErrId_NiceAction.domain_handler_conflict, {
           domain: this.domain,
         });
       }
       throw err_nice_action.fromId(EErrId_NiceAction.environment_already_registered, {
         domain: this.domain,
-        envId: tag,
+        matchTag: matchTag,
       });
     }
-    this._handlersByTag.set(tag, handler);
+    this._handlersByTag.set(matchTag, handler);
     handler._onRegisteredWith(this);
     return this;
   }

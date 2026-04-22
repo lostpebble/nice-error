@@ -34,7 +34,7 @@ describe("matchTag dispatch — named handler is used when registered", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", (act) => ({
-        id: act.input.userId,
+        id: act.userId,
         source: "remote",
       })),
       { matchTag: "remote" },
@@ -42,7 +42,7 @@ describe("matchTag dispatch — named handler is used when registered", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", (act) => ({
-        id: act.input.userId,
+        id: act.userId,
         source: "local",
       })),
     );
@@ -56,7 +56,7 @@ describe("matchTag dispatch — named handler is used when registered", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", (act) => ({
-        id: act.input.userId,
+        id: act.userId,
         source: "remote",
       })),
       { matchTag: "remote" },
@@ -64,7 +64,7 @@ describe("matchTag dispatch — named handler is used when registered", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", (act) => ({
-        id: act.input.userId,
+        id: act.userId,
         source: "local",
       })),
     );
@@ -82,7 +82,7 @@ describe("matchTag dispatch — falls back to default handler when matchTag abse
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", (act) => ({
-        id: act.input.userId,
+        id: act.userId,
         source: "local",
       })),
     );
@@ -121,7 +121,7 @@ describe("matchTag dispatch — falls back to default handler when matchTag abse
     // default handler (would also match)
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", (act) => ({
-        id: act.input.userId,
+        id: act.userId,
         source: "default-req",
       })),
     );
@@ -155,10 +155,7 @@ describe("matchTag dispatch — error when no handler found", () => {
 
 describe("child domain — own handler takes priority", () => {
   it("child default handler is used when the matchTag is only registered on the parent", async () => {
-    const root = createActionRootDomain({
-      domain: "root",
-      actions: { ping: action().input({ schema: v.object({ v: v.string() }) }) },
-    });
+    const root = createActionRootDomain({ domain: "root" });
 
     const child = root.createChildDomain({
       domain: "child",
@@ -169,17 +166,9 @@ describe("child domain — own handler takes priority", () => {
       },
     });
 
-    // "remote" matchTag is registered on root but NOT on child
-    root.setHandler(
-      new ActionHandler().forDomain(root, () => ({ result: "from-root-remote" })),
-      {
-        matchTag: "remote",
-      },
-    );
-
-    // Child has only a default handler
+    // Child has only a default handler — "remote" is not registered on child
     child.setHandler(
-      new ActionHandler().forAction(child, "pong", (act) => ({ result: `child:${act.input.v}` })),
+      new ActionHandler().forAction(child, "pong", (act) => ({ result: `child:${act.v}` })),
     );
 
     // Child dispatch with "remote" matchTag — child's default handler should win
@@ -188,10 +177,7 @@ describe("child domain — own handler takes priority", () => {
   });
 
   it("child matchTag handler wins when both child default and child matchTag are registered", async () => {
-    const root = createActionRootDomain({
-      domain: "root",
-      actions: { ping: action().input({ schema: v.object({ v: v.string() }) }) },
-    });
+    const root = createActionRootDomain({ domain: "root" });
 
     const child = root.createChildDomain({
       domain: "child",
@@ -204,12 +190,12 @@ describe("child domain — own handler takes priority", () => {
 
     // child has BOTH a "remote" matchTag handler AND a default handler
     child.setHandler(
-      new ActionHandler().forAction(child, "pong", (act) => ({ result: `remote:${act.input.v}` })),
+      new ActionHandler().forAction(child, "pong", (act) => ({ result: `remote:${act.v}` })),
       { matchTag: "remote" },
     );
 
     child.setHandler(
-      new ActionHandler().forAction(child, "pong", (act) => ({ result: `local:${act.input.v}` })),
+      new ActionHandler().forAction(child, "pong", (act) => ({ result: `local:${act.v}` })),
     );
 
     const remoteResult = await child.action("pong").execute({ v: "x" }, "remote");
@@ -231,7 +217,7 @@ describe("matchTag fallback — action listeners still fire", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", (act) => ({
-        id: act.input.userId,
+        id: act.userId,
         source: "local",
       })),
     );

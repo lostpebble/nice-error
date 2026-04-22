@@ -54,7 +54,7 @@ const err_post = defineNiceError({
 // ── Shared domain factory ────────────────────────────────────────────────────
 
 const makeDomain = () => {
-  const domain = createActionRootDomain({
+  return createActionRootDomain({ domain: "test_domain_root" }).createChildDomain({
     domain: "test_domain",
     actions: {
       getUser: action()
@@ -76,7 +76,6 @@ const makeDomain = () => {
         .output({ schema: v.object({ slots: v.array(v.string()) }) }),
     },
   });
-  return domain;
 };
 
 beforeEach(() => {
@@ -109,7 +108,7 @@ describe("niceActionQueryKey — structure", () => {
     const domain = makeDomain();
     const key = niceActionQueryKey(domain.action("createPost"));
     expect(key[1]).toBe("test_domain");
-    expect(key[2]).toEqual(["test_domain"]);
+    expect(key[2]).toEqual(["test_domain", "test_domain_root"]);
     expect(key[3]).toBe("createPost");
   });
 
@@ -142,10 +141,7 @@ describe("niceActionQueryKey — structure", () => {
   });
 
   it("child domain allDomains chain is reflected in the key", () => {
-    const root = createActionRootDomain({
-      domain: "root",
-      actions: { ping: action().input({ schema: v.object({ v: v.string() }) }) },
-    });
+    const root = createActionRootDomain({ domain: "root" });
     const child = root.createChildDomain({
       domain: "child",
       actions: { pong: action().input({ schema: v.object({ v: v.string() }) }) },
@@ -258,8 +254,8 @@ describe("useNiceQuery — queryFn execution", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", (act) => {
-        calls(act.input.userId);
-        return { id: act.input.userId, name: "Alice" };
+        calls(act.userId);
+        return { id: act.userId, name: "Alice" };
       }),
     );
 
@@ -278,10 +274,10 @@ describe("useNiceQuery — queryFn execution", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", (act) => {
-        envCalls(act.input.userId);
-        return { id: act.input.userId, name: "Worker Alice" };
+        envCalls(act.userId);
+        return { id: act.userId, name: "Worker Alice" };
       }),
-      { envId: "workerEnv" },
+      { matchTag: "workerEnv" },
     );
 
     useNiceQuery(domain.action("getUser"), { userId: "u2" }, { envId: "workerEnv" });
@@ -319,7 +315,7 @@ describe("useNiceMutation — mutationFn execution", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "createPost", (act) => {
-        calls(act.input.title, act.input.body);
+        calls(act.title, act.body);
         return { postId: "p1" };
       }),
     );
@@ -339,10 +335,10 @@ describe("useNiceMutation — mutationFn execution", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "createPost", (act) => {
-        envCalls(act.input.title);
+        envCalls(act.title);
         return { postId: "p2" };
       }),
-      { envId: "serverEnv" },
+      { matchTag: "serverEnv" },
     );
 
     useNiceMutation(domain.action("createPost"), { envId: "serverEnv" });
@@ -384,7 +380,7 @@ describe("useNiceMutation — mutationFn execution", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "createPost", (act) => {
-        throw err_post.fromId("duplicate_title", { title: act.input.title });
+        throw err_post.fromId("duplicate_title", { title: act.title });
       }),
     );
 
@@ -406,7 +402,7 @@ describe("Integration — QueryClient.fetchQuery", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", (act) => ({
-        id: act.input.userId,
+        id: act.userId,
         name: "Alice",
       })),
     );
@@ -428,8 +424,8 @@ describe("Integration — QueryClient.fetchQuery", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", (act) => {
-        calls(act.input.userId);
-        return { id: act.input.userId, name: "Cached" };
+        calls(act.userId);
+        return { id: act.userId, name: "Cached" };
       }),
     );
 
@@ -510,7 +506,7 @@ describe("Integration — QueryClient.fetchQuery", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getSchedule", (act) => {
-        receivedDates.push(act.input.date);
+        receivedDates.push(act.date);
         return { slots: ["09:00", "14:00"] };
       }),
     );
@@ -537,7 +533,7 @@ describe("Query key invalidation — QueryClient", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", (act) => ({
-        id: act.input.userId,
+        id: act.userId,
         name: "User",
       })),
     );
@@ -574,7 +570,7 @@ describe("Query key invalidation — QueryClient", () => {
 
     domain.setHandler(
       new ActionHandler()
-        .forAction(domain, "getUser", (act) => ({ id: act.input.userId, name: "User" }))
+        .forAction(domain, "getUser", (act) => ({ id: act.userId, name: "User" }))
         .forAction(domain, "createPost", () => ({ postId: "p1" })),
     );
 

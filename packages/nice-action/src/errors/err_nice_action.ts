@@ -74,17 +74,17 @@ export const err_nice_action = err_nice.createChildDomain({
     }),
     [EErrId_NiceAction.action_environment_not_found]: err<{
       domain: string;
-      envId: string;
+      matchTag: string;
     }>({
-      message: ({ domain, envId }) =>
-        `No handler or resolver registered with environment id "${envId}" on domain "${domain}".`,
+      message: ({ domain, matchTag }) =>
+        `No handler or resolver registered with environment id "${matchTag}" on domain "${domain}".`,
     }),
     [EErrId_NiceAction.environment_already_registered]: err<{
       domain: string;
-      envId: string;
+      matchTag: string;
     }>({
-      message: ({ domain, envId }) =>
-        `Environment "${envId}" is already registered on domain "${domain}". Each environment id may only be registered once.`,
+      message: ({ domain, matchTag }) =>
+        `Environment "${matchTag}" is already registered on domain "${domain}". Each environment id may only be registered once.`,
     }),
     [EErrId_NiceAction.action_input_validation_failed]: err<{
       domain: string;
