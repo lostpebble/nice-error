@@ -93,6 +93,8 @@ const err_inventory = defineNiceError({
 
 const makeOrderDomain = () =>
   createActionRootDomain({
+    domain: "root_order",
+  }).createChildDomain({
     domain: "order",
     actions: {
       shipOrder: action()

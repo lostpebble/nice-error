@@ -274,7 +274,7 @@ describe("named environment — handler envId", () => {
 
     dom.setHandler(
       new ActionHandler().forAction(dom, "increment", (act) => log(`worker:${act.input.by}`)),
-      { envId: "worker" },
+      { matchTag: "worker" },
     );
 
     await dom.action("increment").execute({ by: 4 }, "worker");
@@ -287,7 +287,7 @@ describe("named environment — handler envId", () => {
 
     dom.setHandler(
       new ActionHandler().forDomain(dom, () => log("worker")),
-      { envId: "worker" },
+      { matchTag: "worker" },
     );
 
     // No default handler registered → should throw
@@ -301,11 +301,11 @@ describe("named environment — handler envId", () => {
 
     dom.setHandler(
       new ActionHandler().forDomain(dom, () => log("a")),
-      { envId: "a" },
+      { matchTag: "a" },
     );
     dom.setHandler(
       new ActionHandler().forDomain(dom, () => log("b")),
-      { envId: "b" },
+      { matchTag: "b" },
     );
 
     await dom.action("increment").execute({ by: 1 }, "a");
@@ -321,7 +321,7 @@ describe("named environment — handler envId", () => {
     dom.setHandler(new ActionHandler().forDomain(dom, () => log("default")));
     dom.setHandler(
       new ActionHandler().forDomain(dom, () => log("named")),
-      { envId: "named" },
+      { matchTag: "named" },
     );
 
     await dom.action("increment").execute({ by: 1 });
@@ -334,7 +334,7 @@ describe("named environment — handler envId", () => {
     const dom = makeCounterDomain();
     dom.setHandler(
       new ActionHandler().forDomain(dom, () => {}),
-      { envId: "named" },
+      { matchTag: "named" },
     );
 
     await expect(dom.action("increment").execute({ by: 1 }, "missing")).rejects.toThrow(
@@ -355,9 +355,9 @@ describe("named environment — handler envId", () => {
 
   it("throws environment_already_registered when the same envId is used twice", () => {
     const dom = makeCounterDomain();
-    dom.setHandler(new ActionHandler(), { envId: "dup" });
+    dom.setHandler(new ActionHandler(), { matchTag: "dup" });
 
-    expect(() => dom.setHandler(new ActionHandler(), { envId: "dup" })).toThrow(
+    expect(() => dom.setHandler(new ActionHandler(), { matchTag: "dup" })).toThrow(
       /already registered/i,
     );
   });
@@ -425,7 +425,7 @@ describe("action listeners — envId dispatch", () => {
 
     dom.setHandler(
       new ActionHandler().forDomain(dom, () => {}),
-      { envId: "env" },
+      { matchTag: "env" },
     );
     dom.addActionListener((act) => seen(act.coreAction.id));
 
@@ -491,7 +491,7 @@ describe("handler — input validation", () => {
 
     dom.setHandler(
       new ActionHandler().forDomain(dom, () => {}),
-      { envId: "worker" },
+      { matchTag: "worker" },
     );
 
     await expect(dom.action("ping").execute({ count: 0 }, "worker")).rejects.toThrow(

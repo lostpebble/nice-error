@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid";
 import { ActionHandler } from "./ActionHandler/ActionHandler";
+import { ActionHandlerStore } from "./ActionHandlerStore/ActionHandlerStore";
 import type {
   IActionRuntimeEnvironment_JsonObject,
   IRuntimeMeta,
@@ -23,7 +24,7 @@ export class ActionRuntimeEnvironment {
   readonly timeCreated: number;
   readonly runtimeInfo: IRuntimeMeta = getAssumedRuntimeInfo();
 
-  private _handlers: ActionHandler[] = [];
+  private _handlerStore: ActionHandlerStore = new ActionHandlerStore();
 
   constructor(input: IActionRuntimeEnvironment_Constructor_Input) {
     this.envId = input.envId;
@@ -32,7 +33,7 @@ export class ActionRuntimeEnvironment {
   }
 
   get handlers(): readonly ActionHandler[] {
-    return this._handlers;
+    return this._handlerStore;
   }
 
   toJsonObject(): IActionRuntimeEnvironment_JsonObject {
@@ -45,7 +46,7 @@ export class ActionRuntimeEnvironment {
   }
 
   addHandler(handler: ActionHandler): this {
-    this._handlers.push(handler);
+    this._handlerStore.addHandler(handler);
     return this;
   }
 }

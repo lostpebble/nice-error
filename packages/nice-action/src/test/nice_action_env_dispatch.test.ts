@@ -203,7 +203,7 @@ describe("child domain — own handler takes priority", () => {
     // child has BOTH a "remote" envId handler AND a default handler
     child.setHandler(
       new ActionHandler().forAction(child, "pong", (act) => ({ result: `remote:${act.input.v}` })),
-      { envId: "remote" },
+      { matchTag: "remote" },
     );
 
     child.setHandler(

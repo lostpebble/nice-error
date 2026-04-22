@@ -183,7 +183,7 @@ describe("setHandler({ envId }) — named environment", () => {
           return { greeting: name };
         })
         .resolve(dom, "shout", ({ text }) => ({ result: text })),
-      { envId: "edge" },
+      { matchTag: "edge" },
     );
 
     await dom.action("greet").execute({ name: "Dave" }, "edge");
@@ -201,7 +201,7 @@ describe("setHandler({ envId }) — named environment", () => {
           return { greeting: "x" };
         })
         .resolve(dom, "shout", ({ text }) => ({ result: text })),
-      { envId: "edge" },
+      { matchTag: "edge" },
     );
 
     // No default handler → should throw domain_no_handler
@@ -220,7 +220,7 @@ describe("setHandler({ envId }) — named environment", () => {
           return { greeting: "a" };
         })
         .resolve(dom, "shout", ({ text }) => ({ result: text })),
-      { envId: "env-a" },
+      { matchTag: "env-a" },
     );
     dom.setHandler(
       new ActionHandler()
@@ -229,7 +229,7 @@ describe("setHandler({ envId }) — named environment", () => {
           return { greeting: "b" };
         })
         .resolve(dom, "shout", ({ text }) => ({ result: text })),
-      { envId: "env-b" },
+      { matchTag: "env-b" },
     );
 
     await dom.action("greet").execute({ name: "x" }, "env-a");
@@ -245,7 +245,7 @@ describe("setHandler({ envId }) — named environment", () => {
       new ActionHandler()
         .resolve(dom, "greet", () => ({ greeting: "x" }))
         .resolve(dom, "shout", ({ text }) => ({ result: text })),
-      { envId: "named" },
+      { matchTag: "named" },
     );
 
     await expect(dom.action("greet").execute({ name: "x" }, "ghost")).rejects.toThrow(
@@ -273,8 +273,8 @@ describe("setHandler({ envId }) — named environment", () => {
       .resolve(dom, "greet", () => ({ greeting: "x" }))
       .resolve(dom, "shout", ({ text }) => ({ result: text }));
 
-    dom.setHandler(handler, { envId: "dup" });
-    expect(() => dom.setHandler(handler, { envId: "dup" })).toThrow(/already registered/i);
+    dom.setHandler(handler, { matchTag: "dup" });
+    expect(() => dom.setHandler(handler, { matchTag: "dup" })).toThrow(/already registered/i);
   });
 });
 
@@ -504,7 +504,7 @@ describe("action listeners — resolver dispatch path", () => {
       new ActionHandler()
         .resolve(dom, "greet", () => ({ greeting: "x" }))
         .resolve(dom, "shout", ({ text }) => ({ result: text })),
-      { envId: "remote" },
+      { matchTag: "remote" },
     );
     dom.addActionListener((act) => seen(act.coreAction.id));
 
@@ -529,7 +529,7 @@ describe("NiceActionPrimed.execute(envId) — handler path", () => {
           return { greeting: name };
         })
         .resolve(dom, "shout", ({ text }) => ({ result: text })),
-      { envId: "myEnv" },
+      { matchTag: "myEnv" },
     );
 
     const primed = new NiceActionPrimed(dom.action("greet"), { name: "Judy" });
@@ -546,7 +546,7 @@ describe("NiceActionPrimed.execute(envId) — handler path", () => {
           throw new Error("nope");
         })
         .resolve(dom, "shout", ({ text }) => ({ result: text })),
-      { envId: "fail-env" },
+      { matchTag: "fail-env" },
     );
 
     const primed = new NiceActionPrimed(dom.action("greet"), { name: "x" });

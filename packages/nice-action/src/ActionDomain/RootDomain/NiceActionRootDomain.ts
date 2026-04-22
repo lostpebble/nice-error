@@ -1,7 +1,12 @@
 import type { ActionRuntimeEnvironment } from "../../ActionRuntimeEnvironment/ActionRuntimeEnvironment";
 import { EErrId_NiceAction, err_nice_action } from "../../errors/err_nice_action";
 import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
-import type { INiceActionRootDomain } from "../NiceActionDomain.types";
+import { NiceActionDomain } from "../NiceActionDomain";
+import type {
+  INiceActionDomainChildOptions,
+  INiceActionRootDomain,
+  TNiceActionDomainChildDef,
+} from "../NiceActionDomain.types";
 import { NiceActionDomainBase } from "../NiceActionDomainBase";
 
 export class NiceActionRootDomain<
@@ -23,6 +28,29 @@ export class NiceActionRootDomain<
     } as ROOT_DOM);
   }
 
+  createChildDomain<SUB_DOM extends INiceActionDomainChildOptions>(
+    subDomainDef: SUB_DOM & {
+      [K in Exclude<keyof SUB_DOM, keyof INiceActionDomainChildOptions>]: never;
+    },
+  ): NiceActionDomain<TNiceActionDomainChildDef<ROOT_DOM, SUB_DOM>> {
+    if (this.allDomains.includes(subDomainDef.domain)) {
+      throw err_nice_action.fromId(EErrId_NiceAction.domain_already_exists_in_hierarchy, {
+        domain: subDomainDef.domain,
+        allParentDomains: this.allDomains,
+        parentDomain: this.domain,
+      });
+    }
+
+    return new NiceActionDomain<TNiceActionDomainChildDef<ROOT_DOM, SUB_DOM>>(
+      {
+        allDomains: [subDomainDef.domain, ...this.allDomains],
+        domain: subDomainDef.domain,
+        actions: subDomainDef.actions,
+      },
+      this as any,
+    );
+  }
+
   setRuntimeEnvironment(runtime: ActionRuntimeEnvironment): this {
     if (this._runtimeEnvironment != null) {
       throw err_nice_action.fromId(EErrId_NiceAction.environment_already_registered, {
@@ -37,11 +65,12 @@ export class NiceActionRootDomain<
 
   async _dispatchAction<P extends NiceActionPrimed<any, any, any>>(
     primed: P,
-    envId?: string,
+    matchTag?: string,
   ): Promise<unknown> {
+    // const handler = this._runtimeEnvironment.
     // envId-specific handler takes first priority when registered.
-    if (envId != null) {
-      const envHandler = this._runtimeEnvironment?.handlers(envId);
+    if (matchTag != null) {
+      const envHandler = this._runtimeEnvironment?.handlers(matchTag);
       if (envHandler) {
         const validatedPrimed = await this._withValidatedInput(primed);
         const result = await envHandler.dispatchAction(validatedPrimed);
@@ -60,10 +89,10 @@ export class NiceActionRootDomain<
       return result;
     }
 
-    if (envId != null) {
+    if (matchTag != null) {
       throw err_nice_action.fromId(EErrId_NiceAction.action_environment_not_found, {
         domain: this.domain,
-        envId,
+        envId: matchTag,
       });
     }
     throw err_nice_action.fromId(EErrId_NiceAction.domain_no_handler, { domain: this.domain });

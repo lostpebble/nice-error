@@ -1,4 +1,5 @@
 import type { ActionHandler } from "../ActionRuntimeEnvironment/ActionHandler/ActionHandler";
+import { ActionHandlerStore } from "../ActionRuntimeEnvironment/ActionHandlerStore/ActionHandlerStore";
 import { EErrId_NiceAction, err_nice_action } from "../errors/err_nice_action";
 import { NiceAction } from "../NiceAction/NiceAction";
 import { EActionState } from "../NiceAction/NiceAction.enums";
@@ -9,29 +10,57 @@ import {
 } from "../NiceAction/NiceAction.types";
 import { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
 import { hydrateNiceActionResponse, NiceActionResponse } from "../NiceAction/NiceActionResponse";
-import type { INiceActionDomain, TInferInputFromSchema } from "./NiceActionDomain.types";
+import type {
+  INiceActionDomain,
+  INiceActionDomainChildOptions,
+  TInferInputFromSchema,
+  TNiceActionDomainChildDef,
+} from "./NiceActionDomain.types";
 import { NiceActionDomainBase } from "./NiceActionDomainBase";
+import { type NiceActionRootDomain } from "./RootDomain/NiceActionRootDomain";
 
 export class NiceActionDomain<
   ACT_DOM extends INiceActionDomain = INiceActionDomain,
 > extends NiceActionDomainBase<ACT_DOM> {
-  private _handlers = new Map<string | undefined, ActionHandler>();
+  // private _handlers = new Map<string | undefined, ActionHandler>();
+  private _handlerStore: ActionHandlerStore = new ActionHandlerStore();
+  private _nonRootParent?: NiceActionDomain;
+  private _rootDomain: NiceActionRootDomain;
 
-  constructor(definition: ACT_DOM) {
+  constructor(
+    definition: ACT_DOM,
+    {
+      rootDomain,
+    }: {
+      rootDomain: NiceActionRootDomain;
+    },
+  ) {
     super(definition);
+    this._rootDomain = rootDomain;
   }
 
-  // createChildDomain<SUB_DOM extends INiceActionDomainChildOptions>(
-  //   subDomainDef: SUB_DOM & {
-  //     [K in Exclude<keyof SUB_DOM, keyof INiceActionDomainChildOptions>]: never;
-  //   },
-  // ): NiceActionDomain<TNiceActionDomainChildDef<ACT_DOM, SUB_DOM>> {
-  //   return new NiceActionDomain<TNiceActionDomainChildDef<ACT_DOM, SUB_DOM>>({
-  //     allDomains: [subDomainDef.domain, ...this.allDomains],
-  //     domain: subDomainDef.domain,
-  //     actions: subDomainDef.actions,
-  //   });
-  // }
+  createChildDomain<SUB_DOM extends INiceActionDomainChildOptions>(
+    subDomainDef: SUB_DOM & {
+      [K in Exclude<keyof SUB_DOM, keyof INiceActionDomainChildOptions>]: never;
+    },
+  ): NiceActionDomain<TNiceActionDomainChildDef<ACT_DOM, SUB_DOM>> {
+    if (this.allDomains.includes(subDomainDef.domain)) {
+      throw err_nice_action.fromId(EErrId_NiceAction.domain_already_exists_in_hierarchy, {
+        domain: subDomainDef.domain,
+        allParentDomains: this.allDomains,
+        parentDomain: this.domain,
+      });
+    }
+
+    return new NiceActionDomain<TNiceActionDomainChildDef<ACT_DOM, SUB_DOM>>(
+      {
+        allDomains: [subDomainDef.domain, ...this.allDomains],
+        domain: subDomainDef.domain,
+        actions: subDomainDef.actions,
+      },
+      this as any,
+    );
+  }
 
   primeUnknown(
     actionId: ACT_DOM["allDomains"][number],
@@ -202,20 +231,8 @@ export class NiceActionDomain<
    *
    * Throws `environment_already_registered` / `domain_action_handler_conflict` if already taken.
    */
-  setHandler(handler: ActionHandler, options?: { envId?: string }): this {
-    const envId = options?.envId;
-    if (this._handlers.has(envId)) {
-      if (envId != null) {
-        throw err_nice_action.fromId(EErrId_NiceAction.environment_already_registered, {
-          domain: this.domain,
-          envId,
-        });
-      }
-      throw err_nice_action.fromId(EErrId_NiceAction.domain_action_requester_conflict, {
-        domain: this.domain,
-      });
-    }
-    this._handlers.set(envId, handler);
+  setHandler(handler: ActionHandler): this {
+    this._handlerStore.addHandler(handler, `domain::${this.domain}`);
     handler._onRegisteredWith(this);
     return this;
   }

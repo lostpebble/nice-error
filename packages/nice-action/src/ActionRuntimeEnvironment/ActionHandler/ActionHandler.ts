@@ -2,8 +2,8 @@ import { castNiceError } from "@nice-code/error";
 import type { NiceActionDomain } from "../../ActionDomain/NiceActionDomain";
 import type {
   INiceActionDomain,
-  TActionHandlerForDomain,
-  TActionIdHandlerForDomain,
+  TActionHandlerForDomain as THandlerForDomain,
+  TActionIdHandlerForDomain as THandlerForDomainAction,
 } from "../../ActionDomain/NiceActionDomain.types";
 import { EErrId_NiceAction, err_nice_action } from "../../errors/err_nice_action";
 import { EActionRouteStep } from "../../NiceAction/NiceAction.enums";
@@ -18,11 +18,10 @@ import type {
   IActionHandlerConfig,
   TActionHandlerDispatchFn,
   TActionHandlerDispatchResult,
-  TActionHandlerResolverFn,
 } from "./ActionHandler.types";
 
 export class ActionHandler {
-  readonly matchTag?: string;
+  readonly matchTag: string | "_";
 
   readonly _domains = new Map<string, NiceActionDomain<any>>();
   private _resolvers = new Map<string, TActionHandlerDispatchFn>();
@@ -30,7 +29,11 @@ export class ActionHandler {
   private _defaultHandler?: TActionHandlerDispatchFn;
 
   constructor(config: IActionHandlerConfig = {}) {
-    this.matchTag = config.matchTag;
+    this.matchTag = config.matchTag ?? "_";
+  }
+
+  get cases(): readonly IActionHandlerCase[] {
+    return this._cases;
   }
 
   /**
@@ -49,7 +52,7 @@ export class ActionHandler {
    *   });
    * ```
    */
-  resolve<DOM extends INiceActionDomain, ID extends keyof DOM["actions"] & string>(
+  /* resolve<DOM extends INiceActionDomain, ID extends keyof DOM["actions"] & string>(
     domain: NiceActionDomain<DOM>,
     actionId: ID,
     fn: TActionHandlerResolverFn<DOM["actions"][ID]>,
@@ -58,7 +61,7 @@ export class ActionHandler {
     this._domains.set(domain.domain, domain);
     this._resolvers.set(key, (primed) => fn(primed.input as any));
     return this;
-  }
+  } */
 
   /**
    * Register a handler for all actions in a domain (first-match-wins).
@@ -66,7 +69,7 @@ export class ActionHandler {
    */
   forDomain<FOR_DOM extends INiceActionDomain>(
     domain: NiceActionDomain<FOR_DOM>,
-    handler: TActionHandlerForDomain<FOR_DOM>,
+    handler: THandlerForDomain<FOR_DOM>,
   ): this {
     this._domains.set(domain.domain, domain);
     this._cases.push({
@@ -83,7 +86,7 @@ export class ActionHandler {
   forAction<ACT_DOM extends INiceActionDomain, ID extends keyof ACT_DOM["actions"] & string>(
     domain: NiceActionDomain<ACT_DOM>,
     id: ID,
-    handler: TActionIdHandlerForDomain<ACT_DOM, ID>,
+    handler: THandlerForDomainAction<ACT_DOM, ID>,
   ): this {
     this._domains.set(domain.domain, domain);
     this._cases.push({
@@ -103,13 +106,20 @@ export class ActionHandler {
   >(
     domain: NiceActionDomain<ACT_DOM>,
     ids: IDS,
-    handler: TActionIdHandlerForDomain<ACT_DOM, IDS[number]>,
+    handler: THandlerForDomainAction<ACT_DOM, IDS[number]>,
   ): this {
     this._domains.set(domain.domain, domain);
-    this._cases.push({
-      _matchKey: `_::${domain.domain}::_`,
-      _handler: handler as TActionHandlerDispatchFn,
-    });
+
+    for (const id of ids) {
+      this._cases.push({
+        _matchKey: `${this.matchTag}::${domain.domain}::${id}`,
+        _handler: handler as TActionHandlerDispatchFn,
+      });
+    }
+    // this._cases.push({
+    //   _matchKey: `${this.matchTag}::${domain.domain}::_`,
+    //   _handler: handler as TActionHandlerDispatchFn,
+    // });
     return this;
   }
 

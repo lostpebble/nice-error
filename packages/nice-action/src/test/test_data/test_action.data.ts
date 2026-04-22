@@ -1,13 +1,12 @@
 import { createActionRootDomain } from "../../ActionDomain/helpers/createRootActionDomain";
 import { action } from "../../ActionSchema/action";
 
-const createTestActionDomain = () => {
-  const test_act_domain = createActionRootDomain({
-    domain: "test_domain",
-    actions: {},
+const createTestRootDomain = () => {
+  const test_domain_root = createActionRootDomain({
+    domain: "test_domain_root",
   });
 
-  return test_act_domain;
+  return test_domain_root;
 };
 
 export enum ETestActId_UserComment {
@@ -17,14 +16,14 @@ export enum ETestActId_UserComment {
 }
 
 export const createTestDomains = () => {
-  const test_act_domain = createTestActionDomain();
+  const test_domain_root = createTestRootDomain();
 
-  const test_act_domain_user_comment = test_act_domain.createChildDomain({
+  const test_act_domain_user_comment = test_domain_root.createChildDomain({
     domain: "user_comment",
     actions: {
       [ETestActId_UserComment.new_comment]: action(),
     },
   });
 
-  return { test_act_domain, test_act_domain_user_comment };
+  return { test_domain_root, test_act_domain_user_comment };
 };

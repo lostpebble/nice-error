@@ -1,13 +1,6 @@
-import { EErrId_NiceAction, err_nice_action } from "../errors/err_nice_action";
-import { NiceActionDomain } from "./NiceActionDomain";
-import type {
-  INiceActionDomain,
-  INiceActionDomainChildOptions,
-  TActionListener,
-  TNiceActionDomainChildDef,
-} from "./NiceActionDomain.types";
+import type { INiceActionDomain, TActionListener } from "./NiceActionDomain.types";
 
-export class NiceActionDomainBase<ACT_DOM extends INiceActionDomain = INiceActionDomain>
+export abstract class NiceActionDomainBase<ACT_DOM extends INiceActionDomain = INiceActionDomain>
   implements INiceActionDomain<ACT_DOM["allDomains"], ACT_DOM["actions"]>
 {
   readonly domain: ACT_DOM["domain"];
@@ -22,25 +15,11 @@ export class NiceActionDomainBase<ACT_DOM extends INiceActionDomain = INiceActio
     this.actions = definition.actions;
   }
 
-  createChildDomain<SUB_DOM extends INiceActionDomainChildOptions>(
-    subDomainDef: SUB_DOM & {
-      [K in Exclude<keyof SUB_DOM, keyof INiceActionDomainChildOptions>]: never;
-    },
-  ): NiceActionDomain<TNiceActionDomainChildDef<ACT_DOM, SUB_DOM>> {
-    if (this.allDomains.includes(subDomainDef.domain)) {
-      throw err_nice_action.fromId(EErrId_NiceAction.domain_already_exists_in_hierarchy, {
-        domain: subDomainDef.domain,
-        allParentDomains: this.allDomains,
-        parentDomain: this.domain,
-      });
-    }
-
-    return new NiceActionDomain<TNiceActionDomainChildDef<ACT_DOM, SUB_DOM>>({
-      allDomains: [subDomainDef.domain, ...this.allDomains],
-      domain: subDomainDef.domain,
-      actions: subDomainDef.actions,
-    });
-  }
+  // abstract createChildDomain<SUB_DOM extends INiceActionDomainChildOptions>(
+  //   subDomainDef: SUB_DOM & {
+  //     [K in Exclude<keyof SUB_DOM, keyof INiceActionDomainChildOptions>]: never;
+  //   },
+  // ): NiceActionDomain<TNiceActionDomainChildDef<ACT_DOM, SUB_DOM>>;
 
   /**
    * Add an observer that is called after every action dispatched through this domain.
