@@ -17,8 +17,8 @@ import type {
 } from "./NiceActionSchema.types";
 
 export class NiceActionSchema<
-  INPUT extends TTransportedValue<any, any> = TTransportedValue<any, any>,
-  OUTPUT extends TTransportedValue<any, any> = TTransportedValue<any>,
+  INPUT extends TTransportedValue<any, any> = never,
+  OUTPUT extends TTransportedValue<any, any> = never,
   ERRORS extends readonly INiceActionErrorDeclaration<any, any>[] = readonly [],
 > {
   private _errorDeclarations: INiceActionErrorDeclaration[] = [];

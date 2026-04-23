@@ -178,7 +178,9 @@ export class ActionHandler {
     return { handled: false };
   }
 
-  protected async _tryExecute(primed: NiceActionPrimed<any, any, any>): Promise<THandleActionResult> {
+  protected async _tryExecute(
+    primed: NiceActionPrimed<any, any, any>,
+  ): Promise<THandleActionResult> {
     const handlers = this.getHandlersForAction(primed.coreAction, this.matchTag);
     if (handlers?.execution == null) {
       return { handled: false };
@@ -238,28 +240,36 @@ export class ActionHandler {
    * });
    * ```
    */
-  async handleWire(
-    wire: INiceActionPrimed_JsonObject | TNiceActionResponse_JsonObject,
-  ): Promise<THandleActionResult> {
-    const domain = this._domains.get(wire.domain);
+  async handleWire(wire: unknown): Promise<THandleActionResult> {
+    if (
+      typeof wire !== "object" ||
+      wire == null ||
+      typeof (wire as Record<string, unknown>)["domain"] !== "string"
+    ) {
+      throw err_nice_action.fromId(EErrId_NiceAction.wire_not_action_data);
+    }
+
+    const typedWire = wire as INiceActionPrimed_JsonObject | TNiceActionResponse_JsonObject;
+    const domain = this._domains.get(typedWire.domain);
+
     if (domain == null) {
       throw err_nice_action.fromId(EErrId_NiceAction.domain_no_handler, {
-        domain: wire.domain,
+        domain: typedWire.domain,
       });
     }
 
-    if (wire.type === EActionState.primed) {
-      const primed = domain.hydratePrimed(wire as INiceActionPrimed_JsonObject);
+    if (typedWire.type === EActionState.primed) {
+      const primed = domain.hydratePrimed(typedWire);
       return await this._tryExecute(primed);
     }
 
-    if (wire.type === EActionState.resolved) {
-      const response = domain.hydrateResponse(wire as TNiceActionResponse_JsonObject);
+    if (typedWire.type === EActionState.resolved) {
+      const response = domain.hydrateResponse(typedWire);
       return await this._tryHandleResponse(response);
     }
 
-    const unknownWire = wire as any;
-    throw err_nice_action.fromId(EErrId_NiceAction.handle_wire_not_primed_or_response, {
+    const unknownWire = typedWire as any;
+    throw err_nice_action.fromId(EErrId_NiceAction.wire_action_not_primed_or_response, {
       domain: unknownWire.domain,
       actionId: unknownWire.id,
       actionState: unknownWire.type,

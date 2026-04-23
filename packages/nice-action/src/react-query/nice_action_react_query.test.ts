@@ -256,7 +256,7 @@ describe("useNiceQuery — queryFn execution", () => {
       new ActionHandler().forAction(domain, "getUser", {
         execution: (primed) => {
           calls(primed.input.userId);
-          return { id: primed.input.userId, name: "Alice" };
+          return primed.setResponse({ id: primed.input.userId, name: "Alice" });
         },
       }),
     );
@@ -278,7 +278,7 @@ describe("useNiceQuery — queryFn execution", () => {
       new ActionHandler().forAction(domain, "getUser", {
         execution: (primed) => {
           envCalls(primed.input.userId);
-          return { id: primed.input.userId, name: "Worker Alice" };
+          return primed.setResponse({ id: primed.input.userId, name: "Worker Alice" });
         },
       }),
       { matchTag: "workerEnv" },
@@ -323,7 +323,7 @@ describe("useNiceMutation — mutationFn execution", () => {
       new ActionHandler().forAction(domain, "createPost", {
         execution: (primed) => {
           calls(primed.input.title, primed.input.body);
-          return { postId: "p1" };
+          return primed.setResponse({ postId: "p1" });
         },
       }),
     );
@@ -345,7 +345,7 @@ describe("useNiceMutation — mutationFn execution", () => {
       new ActionHandler().forAction(domain, "createPost", {
         execution: (primed) => {
           envCalls(primed.input.title);
-          return { postId: "p2" };
+          return primed.setResponse({ postId: "p2" });
         },
       }),
       { matchTag: "serverEnv" },
@@ -414,10 +414,11 @@ describe("Integration — QueryClient.fetchQuery", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", {
-        execution: (primed) => ({
-          id: primed.input.userId,
-          name: "Alice",
-        }),
+        execution: (primed) =>
+          primed.setResponse({
+            id: primed.input.userId,
+            name: "Alice",
+          }),
       }),
     );
 
@@ -440,7 +441,7 @@ describe("Integration — QueryClient.fetchQuery", () => {
       new ActionHandler().forAction(domain, "getUser", {
         execution: (primed) => {
           calls(primed.input.userId);
-          return { id: primed.input.userId, name: "Cached" };
+          return primed.setResponse({ id: primed.input.userId, name: "Cached" });
         },
       }),
     );
@@ -528,7 +529,7 @@ describe("Integration — QueryClient.fetchQuery", () => {
       new ActionHandler().forAction(domain, "getSchedule", {
         execution: (primed) => {
           receivedDates.push(primed.input.date);
-          return { slots: ["09:00", "14:00"] };
+          return primed.setResponse({ slots: ["09:00", "14:00"] });
         },
       }),
     );
@@ -555,10 +556,11 @@ describe("Query key invalidation — QueryClient", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", {
-        execution: (primed) => ({
-          id: primed.input.userId,
-          name: "User",
-        }),
+        execution: (primed) =>
+          primed.setResponse({
+            id: primed.input.userId,
+            name: "User",
+          }),
       }),
     );
 
@@ -595,9 +597,11 @@ describe("Query key invalidation — QueryClient", () => {
     domain.setHandler(
       new ActionHandler()
         .forAction(domain, "getUser", {
-          execution: (primed) => ({ id: primed.input.userId, name: "User" }),
+          execution: (primed) => primed.setResponse({ id: primed.input.userId, name: "User" }),
         })
-        .forAction(domain, "createPost", { execution: () => ({ postId: "p1" }) }),
+        .forAction(domain, "createPost", {
+          execution: (primed) => primed.setResponse({ postId: "p1" }),
+        }),
     );
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

@@ -1,6 +1,7 @@
-import { action, createActionDomain } from "@nice-code/action";
+import { action } from "@nice-code/action";
 import { defineNiceError, err } from "@nice-code/error";
 import * as v from "valibot";
+import { createActionRootDomain } from "../../nice-action/src/ActionDomain/helpers/createRootActionDomain";
 
 // ---------------------------------------------------------------------------
 // Error domain
@@ -30,7 +31,11 @@ export const err_demo_action = defineNiceError({
 // Action domain
 // ---------------------------------------------------------------------------
 
-export const act_domain_demo = createActionDomain({
+export const act_domain_demo_root = createActionRootDomain({
+  domain: "demo_root",
+});
+
+export const act_domain_demo = act_domain_demo_root.createChildDomain({
   domain: "demo",
   actions: {
     greet: action()

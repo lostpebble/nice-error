@@ -17,6 +17,7 @@ it("SUC - Action Runtime Handling", async () => {
     {
       execution: (primed) => {
         mockHandlerFn(primed.input);
+        return primed.setResponse();
       },
     },
   );

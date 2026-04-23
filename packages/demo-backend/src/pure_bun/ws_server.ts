@@ -9,19 +9,40 @@
  */
 import type { IActionConnectTransport } from "@nice-code/connect";
 import { ActionConnect, EActionConnectRole } from "@nice-code/connect";
-import { registerDemoResolvers } from "../nice_actions/demo_resolver";
+import { demoActionHandler, registerDemoActionHandler } from "../nice_actions/demo_resolver";
 
 const PORT = 4567;
 
 // One server-side ActionConnect instance shared across connections.
 // Each call to onMessage supplies a per-connection replyTransport.
-const serverConnect = registerDemoResolvers(new ActionConnect({ role: EActionConnectRole.server }));
+const serverConnect = registerDemoActionHandler(
+  new ActionConnect({ role: EActionConnectRole.server }),
+);
 
-const server = Bun.serve({
+Bun.serve({
   port: PORT,
 
-  fetch(req, srv) {
+  async fetch(req, srv) {
     const url = new URL(req.url);
+
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    };
+
+    if (url.pathname === "/resolve_action") {
+      if (req.method === "OPTIONS") {
+        return new Response(null, { status: 204, headers: corsHeaders });
+      }
+      if (req.method === "POST") {
+        const wire = await req.json();
+        const response = await demoActionHandler.handleWire(wire);
+        return new Response(JSON.stringify(response), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+    }
 
     if (url.pathname === "/ws") {
       const upgraded = srv.upgrade(req);
@@ -36,7 +57,7 @@ const server = Bun.serve({
   },
 
   websocket: {
-    open(ws) {
+    open(_ws) {
       console.log("[ws] client connected");
     },
 
@@ -55,12 +76,13 @@ const server = Bun.serve({
       void serverConnect.onMessage(text, { replyTransport });
     },
 
-    close(ws, code, reason) {
+    close(_ws, code, reason) {
       console.log(`[ws] client disconnected (${code} ${reason})`);
     },
   },
 });
 
 console.log(`\n  Nice Connect WS demo running`);
-console.log(`    HTTP  http://localhost:${PORT}/`);
-console.log(`    WS    ws://localhost:${PORT}/ws\n`);
+console.log(`    HTTP   http://localhost:${PORT}/`);
+console.log(`    WS     ws://localhost:${PORT}/ws`);
+console.log(`    POST   http://localhost:${PORT}/resolve_action  (HTTP fallback)\n`);

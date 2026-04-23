@@ -1,4 +1,4 @@
-export { createActionRootDomain as createActionDomain } from "./ActionDomain/helpers/createRootActionDomain";
+export { createActionRootDomain } from "./ActionDomain/helpers/createRootActionDomain";
 export { NiceActionDomain } from "./ActionDomain/NiceActionDomain";
 export type {
   INiceActionDomain,

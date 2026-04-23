@@ -68,7 +68,7 @@ describe("NiceAction.executeSafe — success", () => {
 
     dom.setHandler(
       new ActionHandler().forAction(dom, "getUser", {
-        execution: (primed) => ({ id: primed.input.userId, name: "Alice" }),
+        execution: (primed) => primed.setResponse({ id: primed.input.userId, name: "Alice" }),
       }),
     );
 
@@ -105,9 +105,11 @@ describe("NiceAction.executeSafe — failure", () => {
     const dom = makeUserDomain();
 
     dom.setHandler(
-      new ActionHandler().forAction(dom, "getUser", { execution: () => {
-        throw err_user.fromId("not_found");
-      } }),
+      new ActionHandler().forAction(dom, "getUser", {
+        execution: () => {
+          throw err_user.fromId("not_found");
+        },
+      }),
     );
 
     const result = await dom.action("getUser").executeSafe({ userId: "missing" });
@@ -125,9 +127,11 @@ describe("NiceAction.executeSafe — failure", () => {
     const dom = makeUserDomain();
 
     dom.setHandler(
-      new ActionHandler().forAction(dom, "getUser", { execution: () => {
-        throw err_validation.fromId("invalid_input", { field: "userId" });
-      } }),
+      new ActionHandler().forAction(dom, "getUser", {
+        execution: () => {
+          throw err_validation.fromId("invalid_input", { field: "userId" });
+        },
+      }),
     );
 
     const result = await dom.action("getUser").executeSafe({ userId: "" });
@@ -144,9 +148,11 @@ describe("NiceAction.executeSafe — failure", () => {
     const dom = makeUserDomain();
 
     dom.setHandler(
-      new ActionHandler().forAction(dom, "getUser", { execution: () => {
-        throw new Error("unexpected failure");
-      } }),
+      new ActionHandler().forAction(dom, "getUser", {
+        execution: () => {
+          throw new Error("unexpected failure");
+        },
+      }),
     );
 
     const result = await dom.action("getUser").executeSafe({ userId: "u1" });
@@ -168,9 +174,11 @@ describe("NiceAction.executeSafe — handleWithSync integration", () => {
     const handled: string[] = [];
 
     dom.setHandler(
-      new ActionHandler().forAction(dom, "getUser", { execution: () => {
-        throw err_user.fromId("forbidden");
-      } }),
+      new ActionHandler().forAction(dom, "getUser", {
+        execution: () => {
+          throw err_user.fromId("forbidden");
+        },
+      }),
     );
 
     const result = await dom.action("getUser").executeSafe({ userId: "u2" });
@@ -192,9 +200,11 @@ describe("NiceAction.executeSafe — handleWithSync integration", () => {
     const handled: string[] = [];
 
     dom.setHandler(
-      new ActionHandler().forAction(dom, "getUser", { execution: () => {
-        throw err_user.fromId("not_found");
-      } }),
+      new ActionHandler().forAction(dom, "getUser", {
+        execution: () => {
+          throw err_user.fromId("not_found");
+        },
+      }),
     );
 
     const result = await dom.action("getUser").executeSafe({ userId: "u3" });
@@ -219,9 +229,11 @@ describe("NiceAction.executeSafe — handleWithSync integration", () => {
     const handled: string[] = [];
 
     dom.setHandler(
-      new ActionHandler().forAction(dom, "deleteUser", { execution: () => {
-        throw err_user.fromId("forbidden");
-      } }),
+      new ActionHandler().forAction(dom, "deleteUser", {
+        execution: () => {
+          throw err_user.fromId("forbidden");
+        },
+      }),
     );
 
     const result = await dom.action("deleteUser").executeSafe({ userId: "u4" });
@@ -252,7 +264,7 @@ describe("NiceActionPrimed.executeSafe", () => {
 
     dom.setHandler(
       new ActionHandler().forAction(dom, "getUser", {
-        execution: (primed) => ({ id: primed.input.userId, name: "Bob" }),
+        execution: (primed) => primed.setResponse({ id: primed.input.userId, name: "Bob" }),
       }),
     );
 
@@ -269,9 +281,11 @@ describe("NiceActionPrimed.executeSafe", () => {
     const dom = makeUserDomain();
 
     dom.setHandler(
-      new ActionHandler().forAction(dom, "getUser", { execution: () => {
-        throw err_user.fromId("not_found");
-      } }),
+      new ActionHandler().forAction(dom, "getUser", {
+        execution: () => {
+          throw err_user.fromId("not_found");
+        },
+      }),
     );
 
     const primed = new NiceActionPrimed(dom.action("getUser"), { userId: "u6" });
@@ -289,9 +303,11 @@ describe("NiceActionPrimed.executeSafe", () => {
     const dom = makeUserDomain();
 
     dom.setHandler(
-      new ActionHandler().forAction(dom, "getUser", { execution: () => {
-        throw err_user.fromId("forbidden");
-      } }),
+      new ActionHandler().forAction(dom, "getUser", {
+        execution: () => {
+          throw err_user.fromId("forbidden");
+        },
+      }),
     );
 
     const wire = new NiceActionPrimed(dom.action("getUser"), { userId: "u7" }).toJsonObject();
@@ -322,10 +338,12 @@ describe("NiceAction.executeSafe — async handler", () => {
     const dom = makeUserDomain();
 
     dom.setHandler(
-      new ActionHandler().forAction(dom, "getUser", { execution: async () => {
-        await Promise.resolve();
-        throw err_user.fromId("not_found");
-      } }),
+      new ActionHandler().forAction(dom, "getUser", {
+        execution: async () => {
+          await Promise.resolve();
+          throw err_user.fromId("not_found");
+        },
+      }),
     );
 
     const result = await dom.action("getUser").executeSafe({ userId: "u8" });

@@ -1,5 +1,8 @@
 import type { ActionHandler } from "../ActionRuntimeEnvironment/ActionHandler/ActionHandler";
-import type { IActionHandlerInputs } from "../ActionRuntimeEnvironment/ActionHandler/ActionHandler.types";
+import type {
+  IActionHandlerInputs,
+  TExecutionAndResponseListeners,
+} from "../ActionRuntimeEnvironment/ActionHandler/ActionHandler.types";
 import { EErrId_NiceAction, err_nice_action } from "../errors/err_nice_action";
 import { NiceAction } from "../NiceAction/NiceAction";
 import { EActionState } from "../NiceAction/NiceAction.enums";
@@ -222,10 +225,13 @@ export class NiceActionDomain<
   ): Promise<unknown> {
     // Try exact-tag handler registered on this domain
     const taggedHandler = this._handlersByTag.get(matchTag ?? "_");
+    const allListeners: TExecutionAndResponseListeners<any>[] = [
+      ...(listeners ?? []),
+      ...this._listeners,
+    ];
 
     if (taggedHandler != null) {
       const validatedPrimed = primed.validateInput();
-      const allListeners = [...(listeners ?? []), ...this._listeners];
 
       for (const listener of allListeners) {
         listener.execution?.(validatedPrimed);
@@ -239,27 +245,34 @@ export class NiceActionDomain<
     // If a specific matchTag was requested but not found, fall back to the
     // domain's default handler ("_") before escalating to the root domain.
     if (matchTag != null) {
-      const defaultHandler = this._handlersByTag.get("_");
+      throw err_nice_action.fromId(EErrId_NiceAction.action_environment_not_found, {
+        domain: this.domain,
+        matchTag: matchTag,
+      });
+    }
 
-      if (defaultHandler != null) {
-        const validatedPrimed = primed.validateInput();
-        const response = await defaultHandler.dispatchAction(validatedPrimed);
+    const defaultHandler = this._handlersByTag.get("_");
 
-        const allListeners = [...(listeners ?? []), ...this._listeners];
+    if (defaultHandler != null) {
+      const validatedPrimed = primed.validateInput();
+      const response = await defaultHandler.dispatchAction(validatedPrimed);
 
-        for (const listener of allListeners) {
-          listener.execution?.(validatedPrimed);
-        }
+      const allListeners = [...(listeners ?? []), ...this._listeners];
 
-        if (response.result.ok) return response.result.output;
-        throw response.result.error;
+      for (const listener of allListeners) {
+        listener.execution?.(validatedPrimed);
       }
+
+      if (response.result.ok) return response.result.output;
+      throw response.result.error;
     }
 
     // No domain-level handler — try the root domain (runtime environment routing).
     // Fire child domain listeners after root dispatch so they fire regardless of handler path.
-    const output = await this._rootDomain._executeAction(primed, { matchTag });
-    for (const listener of this._listeners) await listener.execution?.(primed);
+    const output = await this._rootDomain._executeAction(primed, {
+      matchTag,
+      listeners: allListeners,
+    });
     return output;
   }
 

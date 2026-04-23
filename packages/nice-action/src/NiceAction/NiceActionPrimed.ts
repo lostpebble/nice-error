@@ -67,9 +67,7 @@ export class NiceActionPrimed<
     });
   }
 
-  setResponse(
-    output: TInferOutputFromSchema<SCH>["Output"] | undefined,
-  ): NiceActionResponse<DOM, ID, SCH> {
+  setResponse(output: TInferOutputFromSchema<SCH>["Output"]): NiceActionResponse<DOM, ID, SCH> {
     if (this.coreAction.schema.outputSchema != null) {
       this.coreAction.schema.outputSchema["~standard"].validate(output);
     }

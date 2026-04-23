@@ -34,14 +34,14 @@ describe("matchTag dispatch — named handler is used when registered", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", {
-        execution: (primed) => ({ id: primed.input.userId, source: "remote" }),
+        execution: (primed) => primed.setResponse({ id: primed.input.userId, source: "remote" }),
       }),
       { matchTag: "remote" },
     );
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", {
-        execution: (primed) => ({ id: primed.input.userId, source: "local" }),
+        execution: (primed) => primed.setResponse({ id: primed.input.userId, source: "local" }),
       }),
     );
 
@@ -54,14 +54,14 @@ describe("matchTag dispatch — named handler is used when registered", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", {
-        execution: (primed) => ({ id: primed.input.userId, source: "remote" }),
+        execution: (primed) => primed.setResponse({ id: primed.input.userId, source: "remote" }),
       }),
       { matchTag: "remote" },
     );
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", {
-        execution: (primed) => ({ id: primed.input.userId, source: "local" }),
+        execution: (primed) => primed.setResponse({ id: primed.input.userId, source: "local" }),
       }),
     );
 
@@ -72,13 +72,13 @@ describe("matchTag dispatch — named handler is used when registered", () => {
 
 // ── 2. Default handler wins when matchTag is not registered on this domain ───────
 
-describe("matchTag dispatch — falls back to default handler when matchTag absent", () => {
+describe("matchTag dispatch — doesn't fall back to default handler when matchTag absent", () => {
   it("default handler is used when matchTag is not registered", async () => {
     const domain = makeUserDomain();
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getUser", {
-        execution: (primed) => ({ id: primed.input.userId, source: "local" }),
+      new ActionHandler({ matchTag: "remote" }).forAction(domain, "getUser", {
+        execution: (primed) => primed.setResponse({ id: primed.input.userId, source: "local" }),
       }),
     );
 
@@ -87,16 +87,17 @@ describe("matchTag dispatch — falls back to default handler when matchTag abse
     expect(result).toEqual({ id: "u1", source: "local" });
   });
 
-  it("default handler with forAction() is used when matchTag is not registered", async () => {
+  it("default handler with forAction() is not used when matchTag is not registered", async () => {
     const domain = makeUserDomain();
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", {
-        execution: (primed) => ({ id: primed.input.userId, source: "default-handler" }),
+        execution: (primed) =>
+          primed.setResponse({ id: primed.input.userId, source: "default-handler" }),
       }),
     );
 
-    const result = await domain.action("getUser").execute({ userId: "u1" }, "unknownEnv");
+    const result = await domain.action("getUser").executeSafe({ userId: "u1" }, "unknownEnv");
     expect(result).toEqual({ id: "u1", source: "default-handler" });
   });
 
@@ -106,7 +107,8 @@ describe("matchTag dispatch — falls back to default handler when matchTag abse
     // matchTag-keyed handler
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", {
-        execution: (primed) => ({ id: primed.input.userId, source: "env-handler" }),
+        execution: (primed) =>
+          primed.setResponse({ id: primed.input.userId, source: "env-handler" }),
       }),
       { matchTag: "solver" },
     );
@@ -114,7 +116,8 @@ describe("matchTag dispatch — falls back to default handler when matchTag abse
     // default handler (would also match)
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", {
-        execution: (primed) => ({ id: primed.input.userId, source: "default-req" }),
+        execution: (primed) =>
+          primed.setResponse({ id: primed.input.userId, source: "default-req" }),
       }),
     );
 
@@ -161,7 +164,7 @@ describe("child domain — own handler takes priority", () => {
     // Child has only a default handler — "remote" is not registered on child
     child.setHandler(
       new ActionHandler().forAction(child, "pong", {
-        execution: (primed) => ({ result: `child:${primed.input.v}` }),
+        execution: (primed) => primed.setResponse({ result: `child:${primed.input.v}` }),
       }),
     );
 
@@ -185,14 +188,14 @@ describe("child domain — own handler takes priority", () => {
     // child has BOTH a "remote" matchTag handler AND a default handler
     child.setHandler(
       new ActionHandler().forAction(child, "pong", {
-        execution: (primed) => ({ result: `remote:${primed.input.v}` }),
+        execution: (primed) => primed.setResponse({ result: `remote:${primed.input.v}` }),
       }),
       { matchTag: "remote" },
     );
 
     child.setHandler(
       new ActionHandler().forAction(child, "pong", {
-        execution: (primed) => ({ result: `local:${primed.input.v}` }),
+        execution: (primed) => primed.setResponse({ result: `local:${primed.input.v}` }),
       }),
     );
 
@@ -215,7 +218,7 @@ describe("matchTag fallback — action listeners still fire", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", {
-        execution: (primed) => ({ id: primed.input.userId, source: "local" }),
+        execution: (primed) => primed.setResponse({ id: primed.input.userId, source: "local" }),
       }),
     );
 

@@ -123,7 +123,7 @@ describe("ActionRuntimeEnvironment — basic dispatch via root domain", () => {
     });
 
     const handler = new ActionHandler().forAction(domain, "hello", {
-      execution: (primed) => ({ greeting: `Hello, ${primed.input.name}!` }),
+      execution: (primed) => primed.setResponse({ greeting: `Hello, ${primed.input.name}!` }),
     });
 
     root.setRuntimeEnvironment(makeRuntime().addHandlers([handler]));
@@ -143,6 +143,7 @@ describe("ActionRuntimeEnvironment — basic dispatch via root domain", () => {
     const handler = new ActionHandler().forAction(domain, "log", {
       execution: (primed) => {
         called(primed.input.msg);
+        return primed.setResponse(undefined);
       },
     });
 
@@ -178,7 +179,7 @@ describe("ActionRuntimeEnvironment — basic dispatch via root domain", () => {
     const handler = new ActionHandler().forAction(domain, "fetch", {
       execution: async (primed) => {
         await Promise.resolve();
-        return { data: `fetched:${primed.input.id}` };
+        return primed.setResponse({ data: `fetched:${primed.input.id}` });
       },
     });
 
@@ -214,8 +215,10 @@ describe("ActionRuntimeEnvironment — multi-domain dispatch", () => {
     });
 
     const handler = new ActionHandler()
-      .forAction(users, "get", { execution: (p) => ({ name: `User-${p.input.id}` }) })
-      .forAction(posts, "get", { execution: (p) => ({ title: `Post-${p.input.id}` }) });
+      .forAction(users, "get", { execution: (p) => p.setResponse({ name: `User-${p.input.id}` }) })
+      .forAction(posts, "get", {
+        execution: (p) => p.setResponse({ title: `Post-${p.input.id}` }),
+      });
 
     root.setRuntimeEnvironment(makeRuntime().addHandlers([handler]));
 
@@ -244,12 +247,12 @@ describe("ActionRuntimeEnvironment — multi-domain dispatch", () => {
         const create = domain.matchAction(act, "create");
         if (create) {
           log("create", create.input.label);
-          return { created: true };
+          return act.setResponse({ created: true });
         }
         const del = domain.matchAction(act, "delete");
         if (del) {
           log("delete", del.input.id);
-          return { deleted: true };
+          return act.setResponse({ deleted: true });
         }
       },
     });
@@ -287,8 +290,8 @@ describe("ActionRuntimeEnvironment — multi-domain dispatch", () => {
     });
 
     const handler = new ActionHandler()
-      .forAction(alpha, "run", { execution: (p) => ({ result: p.input.x * 2 }) })
-      .forAction(beta, "run", { execution: (p) => ({ result: p.input.x * 3 }) });
+      .forAction(alpha, "run", { execution: (p) => p.setResponse({ result: p.input.x * 2 }) })
+      .forAction(beta, "run", { execution: (p) => p.setResponse({ result: p.input.x * 3 }) });
 
     root.setRuntimeEnvironment(makeRuntime().addHandlers([handler]));
 
@@ -335,7 +338,7 @@ describe("ActionRuntimeEnvironment — input validation", () => {
     const handler = new ActionHandler().forAction(domain, "process", {
       execution: (primed) => {
         captured = primed.input;
-        return { ok: true };
+        return primed.setResponse({ ok: true });
       },
     });
 
@@ -492,14 +495,16 @@ describe("ActionRuntimeEnvironment — domain handler priority", () => {
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "act", {
-        execution: () => ({ source: "domain" }),
+        execution: (act) => act.setResponse({ source: "domain" }),
       }),
     );
 
     const runtimeExec = vi.fn(() => ({ source: "runtime" }));
     root.setRuntimeEnvironment(
       makeRuntime().addHandlers([
-        new ActionHandler().forAction(domain, "act", { execution: runtimeExec }),
+        new ActionHandler().forAction(domain, "act", {
+          execution: (act) => act.setResponse({ source: "runtime" }),
+        }),
       ]),
     );
 
@@ -531,13 +536,15 @@ describe("ActionRuntimeEnvironment — domain handler priority", () => {
 
     local.setHandler(
       new ActionHandler().forAction(local, "run", {
-        execution: () => ({ source: "local-handler" }),
+        execution: (act) => act.setResponse({ source: "local-handler" }),
       }),
     );
 
     const handler = new ActionHandler()
-      .forAction(local, "run", { execution: () => ({ source: "runtime-local" }) })
-      .forAction(remote, "run", { execution: () => ({ source: "runtime-remote" }) });
+      .forAction(local, "run", { execution: (act) => act.setResponse({ source: "runtime-local" }) })
+      .forAction(remote, "run", {
+        execution: (act) => act.setResponse({ source: "runtime-remote" }),
+      });
 
     root.setRuntimeEnvironment(makeRuntime().addHandlers([handler]));
 

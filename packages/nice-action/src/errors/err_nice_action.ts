@@ -11,7 +11,8 @@ export enum EErrId_NiceAction {
   hydration_action_id_not_found = "hydration_action_id_not_found",
   no_action_execution_handler = "no_action_execution_handler",
   no_action_response_handler = "no_action_response_handler",
-  handle_wire_not_primed_or_response = "handle_wire_not_primed_or_response",
+  wire_action_not_primed_or_response = "wire_action_not_primed_or_response",
+  wire_not_action_data = "wire_not_action_data",
   action_environment_not_found = "action_environment_not_found",
   environment_already_registered = "environment_already_registered",
   action_input_validation_failed = "action_input_validation_failed",
@@ -79,13 +80,17 @@ export const err_nice_action = err_nice.createChildDomain({
       message: ({ domain, actionId }) =>
         `No response handler registered for action "${actionId}" in domain "${domain}".`,
     }),
-    [EErrId_NiceAction.handle_wire_not_primed_or_response]: err<{
+    [EErrId_NiceAction.wire_action_not_primed_or_response]: err<{
       domain: string;
       actionId: string;
       actionState: EActionState | undefined;
     }>({
       message: ({ domain, actionId, actionState }) =>
         `Cannot handle wire for action "${actionId}" in domain "${domain}": expected action type of "primed" or "resolved", got "${actionState}".`,
+    }),
+    [EErrId_NiceAction.wire_not_action_data]: err({
+      message: () =>
+        `Cannot handle wire for action: expected an object with a "domain" property of type string and a "type" property of "primed" or "resolved".`,
     }),
     [EErrId_NiceAction.action_environment_not_found]: err<{
       domain: string;

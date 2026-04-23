@@ -13,7 +13,7 @@
  *  - Edge cases: malformed JSON, unknown cuid, unknown message type
  */
 
-import { action, createActionDomain, NiceActionPrimed } from "@nice-code/action";
+import { action, createActionRootDomain, NiceActionPrimed } from "@nice-code/action";
 import * as v from "valibot";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionConnect } from "../ActionConnect/ActionConnect";
@@ -24,7 +24,7 @@ import { EActionConnectRole } from "../ActionConnect/ActionConnect.types";
 // ---------------------------------------------------------------------------
 
 function makeTestDomain() {
-  const root = createActionDomain({ domain: "test_root" });
+  const root = createActionRootDomain({ domain: "test_root" });
   return root.createChildDomain({
     domain: "test_domain",
     actions: {

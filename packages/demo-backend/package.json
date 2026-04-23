@@ -4,7 +4,7 @@
   "scripts": {
     "cf-typegen": "wrangler types && bunx @biomejs/biome format . --write",
     "dev": "bun run cf-typegen && wrangler dev",
-    "start": "bun run src/pure_bun/index.ts",
+    "start": "bun run src/pure_bun/ws_server.ts",
     "type-check": "bunx tsc --noEmit",
     "type-check-watch": "bunx tsc --noEmit --watch"
   },

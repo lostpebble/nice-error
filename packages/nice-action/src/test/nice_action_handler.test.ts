@@ -70,7 +70,7 @@ describe("ActionHandler.forDomain", () => {
       new ActionHandler().forDomain(dom, {
         execution: (primed) => {
           const g = dom.matchAction(primed, "greet");
-          if (g) return { message: `hi ${g.input.name}` };
+          if (g) return primed.setResponse({ message: `hi ${g.input.name}` });
         },
       }),
     );
@@ -354,12 +354,17 @@ describe("named environment — handler envId", () => {
     const log = vi.fn<(src: string) => void>();
 
     dom.setHandler(
-      new ActionHandler().forDomain(dom, { execution: () => log("default-fallback") }),
+      new ActionHandler().forDomain(dom, {
+        execution: (primed) => {
+          log("default-fallback");
+          primed.setResponse({ message: "default-fallback" });
+        },
+      }),
     );
 
-    await dom.action("increment").execute({ by: 1 }, "unregistered");
+    await dom.action("increment").executeSafe({ by: 1 }, "unregistered");
 
-    expect(log).toHaveBeenCalledWith("default-fallback");
+    expect(log).not.toHaveBeenCalled();
   });
 
   it("throws environment_already_registered when the same envId is used twice", () => {
