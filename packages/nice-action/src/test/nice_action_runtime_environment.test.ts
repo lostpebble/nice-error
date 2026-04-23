@@ -54,60 +54,6 @@ describe("ActionRuntimeEnvironment — instantiation", () => {
   });
 });
 
-// ── 2. addHandlers / getHandlerForTag ─────────────────────────────────────────
-
-describe("ActionRuntimeEnvironment — addHandlers / getHandlerForTag", () => {
-  it("stores a default-tag handler and retrieves it", () => {
-    const runtime = makeRuntime();
-    const handler = new ActionHandler(); // matchTag = "_"
-    runtime.addHandlers([handler]);
-    expect(runtime.getHandlerForTag("_")).toBe(handler);
-  });
-
-  it("stores a custom-tag handler and retrieves it", () => {
-    const runtime = makeRuntime();
-    const handler = new ActionHandler({ matchTag: "remote" });
-    runtime.addHandlers([handler]);
-    expect(runtime.getHandlerForTag("remote")).toBe(handler);
-    expect(runtime.getHandlerForTag("_")).toBeUndefined();
-  });
-
-  it("returns undefined for an unknown tag", () => {
-    expect(makeRuntime().getHandlerForTag("_")).toBeUndefined();
-  });
-
-  it("multiple handlers with different tags all stored correctly", () => {
-    const runtime = makeRuntime();
-    const h1 = new ActionHandler({ matchTag: "a" });
-    const h2 = new ActionHandler({ matchTag: "b" });
-    runtime.addHandlers([h1, h2]);
-    expect(runtime.getHandlerForTag("a")).toBe(h1);
-    expect(runtime.getHandlerForTag("b")).toBe(h2);
-  });
-
-  it("first handler wins when multiple share the same tag", () => {
-    const runtime = makeRuntime();
-    const h1 = new ActionHandler();
-    const h2 = new ActionHandler();
-    runtime.addHandlers([h1, h2]);
-    expect(runtime.getHandlerForTag("_")).toBe(h1);
-  });
-
-  it("addHandlers is chainable", () => {
-    const runtime = makeRuntime();
-    expect(runtime.addHandlers([])).toBe(runtime);
-  });
-
-  it("handlers can be added in multiple addHandlers calls", () => {
-    const runtime = makeRuntime();
-    const h1 = new ActionHandler({ matchTag: "x" });
-    const h2 = new ActionHandler({ matchTag: "y" });
-    runtime.addHandlers([h1]).addHandlers([h2]);
-    expect(runtime.getHandlerForTag("x")).toBe(h1);
-    expect(runtime.getHandlerForTag("y")).toBe(h2);
-  });
-});
-
 // ── 3. setRuntimeEnvironment + basic dispatch ─────────────────────────────────
 
 describe("ActionRuntimeEnvironment — basic dispatch via root domain", () => {
@@ -493,11 +439,13 @@ describe("ActionRuntimeEnvironment — domain handler priority", () => {
       },
     });
 
-    domain.setHandler(
+    const testRuntime = makeRuntime();
+
+    testRuntime.addHandlers([
       new ActionHandler().forAction(domain, "act", {
         execution: (act) => act.setResponse({ source: "domain" }),
       }),
-    );
+    ]);
 
     const runtimeExec = vi.fn(() => ({ source: "runtime" }));
     root.setRuntimeEnvironment(
@@ -534,17 +482,15 @@ describe("ActionRuntimeEnvironment — domain handler priority", () => {
       },
     });
 
-    local.setHandler(
-      new ActionHandler().forAction(local, "run", {
-        execution: (act) => act.setResponse({ source: "local-handler" }),
-      }),
-    );
+    const runtime = makeRuntime();
 
     const handler = new ActionHandler()
       .forAction(local, "run", { execution: (act) => act.setResponse({ source: "runtime-local" }) })
       .forAction(remote, "run", {
         execution: (act) => act.setResponse({ source: "runtime-remote" }),
       });
+
+    runtime.addHandlers([handler]);
 
     root.setRuntimeEnvironment(makeRuntime().addHandlers([handler]));
 

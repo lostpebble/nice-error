@@ -1,5 +1,7 @@
 import { nanoid } from "nanoid";
+import type { INiceAction } from "../NiceAction/NiceAction.types";
 import { ActionHandler } from "./ActionHandler/ActionHandler";
+import type { TMatchHandlerKey } from "./ActionHandler/ActionHandler.types";
 import type {
   IActionRuntimeEnvironment_JsonObject,
   IRuntimeMeta,
@@ -23,7 +25,7 @@ export class ActionRuntimeEnvironment {
   readonly timeCreated: number;
   readonly runtimeInfo: IRuntimeMeta = getAssumedRuntimeInfo();
 
-  private _handlersByTag = new Map<string, ActionHandler[]>();
+  private _handlersByTag = new Map<TMatchHandlerKey, ActionHandler[]>();
 
   constructor(input: IActionRuntimeEnvironment_Constructor_Input) {
     this.envId = input.envId;
@@ -33,12 +35,23 @@ export class ActionRuntimeEnvironment {
 
   addHandlers(handlers: ActionHandler[]): this {
     for (const handler of handlers) {
-      const tag = handler.matchTag;
-      if (!this._handlersByTag.has(tag)) {
-        this._handlersByTag.set(tag, []);
+      for (const matchKey of handler.allHandlerKeys) {
+        if (!this._handlersByTag.has(matchKey)) {
+          this._handlersByTag.set(matchKey, []);
+        } else if (this._handlersByTag.get(matchKey)!.some((h) => h.cuid === handler.cuid)) {
+          continue;
+        }
+
+        const handlersForKey = this._handlersByTag.get(matchKey)!;
+        this._handlersByTag.set(matchKey, [handler, ...handlersForKey]);
       }
-      this._handlersByTag.get(tag)!.push(handler);
     }
+
+    console.log("added handlers", {
+      envId: this.envId,
+      memCuid: this.memCuid,
+      handlerInfo: handlers.map((h) => ({ cuid: h.cuid, keys: h.allHandlerKeys.join(", ") })),
+    });
     return this;
   }
 
@@ -46,8 +59,12 @@ export class ActionRuntimeEnvironment {
    * Return the first handler registered for the given matchTag, or undefined
    * if none has been registered.
    */
-  getHandlerForTag(matchTag: string): ActionHandler | undefined {
-    return this._handlersByTag.get(matchTag)?.[0];
+  getHandlerForAction(
+    action: Pick<INiceAction<any, any>, "domain" | "id">,
+    tag?: string,
+  ): ActionHandler | undefined {
+    const matchTag = tag ?? "_";
+    return this._handlersByTag.get(`${matchTag}::${action.domain}::${action.id}`)?.[0];
   }
 
   toJsonObject(): IActionRuntimeEnvironment_JsonObject {

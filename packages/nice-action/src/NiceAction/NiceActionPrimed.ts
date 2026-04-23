@@ -4,6 +4,7 @@ import type {
   TInferInputFromSchema,
   TInferOutputFromSchema,
 } from "../ActionDomain/NiceActionDomain.types";
+import type { IRuntimeEnvironmentMeta } from "../ActionRuntimeEnvironment/ActionRuntimeEnvironment.types";
 import type { TInferActionError } from "../ActionSchema/NiceActionSchema";
 import type { NiceAction } from "./NiceAction";
 import { EActionState } from "./NiceAction.enums";
@@ -40,6 +41,10 @@ export class NiceActionPrimed<
 
   get input() {
     return this._input;
+  }
+
+  getEnvironmentMeta(): IRuntimeEnvironmentMeta {
+    return this.coreAction._actionDomain.getEnvironmentMeta();
   }
 
   /**
@@ -115,7 +120,7 @@ export class NiceActionPrimed<
    * Pass `matchTag` to target a specific named handler/resolver on the domain.
    */
   async execute(matchTag?: string): Promise<TInferOutputFromSchema<SCH>["Output"]> {
-    return this.coreAction._actionDomain._executeAction(this, { matchTag });
+    return this.coreAction._actionDomain._executeAction(this, { tag: matchTag });
   }
 
   validateInput(): this {

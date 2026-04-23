@@ -198,7 +198,7 @@ describe("setHandler({ matchTag }) — named environment", () => {
     const log = vi.fn();
 
     dom.setHandler(
-      new ActionHandler()
+      new ActionHandler({ tag: "edge" })
         .forAction(dom, "greet", {
           execution: (primed) => {
             log(`named:${primed.input.name}`);
@@ -208,7 +208,6 @@ describe("setHandler({ matchTag }) — named environment", () => {
         .forAction(dom, "shout", {
           execution: (primed) => primed.setResponse({ result: primed.input.text }),
         }),
-      { matchTag: "edge" },
     );
 
     await dom.action("greet").execute({ name: "Dave" }, "edge");
@@ -220,7 +219,7 @@ describe("setHandler({ matchTag }) — named environment", () => {
     const log = vi.fn();
 
     dom.setHandler(
-      new ActionHandler()
+      new ActionHandler({ tag: "edge" })
         .forAction(dom, "greet", {
           execution: (primed) => {
             log("named");
@@ -230,7 +229,6 @@ describe("setHandler({ matchTag }) — named environment", () => {
         .forAction(dom, "shout", {
           execution: (primed) => primed.setResponse({ result: primed.input.text }),
         }),
-      { matchTag: "edge" },
     );
 
     // No default handler → should throw domain_no_handler
@@ -243,7 +241,7 @@ describe("setHandler({ matchTag }) — named environment", () => {
     const log = vi.fn();
 
     dom.setHandler(
-      new ActionHandler()
+      new ActionHandler({ tag: "env-a" })
         .forAction(dom, "greet", {
           execution: (primed) => {
             log("env-a");
@@ -253,10 +251,9 @@ describe("setHandler({ matchTag }) — named environment", () => {
         .forAction(dom, "shout", {
           execution: (primed) => primed.setResponse({ result: primed.input.text }),
         }),
-      { matchTag: "env-a" },
     );
     dom.setHandler(
-      new ActionHandler()
+      new ActionHandler({ tag: "env-b" })
         .forAction(dom, "greet", {
           execution: (primed) => {
             log("env-b");
@@ -266,7 +263,6 @@ describe("setHandler({ matchTag }) — named environment", () => {
         .forAction(dom, "shout", {
           execution: (primed) => primed.setResponse({ result: primed.input.text }),
         }),
-      { matchTag: "env-b" },
     );
 
     await dom.action("greet").execute({ name: "x" }, "env-a");
@@ -279,12 +275,11 @@ describe("setHandler({ matchTag }) — named environment", () => {
     const dom = makeGreetDomain();
 
     dom.setHandler(
-      new ActionHandler()
+      new ActionHandler({ tag: "named" })
         .forAction(dom, "greet", { execution: (primed) => primed.setResponse({ greeting: "x" }) })
         .forAction(dom, "shout", {
           execution: (primed) => primed.setResponse({ result: primed.input.text }),
         }),
-      { matchTag: "named" },
     );
 
     await expect(dom.action("greet").execute({ name: "x" }, "ghost")).rejects.toThrow(
@@ -312,14 +307,14 @@ describe("setHandler({ matchTag }) — named environment", () => {
 
   it("throws environment_already_registered when the same matchTag is registered twice", () => {
     const dom = makeGreetDomain();
-    const handler = new ActionHandler()
+    const handler = new ActionHandler({ tag: "dup" })
       .forAction(dom, "greet", { execution: (primed) => primed.setResponse({ greeting: "x" }) })
       .forAction(dom, "shout", {
         execution: (primed) => primed.setResponse({ result: primed.input.text }),
       });
 
-    dom.setHandler(handler, { matchTag: "dup" });
-    expect(() => dom.setHandler(handler, { matchTag: "dup" })).toThrow(/already registered/i);
+    dom.setHandler(handler);
+    expect(() => dom.setHandler(handler)).toThrow(/already registered/i);
   });
 });
 
@@ -589,12 +584,11 @@ describe("action listeners — execution dispatch path", () => {
     const seen = vi.fn();
 
     dom.setHandler(
-      new ActionHandler()
+      new ActionHandler({ tag: "remote" })
         .forAction(dom, "greet", { execution: (primed) => primed.setResponse({ greeting: "x" }) })
         .forAction(dom, "shout", {
           execution: (primed) => primed.setResponse({ result: primed.input.text }),
         }),
-      { matchTag: "remote" },
     );
     dom.addActionListener({ execution: (act) => seen(act.coreAction.id) });
 
@@ -613,7 +607,7 @@ describe("NiceActionPrimed.execute(matchTag) — handler path", () => {
     const log = vi.fn();
 
     dom.setHandler(
-      new ActionHandler()
+      new ActionHandler({ tag: "myEnv" })
         .forAction(dom, "greet", {
           execution: (primed) => {
             log(`primed:${primed.input.name}`);
@@ -623,7 +617,6 @@ describe("NiceActionPrimed.execute(matchTag) — handler path", () => {
         .forAction(dom, "shout", {
           execution: (primed) => primed.setResponse({ result: primed.input.text }),
         }),
-      { matchTag: "myEnv" },
     );
 
     const primed = new NiceActionPrimed(dom.action("greet"), { name: "Judy" });
@@ -635,7 +628,7 @@ describe("NiceActionPrimed.execute(matchTag) — handler path", () => {
     const dom = makeGreetDomain();
 
     dom.setHandler(
-      new ActionHandler()
+      new ActionHandler({ tag: "fail-env" })
         .forAction(dom, "greet", {
           execution: () => {
             throw new Error("nope");
@@ -644,7 +637,6 @@ describe("NiceActionPrimed.execute(matchTag) — handler path", () => {
         .forAction(dom, "shout", {
           execution: (primed) => primed.setResponse({ result: primed.input.text }),
         }),
-      { matchTag: "fail-env" },
     );
 
     const primed = new NiceActionPrimed(dom.action("greet"), { name: "x" });

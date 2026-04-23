@@ -13,7 +13,7 @@ export enum EErrId_NiceAction {
   no_action_response_handler = "no_action_response_handler",
   wire_action_not_primed_or_response = "wire_action_not_primed_or_response",
   wire_not_action_data = "wire_not_action_data",
-  action_environment_not_found = "action_environment_not_found",
+  action_tag_handler_not_found = "action_tag_handler_not_found",
   environment_already_registered = "environment_already_registered",
   action_input_validation_failed = "action_input_validation_failed",
   action_input_validation_promise = "action_input_validation_promise",
@@ -92,7 +92,7 @@ export const err_nice_action = err_nice.createChildDomain({
       message: () =>
         `Cannot handle wire for action: expected an object with a "domain" property of type string and a "type" property of "primed" or "resolved".`,
     }),
-    [EErrId_NiceAction.action_environment_not_found]: err<{
+    [EErrId_NiceAction.action_tag_handler_not_found]: err<{
       domain: string;
       matchTag: string;
     }>({

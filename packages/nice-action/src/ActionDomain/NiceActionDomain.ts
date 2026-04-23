@@ -1,8 +1,8 @@
-import type { ActionHandler } from "../ActionRuntimeEnvironment/ActionHandler/ActionHandler";
 import type {
   IActionHandlerInputs,
   TExecutionAndResponseListeners,
 } from "../ActionRuntimeEnvironment/ActionHandler/ActionHandler.types";
+import type { IRuntimeEnvironmentMeta } from "../ActionRuntimeEnvironment/ActionRuntimeEnvironment.types";
 import { EErrId_NiceAction, err_nice_action } from "../errors/err_nice_action";
 import { NiceAction } from "../NiceAction/NiceAction";
 import { EActionState } from "../NiceAction/NiceAction.enums";
@@ -25,7 +25,6 @@ import { type NiceActionRootDomain } from "./RootDomain/NiceActionRootDomain";
 export class NiceActionDomain<
   ACT_DOM extends INiceActionDomain = INiceActionDomain,
 > extends NiceActionDomainBase<ACT_DOM> {
-  private _handlersByTag = new Map<string, ActionHandler>();
   private _rootDomain: NiceActionRootDomain;
 
   constructor(
@@ -38,6 +37,14 @@ export class NiceActionDomain<
   ) {
     super(definition);
     this._rootDomain = rootDomain;
+  }
+
+  get rootDomain() {
+    return this._rootDomain;
+  }
+
+  getEnvironmentMeta(): IRuntimeEnvironmentMeta {
+    return this.rootDomain.getEnvironmentMeta();
   }
 
   createChildDomain<SUB_DOM extends INiceActionDomainChildOptions>(
@@ -219,86 +226,21 @@ export class NiceActionDomain<
   async _executeAction<P extends NiceActionPrimed<any, any, any>>(
     primed: P,
     {
-      matchTag,
+      tag,
       listeners,
     }: IActionHandlerInputs<P extends NiceActionPrimed<infer DOM, any, any> ? DOM : never> = {},
   ): Promise<unknown> {
-    // Try exact-tag handler registered on this domain
-    const taggedHandler = this._handlersByTag.get(matchTag ?? "_");
     const allListeners: TExecutionAndResponseListeners<any>[] = [
       ...(listeners ?? []),
       ...this._listeners,
     ];
 
-    if (taggedHandler != null) {
-      const validatedPrimed = primed.validateInput();
-
-      for (const listener of allListeners) {
-        listener.execution?.(validatedPrimed);
-      }
-
-      const response = await taggedHandler.dispatchAction(validatedPrimed);
-      if (response.result.ok) return response.result.output;
-      throw response.result.error;
-    }
-
-    // If a specific matchTag was requested but not found, fall back to the
-    // domain's default handler ("_") before escalating to the root domain.
-    if (matchTag != null) {
-      throw err_nice_action.fromId(EErrId_NiceAction.action_environment_not_found, {
-        domain: this.domain,
-        matchTag: matchTag,
-      });
-    }
-
-    const defaultHandler = this._handlersByTag.get("_");
-
-    if (defaultHandler != null) {
-      const validatedPrimed = primed.validateInput();
-      const response = await defaultHandler.dispatchAction(validatedPrimed);
-
-      const allListeners = [...(listeners ?? []), ...this._listeners];
-
-      for (const listener of allListeners) {
-        listener.execution?.(validatedPrimed);
-      }
-
-      if (response.result.ok) return response.result.output;
-      throw response.result.error;
-    }
-
     // No domain-level handler — try the root domain (runtime environment routing).
     // Fire child domain listeners after root dispatch so they fire regardless of handler path.
     const output = await this._rootDomain._executeAction(primed, {
-      matchTag,
+      tag: tag,
       listeners: allListeners,
     });
     return output;
-  }
-
-  /**
-   * Register an `ActionHandler` on this domain.
-   *
-   * Pass `options.matchTag` to register under a named tag, targeted via
-   * `action.execute(input, matchTag)`. Omit to register as the default handler.
-   * Throws `domain_handler_conflict` if the default tag is registered twice, or
-   * `environment_already_registered` if any other tag is registered twice.
-   */
-  setHandler(handler: ActionHandler, options?: { matchTag?: string }): this {
-    const matchTag = options?.matchTag ?? handler.matchTag;
-    if (this._handlersByTag.has(matchTag)) {
-      if (matchTag === "_") {
-        throw err_nice_action.fromId(EErrId_NiceAction.domain_handler_conflict, {
-          domain: this.domain,
-        });
-      }
-      throw err_nice_action.fromId(EErrId_NiceAction.environment_already_registered, {
-        domain: this.domain,
-        matchTag: matchTag,
-      });
-    }
-    this._handlersByTag.set(matchTag, handler);
-    handler._onRegisteredWith(this);
-    return this;
   }
 }

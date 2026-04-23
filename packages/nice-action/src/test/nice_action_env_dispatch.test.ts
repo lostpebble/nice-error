@@ -77,7 +77,7 @@ describe("matchTag dispatch — doesn't fall back to default handler when matchT
     const domain = makeUserDomain();
 
     domain.setHandler(
-      new ActionHandler({ matchTag: "remote" }).forAction(domain, "getUser", {
+      new ActionHandler({ tag: "remote" }).forAction(domain, "getUser", {
         execution: (primed) => primed.setResponse({ id: primed.input.userId, source: "local" }),
       }),
     );
@@ -169,7 +169,7 @@ describe("child domain — own handler takes priority", () => {
     // Child has only a default handler — "remote" is not registered on child
     child.setHandler(
       new ActionHandler({
-        matchTag: "remote",
+        tag: "remote",
       }).forAction(child, "pong", {
         execution: (primed) => primed.setResponse({ result: `child:${primed.input.v}` }),
       }),

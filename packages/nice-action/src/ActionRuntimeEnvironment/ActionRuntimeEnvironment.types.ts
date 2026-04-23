@@ -11,3 +11,8 @@ export interface IActionRuntimeEnvironment_JsonObject {
   timeCreated: number;
   runtimeInfo: IRuntimeMeta;
 }
+
+export interface IRuntimeEnvironmentMeta {
+  envId?: string;
+  runtimeInfo: IRuntimeMeta;
+}

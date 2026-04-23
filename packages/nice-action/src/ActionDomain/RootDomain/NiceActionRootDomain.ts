@@ -1,5 +1,7 @@
 import type { IActionHandlerInputs } from "../../ActionRuntimeEnvironment/ActionHandler/ActionHandler.types";
 import type { ActionRuntimeEnvironment } from "../../ActionRuntimeEnvironment/ActionRuntimeEnvironment";
+import type { IRuntimeEnvironmentMeta } from "../../ActionRuntimeEnvironment/ActionRuntimeEnvironment.types";
+import { getAssumedRuntimeInfo } from "../../ActionRuntimeEnvironment/utils/getAssumedRuntimeEnvironment";
 import { EErrId_NiceAction, err_nice_action } from "../../errors/err_nice_action";
 import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
 import { NiceActionDomain } from "../NiceActionDomain";
@@ -27,6 +29,13 @@ export class NiceActionRootDomain<
       allDomains: [domainId],
       actions: {},
     } as ROOT_DOM);
+  }
+
+  getEnvironmentMeta(): IRuntimeEnvironmentMeta {
+    return {
+      envId: this._runtimeEnvironment?.envId,
+      runtimeInfo: this._runtimeEnvironment?.runtimeInfo ?? getAssumedRuntimeInfo(),
+    };
   }
 
   createChildDomain<SUB_DOM extends INiceActionDomainChildOptions>(
@@ -67,20 +76,19 @@ export class NiceActionRootDomain<
   async _executeAction<P extends NiceActionPrimed<any, any, any>>(
     primed: P,
     {
-      matchTag,
+      tag,
       listeners,
     }: IActionHandlerInputs<P extends NiceActionPrimed<infer DOM, any, any> ? DOM : never> = {},
   ): Promise<unknown> {
-    const effectiveTag = matchTag ?? "_";
-
     if (this._runtimeEnvironment != null) {
-      const handler = this._runtimeEnvironment.getHandlerForTag(effectiveTag);
+      const handler = this._runtimeEnvironment.getHandlerForAction(primed, tag);
+
       if (handler != null) {
         const validatedPrimed = primed.validateInput();
         const allListeners = [...(listeners ?? []), ...this._listeners];
 
         for (const listener of allListeners) {
-          listener.execution?.(validatedPrimed);
+          listener.execution?.(validatedPrimed, { tag, envMeta: this.getEnvironmentMeta() });
         }
 
         const response = await handler.dispatchAction(validatedPrimed);
@@ -89,10 +97,10 @@ export class NiceActionRootDomain<
       }
     }
 
-    if (matchTag != null) {
-      throw err_nice_action.fromId(EErrId_NiceAction.action_environment_not_found, {
+    if (tag != null) {
+      throw err_nice_action.fromId(EErrId_NiceAction.action_tag_handler_not_found, {
         domain: this.domain,
-        matchTag: matchTag,
+        matchTag: tag,
       });
     }
 

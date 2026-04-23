@@ -3,6 +3,7 @@ import type {
   INiceActionDomain,
   TInferOutputFromSchema,
 } from "../ActionDomain/NiceActionDomain.types";
+import type { IRuntimeEnvironmentMeta } from "../ActionRuntimeEnvironment/ActionRuntimeEnvironment.types";
 import type { TInferActionError } from "../ActionSchema/NiceActionSchema";
 import type { NiceAction } from "./NiceAction";
 import { EActionState } from "./NiceAction.enums";
@@ -38,6 +39,10 @@ export class NiceActionResponse<
     this.allDomains = primed.coreAction.allDomains;
     this.id = primed.coreAction.id;
     this.timeResponded = hydrationData?.timeResponded ?? Date.now();
+  }
+
+  getEnvironmentMeta(): IRuntimeEnvironmentMeta {
+    return this.primed.coreAction._actionDomain.getEnvironmentMeta();
   }
 
   /**

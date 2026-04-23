@@ -209,7 +209,9 @@ describe("onMessage — forAction handler dispatch", () => {
     const dom = makeTestDomain();
 
     const ac = new ActionConnect({ role: EActionConnectRole.server })
-      .forAction(dom, "echo", { execution: (primed) => ({ echoed: primed.input.text }) })
+      .forAction(dom, "echo", {
+        execution: (primed) => primed.setResponse({ echoed: primed.input.text }),
+      })
       .forAction(dom, "boom", {
         execution: () => {
           throw new Error("boom");
@@ -231,7 +233,9 @@ describe("onMessage — forAction handler dispatch", () => {
     const dom = makeTestDomain();
 
     const ac = new ActionConnect({ role: EActionConnectRole.server })
-      .forAction(dom, "echo", { execution: (primed) => ({ echoed: primed.input.text }) })
+      .forAction(dom, "echo", {
+        execution: (primed) => primed.setResponse({ echoed: primed.input.text }),
+      })
       .forAction(dom, "boom", {
         execution: () => {
           throw new Error("something broke");
@@ -254,7 +258,9 @@ describe("onMessage — forAction handler dispatch", () => {
     const defaultTransport = makeMockTransport();
     const ac = new ActionConnect({ role: EActionConnectRole.server })
       .setTransport(defaultTransport)
-      .forAction(dom, "echo", { execution: (primed) => ({ echoed: primed.input.text }) });
+      .forAction(dom, "echo", {
+        execution: (primed) => primed.setResponse({ echoed: primed.input.text }),
+      });
 
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "via-default" });
     await ac.onMessage(JSON.stringify(primed.toJsonObject()));
@@ -274,7 +280,7 @@ describe("onMessage — forAction handler dispatch (client-side)", () => {
     const dom = makeTestDomain();
 
     const ac = new ActionConnect({ role: EActionConnectRole.client }).forAction(dom, "echo", {
-      execution: (primed) => ({ echoed: `client:${primed.input.text}` }),
+      execution: (primed) => primed.setResponse({ echoed: `client:${primed.input.text}` }),
     });
 
     const replyTransport = makeMockTransport();

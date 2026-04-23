@@ -1,3 +1,4 @@
+import { nanoid } from "nanoid";
 import type { NiceActionDomain } from "../../ActionDomain/NiceActionDomain";
 import type { INiceActionDomain, MaybePromise } from "../../ActionDomain/NiceActionDomain.types";
 import { EErrId_NiceAction, err_nice_action } from "../../errors/err_nice_action";
@@ -11,6 +12,7 @@ import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
 import { NiceActionResponse } from "../../NiceAction/NiceActionResponse";
 import { isActionResponseJsonObject } from "../../utils/isActionResponseJsonObject";
 import type {
+  IActionEnvironmentMetaWithTag,
   IActionHandlerInputs,
   TExecutionAndResponseHandlers,
   THandleActionResult,
@@ -18,9 +20,13 @@ import type {
 } from "./ActionHandler.types";
 
 type TStoredHandlers = {
-  execution?(primed: NiceActionPrimed<any, any, any>): MaybePromise<any>;
+  execution?(
+    primed: NiceActionPrimed<any, any, any>,
+    envMeta: IActionEnvironmentMetaWithTag,
+  ): MaybePromise<any>;
   response?(
     response: NiceActionResponse<any, any>,
+    envMeta: IActionEnvironmentMetaWithTag,
   ): MaybePromise<
     NiceActionResponse<any, any> | TNiceActionResponse_JsonObject<any, any> | undefined
   >;
@@ -28,6 +34,7 @@ type TStoredHandlers = {
 
 export class ActionHandler {
   readonly matchTag: string | "_";
+  readonly cuid: string = nanoid();
 
   readonly _domains = new Map<string, NiceActionDomain<any>>();
 
@@ -35,7 +42,15 @@ export class ActionHandler {
   private _defaultHandler?: TStoredHandlers;
 
   constructor(config: IActionHandlerInputs = {}) {
-    this.matchTag = config.matchTag ?? "_";
+    this.matchTag = config.tag ?? "_";
+  }
+
+  get handersByKeyMap() {
+    return this._handlersByKey;
+  }
+
+  get allHandlerKeys(): TMatchHandlerKey[] {
+    return [...this._handlersByKey.keys().map((key) => `${key}` as TMatchHandlerKey)];
   }
 
   private getHandlersForAction(
@@ -160,7 +175,10 @@ export class ActionHandler {
   ): Promise<THandleActionResult> {
     const handlers = this.getHandlersForAction(response.primed.coreAction, this.matchTag);
     if (handlers?.response) {
-      const result = await handlers.response(response);
+      const result = await handlers.response(response, {
+        tag: this.matchTag,
+        envMeta: response.getEnvironmentMeta(),
+      });
       if (result === undefined) {
         return { handled: true, response };
       }
@@ -186,7 +204,10 @@ export class ActionHandler {
       return { handled: false };
     }
 
-    const rawResult = await handlers.execution(primed);
+    const rawResult = await handlers.execution(primed, {
+      tag: this.matchTag,
+      envMeta: primed.getEnvironmentMeta(),
+    });
 
     let response: NiceActionResponse<any, any>;
     if (rawResult instanceof NiceActionResponse) {

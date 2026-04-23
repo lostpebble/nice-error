@@ -120,9 +120,7 @@ export class NiceAction<
     tag?: string,
   ): Promise<TInferOutputFromSchema<SCH>["Output"]> {
     const primed = new NiceActionPrimed(this, input);
-    return this._actionDomain._executeAction(primed, { matchTag: tag }) as Promise<
-      TInferOutputFromSchema<SCH>["Output"]
-    >;
+    return this._actionDomain._executeAction(primed, { tag });
   }
 
   /**

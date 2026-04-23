@@ -51,7 +51,7 @@ export class ActionConnect extends ActionHandler {
   private _transports = new Map<string | undefined, IActionConnectTransport>();
 
   constructor(config: IActionConnectConfig) {
-    super({ matchTag: config.matchTag });
+    super({ tag: config.tag });
     this._config = {
       enableHttpFallback: true,
       requestTimeout: DEFAULT_TIMEOUT,

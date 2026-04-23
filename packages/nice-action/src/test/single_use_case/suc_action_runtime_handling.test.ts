@@ -1,10 +1,10 @@
 import { expect, it, vi } from "vitest";
 import { createHandler } from "../../ActionRuntimeEnvironment/ActionHandler/ActionHandler";
 import { ActionRuntimeEnvironment } from "../../ActionRuntimeEnvironment/ActionRuntimeEnvironment";
-import { createTestDomains, ETestActId_UserComment } from "../test_data/test_action.data";
+import { ETestActId_UserComment, test_createActionTestData } from "../test_data/test_action.data";
 
 it("SUC - Action Runtime Handling", async () => {
-  const { test_domain_root, test_act_domain_user_comment } = createTestDomains();
+  const { test_domain_root, test_act_domain_user_comment } = test_createActionTestData();
 
   expect(test_domain_root.domain).toBe("test_domain_root");
   expect(test_act_domain_user_comment.domain).toBe("user_comment");

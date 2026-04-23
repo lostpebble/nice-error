@@ -283,10 +283,9 @@ describe("named environment — handler envId", () => {
     const log = vi.fn();
 
     dom.setHandler(
-      new ActionHandler().forAction(dom, "increment", {
+      new ActionHandler({ tag: "worker" }).forAction(dom, "increment", {
         execution: (primed) => log(`worker:${primed.input.by}`),
       }),
-      { matchTag: "worker" },
     );
 
     await dom.action("increment").execute({ by: 4 }, "worker");
@@ -297,9 +296,9 @@ describe("named environment — handler envId", () => {
     const dom = makeCounterDomain();
     const log = vi.fn();
 
-    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => log("worker") }), {
-      matchTag: "worker",
-    });
+    dom.setHandler(
+      new ActionHandler({ tag: "worker" }).forDomain(dom, { execution: () => log("worker") }),
+    );
 
     // No default handler registered → should throw
     await expect(dom.action("increment").execute({ by: 1 })).rejects.toThrow();
@@ -310,12 +309,8 @@ describe("named environment — handler envId", () => {
     const dom = makeCounterDomain();
     const log = vi.fn();
 
-    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => log("a") }), {
-      matchTag: "a",
-    });
-    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => log("b") }), {
-      matchTag: "b",
-    });
+    dom.setHandler(new ActionHandler({ tag: "a" }).forDomain(dom, { execution: () => log("a") }));
+    dom.setHandler(new ActionHandler({ tag: "b" }).forDomain(dom, { execution: () => log("b") }));
 
     await dom.action("increment").execute({ by: 1 }, "a");
     await dom.action("increment").execute({ by: 1 }, "b");
@@ -328,9 +323,9 @@ describe("named environment — handler envId", () => {
     const log = vi.fn();
 
     dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => log("default") }));
-    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => log("named") }), {
-      matchTag: "named",
-    });
+    dom.setHandler(
+      new ActionHandler({ tag: "named" }).forDomain(dom, { execution: () => log("named") }),
+    );
 
     await dom.action("increment").execute({ by: 1 });
     await dom.action("increment").execute({ by: 1 }, "named");
@@ -340,9 +335,7 @@ describe("named environment — handler envId", () => {
 
   it("throws action_environment_not_found when envId is unknown and no default handler exists", async () => {
     const dom = makeCounterDomain();
-    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => {} }), {
-      matchTag: "named",
-    });
+    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => {} }));
 
     await expect(dom.action("increment").execute({ by: 1 }, "missing")).rejects.toThrow(
       /no handler or resolver registered with environment id/i,
@@ -369,11 +362,9 @@ describe("named environment — handler envId", () => {
 
   it("throws environment_already_registered when the same envId is used twice", () => {
     const dom = makeCounterDomain();
-    dom.setHandler(new ActionHandler(), { matchTag: "dup" });
+    dom.setHandler(new ActionHandler());
 
-    expect(() => dom.setHandler(new ActionHandler(), { matchTag: "dup" })).toThrow(
-      /already registered/i,
-    );
+    expect(() => dom.setHandler(new ActionHandler())).toThrow(/already registered/i);
   });
 
   it("throws domain_action_handler_conflict when default handler registered twice", () => {
@@ -393,9 +384,7 @@ describe("action listeners — envId dispatch", () => {
     const dom = makeCounterDomain();
     const seen = vi.fn();
 
-    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => {} }), {
-      matchTag: "env",
-    });
+    dom.setHandler(new ActionHandler({ tag: "env" }).forDomain(dom, { execution: () => {} }));
     dom.addActionListener({ execution: (act) => seen(act.coreAction.id) });
 
     await dom.action("increment").execute({ by: 1 }, "env");
@@ -458,9 +447,7 @@ describe("handler — input validation", () => {
       },
     });
 
-    dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => {} }), {
-      matchTag: "worker",
-    });
+    dom.setHandler(new ActionHandler({ tag: "worker" }).forDomain(dom, { execution: () => {} }));
 
     await expect(dom.action("ping").execute({ count: 0 }, "worker")).rejects.toThrow(
       /input validation failed/i,
@@ -502,12 +489,12 @@ describe("handler — input validation", () => {
     const log = vi.fn();
 
     dom.setHandler(
-      new ActionHandler().forAction(dom, "increment", {
+      new ActionHandler({ tag: "worker" }).forAction(dom, "increment", {
         execution: (primed) => log(primed.input.by),
       }),
     );
 
-    await dom.action("increment").execute({ by: 5 });
+    await dom.action("increment").execute({ by: 5 }, "worker");
     expect(log).toHaveBeenCalledWith(5);
   });
 });
