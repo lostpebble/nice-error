@@ -1,4 +1,5 @@
 import type {
+  INiceActionDomain,
   MaybePromise,
   TInferOutputFromSchema,
 } from "../../ActionDomain/NiceActionDomain.types";
@@ -44,7 +45,20 @@ export type TExecutionAndResponseHandlers<A extends INiceAction<any, any>> = TAt
   response: THandleActionResponseFn<A>;
 }>;
 
-export interface IActionHandlerConfig {
+export type TListenToActionExecutionFn<DOM extends INiceActionDomain> = (
+  primed: NiceActionPrimed<DOM>,
+) => MaybePromise<void>;
+
+export type TListenToActionResponseFn<DOM extends INiceActionDomain> = (
+  response: NiceActionResponse<DOM>,
+) => MaybePromise<void>;
+
+export type TExecutionAndResponseListeners<DOM extends INiceActionDomain> = TAtLeastOne<{
+  execution: TListenToActionExecutionFn<DOM>;
+  response: TListenToActionResponseFn<DOM>;
+}>;
+
+export interface IActionHandlerInputs<DOM extends INiceActionDomain = INiceActionDomain> {
   /**
    * An action "match tag" for the handler.
    *
@@ -52,6 +66,7 @@ export interface IActionHandlerConfig {
    * action.
    */
   matchTag?: string;
+  listeners?: TExecutionAndResponseListeners<DOM>[];
 }
 
 export type THandleActionResult =

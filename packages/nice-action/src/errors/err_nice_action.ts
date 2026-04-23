@@ -15,6 +15,9 @@ export enum EErrId_NiceAction {
   action_environment_not_found = "action_environment_not_found",
   environment_already_registered = "environment_already_registered",
   action_input_validation_failed = "action_input_validation_failed",
+  action_input_validation_promise = "action_input_validation_promise",
+  action_output_validation_failed = "action_output_validation_failed",
+  action_output_validation_promise = "action_output_validation_promise",
 }
 
 export const err_nice_action = err_nice.createChildDomain({
@@ -106,6 +109,31 @@ export const err_nice_action = err_nice.createChildDomain({
       message: ({ domain, actionId, validationMessage }) =>
         `Input validation failed for action "${actionId}" in domain "${domain}":\n${validationMessage}`,
       httpStatusCode: 400,
+    }),
+    [EErrId_NiceAction.action_input_validation_promise]: err<{
+      domain: string;
+      actionId: string;
+    }>({
+      message: ({ domain, actionId }) =>
+        `Input validation for action "${actionId}" in domain "${domain}" returned a promise, which is not supported.`,
+      httpStatusCode: 400,
+    }),
+    [EErrId_NiceAction.action_output_validation_failed]: err<{
+      domain: string;
+      actionId: string;
+      validationMessage: string;
+    }>({
+      message: ({ domain, actionId, validationMessage }) =>
+        `Output validation failed for action "${actionId}" in domain "${domain}":\n${validationMessage}`,
+      httpStatusCode: 500,
+    }),
+    [EErrId_NiceAction.action_output_validation_promise]: err<{
+      domain: string;
+      actionId: string;
+    }>({
+      message: ({ domain, actionId }) =>
+        `Output validation for action "${actionId}" in domain "${domain}" returned a promise, which is not supported.`,
+      httpStatusCode: 500,
     }),
   },
 });

@@ -17,7 +17,7 @@ import { NiceActionResponse } from "./NiceActionResponse";
 
 export class NiceActionPrimed<
   DOM extends INiceActionDomain,
-  ID extends keyof DOM["actions"] & string,
+  ID extends keyof DOM["actions"] & string = keyof DOM["actions"] & string,
   SCH extends DOM["actions"][ID] = DOM["actions"][ID],
 > implements Omit<INiceAction<DOM, ID>, "schema" | "cuid" | "timeCreated">
 {
@@ -29,13 +29,17 @@ export class NiceActionPrimed<
 
   constructor(
     readonly coreAction: NiceAction<DOM, ID, SCH>,
-    readonly input: TInferInputFromSchema<SCH>["Input"],
+    private _input: TInferInputFromSchema<SCH>["Input"],
     hydrationData?: Pick<INiceActionPrimed_JsonObject<DOM, ID>, "timePrimed">,
   ) {
     this.domain = coreAction.domain;
     this.allDomains = coreAction.allDomains;
     this.id = coreAction.id;
     this.timePrimed = hydrationData?.timePrimed ?? Date.now();
+  }
+
+  get input() {
+    return this._input;
   }
 
   /**
@@ -108,7 +112,18 @@ export class NiceActionPrimed<
    * Pass `matchTag` to target a specific named handler/resolver on the domain.
    */
   async execute(matchTag?: string): Promise<TInferOutputFromSchema<SCH>["Output"]> {
-    return this.coreAction._actionDomain._dispatchAction(this, matchTag);
+    return this.coreAction._actionDomain._executeAction(this, { matchTag });
+  }
+
+  validateInput(): this {
+    const newInput = this.coreAction.schema.validateInput(this.input, {
+      domain: this.domain,
+      actionId: this.id,
+    });
+
+    this._input = newInput;
+
+    return this;
   }
 
   /**

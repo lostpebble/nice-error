@@ -21,8 +21,8 @@ import { NiceActionResponse } from "./NiceActionResponse";
 
 export class NiceAction<
   DOM extends INiceActionDomain,
-  ID extends keyof DOM["actions"] & string,
-  SCH extends DOM["actions"][ID],
+  ID extends keyof DOM["actions"] & string = keyof DOM["actions"] & string,
+  SCH extends DOM["actions"][ID] = DOM["actions"][ID],
 > implements INiceAction<DOM, ID>
 {
   readonly type = EActionState.empty;
@@ -117,10 +117,10 @@ export class NiceAction<
    */
   async execute(
     input: TInferInputFromSchema<SCH>["Input"],
-    envId?: string,
+    tag?: string,
   ): Promise<TInferOutputFromSchema<SCH>["Output"]> {
     const primed = new NiceActionPrimed(this, input);
-    return this._actionDomain._dispatchAction(primed, envId) as Promise<
+    return this._actionDomain._executeAction(primed, { matchTag: tag }) as Promise<
       TInferOutputFromSchema<SCH>["Output"]
     >;
   }
@@ -146,10 +146,10 @@ export class NiceAction<
    */
   async executeSafe(
     input: TInferInputFromSchema<SCH>["Input"],
-    envId?: string,
+    tag?: string,
   ): Promise<NiceActionResult<TInferOutputFromSchema<SCH>["Output"], TInferActionError<SCH>>> {
     try {
-      const value = await this.execute(input, envId);
+      const value = await this.execute(input, tag);
       return { ok: true, output: value };
     } catch (error) {
       return { ok: false, error: error as TInferActionError<SCH> };
@@ -166,10 +166,10 @@ export class NiceAction<
    */
   async executeToResponse(
     input: TInferInputFromSchema<SCH>["Input"],
-    envId?: string,
+    tag?: string,
   ): Promise<NiceActionResponse<DOM, ID, SCH>> {
     const primed = this.prime(input);
-    const result = await this.executeSafe(input, envId);
+    const result = await this.executeSafe(input, tag);
     return new NiceActionResponse<DOM, ID, SCH>(primed, result);
   }
 }

@@ -59,3 +59,9 @@ export class ActionRuntimeEnvironment {
     };
   }
 }
+
+export const createActionRuntime = (
+  config: IActionRuntimeEnvironment_Constructor_Input,
+): ActionRuntimeEnvironment => {
+  return new ActionRuntimeEnvironment(config);
+};

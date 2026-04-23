@@ -72,8 +72,12 @@ describe("forAction() — inline dispatch (same environment)", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .forAction(dom, "greet", { execution: (primed) => ({ greeting: `hello ${primed.input.name}` }) })
-        .forAction(dom, "shout", { execution: (primed) => ({ result: primed.input.text.toUpperCase() }) }),
+        .forAction(dom, "greet", {
+          execution: (primed) => ({ greeting: `hello ${primed.input.name}` }),
+        })
+        .forAction(dom, "shout", {
+          execution: (primed) => ({ result: primed.input.text.toUpperCase() }),
+        }),
     );
 
     const result = await dom.action("greet").execute({ name: "Alice" });
@@ -92,7 +96,9 @@ describe("forAction() — inline dispatch (same environment)", () => {
             return { greeting: `hi ${primed.input.name}` };
           },
         })
-        .forAction(dom, "shout", { execution: (primed) => ({ result: primed.input.text.toUpperCase() }) }),
+        .forAction(dom, "shout", {
+          execution: (primed) => ({ result: primed.input.text.toUpperCase() }),
+        }),
     );
 
     await dom.action("greet").execute({ name: "Bob" });
@@ -122,7 +128,11 @@ describe("forAction() — inline dispatch (same environment)", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .forAction(dom, "greet", { execution: () => { throw new Error("handler failed"); } })
+        .forAction(dom, "greet", {
+          execution: () => {
+            throw new Error("handler failed");
+          },
+        })
         .forAction(dom, "shout", { execution: (primed) => ({ result: primed.input.text }) }),
     );
 
@@ -135,7 +145,11 @@ describe("forAction() — inline dispatch (same environment)", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .forAction(dom, "greet", { execution: () => { throw new Error("boom"); } })
+        .forAction(dom, "greet", {
+          execution: () => {
+            throw new Error("boom");
+          },
+        })
         .forAction(dom, "shout", { execution: (primed) => ({ result: primed.input.text }) }),
     );
 
@@ -220,13 +234,23 @@ describe("setHandler({ matchTag }) — named environment", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .forAction(dom, "greet", { execution: () => { log("env-a"); return { greeting: "a" }; } })
+        .forAction(dom, "greet", {
+          execution: () => {
+            log("env-a");
+            return { greeting: "a" };
+          },
+        })
         .forAction(dom, "shout", { execution: (primed) => ({ result: primed.input.text }) }),
       { matchTag: "env-a" },
     );
     dom.setHandler(
       new ActionHandler()
-        .forAction(dom, "greet", { execution: () => { log("env-b"); return { greeting: "b" }; } })
+        .forAction(dom, "greet", {
+          execution: () => {
+            log("env-b");
+            return { greeting: "b" };
+          },
+        })
         .forAction(dom, "shout", { execution: (primed) => ({ result: primed.input.text }) }),
       { matchTag: "env-b" },
     );
@@ -257,7 +281,9 @@ describe("setHandler({ matchTag }) — named environment", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .forAction(dom, "greet", { execution: (primed) => ({ greeting: `Hi ${primed.input.name}` }) })
+        .forAction(dom, "greet", {
+          execution: (primed) => ({ greeting: `Hi ${primed.input.name}` }),
+        })
         .forAction(dom, "shout", { execution: (primed) => ({ result: primed.input.text }) }),
     );
 
@@ -286,7 +312,9 @@ describe("domain_no_handler — missing handler", () => {
     const dom = makeGreetDomain();
 
     // Only greet is registered — shout is not
-    dom.setHandler(new ActionHandler().forAction(dom, "greet", { execution: () => ({ greeting: "x" }) }));
+    dom.setHandler(
+      new ActionHandler().forAction(dom, "greet", { execution: () => ({ greeting: "x" }) }),
+    );
 
     await expect(dom.action("shout").execute({ text: "hello" })).rejects.toThrow(
       /no action handler/i,
@@ -302,8 +330,12 @@ describe("ActionHandler.handleWire", () => {
   it("routes a serialized action to the correct handler", async () => {
     const dom = makeGreetDomain();
     const handler = new ActionHandler()
-      .forAction(dom, "greet", { execution: (primed) => ({ greeting: `env hello ${primed.input.name}` }) })
-      .forAction(dom, "shout", { execution: (primed) => ({ result: primed.input.text.toUpperCase() }) });
+      .forAction(dom, "greet", {
+        execution: (primed) => ({ greeting: `env hello ${primed.input.name}` }),
+      })
+      .forAction(dom, "shout", {
+        execution: (primed) => ({ result: primed.input.text.toUpperCase() }),
+      });
 
     const wire = new NiceActionPrimed(dom.action("greet"), { name: "Eve" }).toJsonObject();
     const result = await handler.handleWire(wire);
@@ -339,11 +371,15 @@ describe("ActionHandler.handleWire", () => {
     const dateDom = makeDateDomain();
 
     const handler = new ActionHandler()
-      .forAction(greetDom, "greet", { execution: (primed) => ({ greeting: `hi ${primed.input.name}` }) })
+      .forAction(greetDom, "greet", {
+        execution: (primed) => ({ greeting: `hi ${primed.input.name}` }),
+      })
       .forAction(greetDom, "shout", { execution: (primed) => ({ result: primed.input.text }) })
       .forAction(dateDom, "schedule", { execution: () => ({ confirmed: true }) });
 
-    const greetWire = new NiceActionPrimed(greetDom.action("greet"), { name: "Frank" }).toJsonObject();
+    const greetWire = new NiceActionPrimed(greetDom.action("greet"), {
+      name: "Frank",
+    }).toJsonObject();
     const greetResult = await handler.handleWire(greetWire);
     expect(greetResult.handled).toBe(true);
     if (greetResult.handled && greetResult.response.result.ok) {
@@ -363,7 +399,11 @@ describe("ActionHandler.handleWire", () => {
   it("propagates handler fn errors from handleWire", async () => {
     const dom = makeGreetDomain();
     const handler = new ActionHandler()
-      .forAction(dom, "greet", { execution: () => { throw new Error("downstream error"); } })
+      .forAction(dom, "greet", {
+        execution: () => {
+          throw new Error("downstream error");
+        },
+      })
       .forAction(dom, "shout", { execution: (primed) => ({ result: primed.input.text }) });
 
     const wire = new NiceActionPrimed(dom.action("greet"), { name: "x" }).toJsonObject();
@@ -391,7 +431,9 @@ describe("ActionHandler.handleWire", () => {
   it("returns { handled: false } when no handler is registered for the action", async () => {
     const dom = makeGreetDomain();
     // Only greet registered, not shout
-    const handler = new ActionHandler().forAction(dom, "greet", { execution: () => ({ greeting: "x" }) });
+    const handler = new ActionHandler().forAction(dom, "greet", {
+      execution: () => ({ greeting: "x" }),
+    });
 
     const result = await handler.handleWire({
       type: EActionState.primed,
@@ -439,7 +481,9 @@ describe("full transport round-trip — wire format with serde", () => {
   it("greet domain completes a full JSON.stringify/parse round-trip", async () => {
     const dom = makeGreetDomain();
     const handler = new ActionHandler()
-      .forAction(dom, "greet", { execution: (primed) => ({ greeting: `hello ${primed.input.name}` }) })
+      .forAction(dom, "greet", {
+        execution: (primed) => ({ greeting: `hello ${primed.input.name}` }),
+      })
       .forAction(dom, "shout", { execution: (primed) => ({ result: primed.input.text }) });
 
     const primed = new NiceActionPrimed(dom.action("greet"), { name: "Grace" });
@@ -496,7 +540,7 @@ describe("action listeners — execution dispatch path", () => {
         .forAction(dom, "greet", { execution: () => ({ greeting: "x" }) })
         .forAction(dom, "shout", { execution: (primed) => ({ result: primed.input.text }) }),
     );
-    dom.addActionListener((act) => seen(act.coreAction.id));
+    dom.addActionListener({ execution: (act) => seen(act.coreAction.id) });
 
     await dom.action("greet").execute({ name: "Ivan" });
     expect(seen).toHaveBeenCalledWith("greet");
@@ -512,7 +556,7 @@ describe("action listeners — execution dispatch path", () => {
         .forAction(dom, "shout", { execution: (primed) => ({ result: primed.input.text }) }),
       { matchTag: "remote" },
     );
-    dom.addActionListener((act) => seen(act.coreAction.id));
+    dom.addActionListener({ execution: (act) => seen(act.coreAction.id) });
 
     await dom.action("greet").execute({ name: "Ivan" }, "remote");
     expect(seen).toHaveBeenCalledWith("greet");
@@ -550,7 +594,11 @@ describe("NiceActionPrimed.execute(matchTag) — handler path", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .forAction(dom, "greet", { execution: () => { throw new Error("nope"); } })
+        .forAction(dom, "greet", {
+          execution: () => {
+            throw new Error("nope");
+          },
+        })
         .forAction(dom, "shout", { execution: (primed) => ({ result: primed.input.text }) }),
       { matchTag: "fail-env" },
     );

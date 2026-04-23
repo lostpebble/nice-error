@@ -1,3 +1,4 @@
+import type { IActionHandlerInputs } from "../../ActionRuntimeEnvironment/ActionHandler/ActionHandler.types";
 import type { ActionRuntimeEnvironment } from "../../ActionRuntimeEnvironment/ActionRuntimeEnvironment";
 import { EErrId_NiceAction, err_nice_action } from "../../errors/err_nice_action";
 import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
@@ -63,28 +64,26 @@ export class NiceActionRootDomain<
     return this;
   }
 
-  private async _withValidatedInput(
-    primed: NiceActionPrimed<any, any, any>,
-  ): Promise<NiceActionPrimed<any, any, any>> {
-    const validatedInput = await primed.coreAction.schema.validateInput(primed.input, {
-      domain: primed.domain,
-      actionId: primed.coreAction.id,
-    });
-    return primed.coreAction.prime(validatedInput);
-  }
-
-  async _dispatchAction<P extends NiceActionPrimed<any, any, any>>(
+  async _executeAction<P extends NiceActionPrimed<any, any, any>>(
     primed: P,
-    matchTag?: string,
+    {
+      matchTag,
+      listeners,
+    }: IActionHandlerInputs<P extends NiceActionPrimed<infer DOM, any, any> ? DOM : never> = {},
   ): Promise<unknown> {
     const effectiveTag = matchTag ?? "_";
 
     if (this._runtimeEnvironment != null) {
       const handler = this._runtimeEnvironment.getHandlerForTag(effectiveTag);
       if (handler != null) {
-        const validatedPrimed = await this._withValidatedInput(primed);
+        const validatedPrimed = primed.validateInput();
+        const allListeners = [...(listeners ?? []), ...this._listeners];
+
+        for (const listener of allListeners) {
+          listener.execution?.(validatedPrimed);
+        }
+
         const response = await handler.dispatchAction(validatedPrimed);
-        for (const listener of this._listeners) await listener(validatedPrimed);
         if (response.result.ok) return response.result.output;
         throw response.result.error;
       }
@@ -96,6 +95,7 @@ export class NiceActionRootDomain<
         matchTag: matchTag,
       });
     }
+
     throw err_nice_action.fromId(EErrId_NiceAction.domain_no_handler, { domain: this.domain });
   }
 }

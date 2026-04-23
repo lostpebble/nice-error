@@ -240,7 +240,7 @@ describe("useNiceQuery — options passthrough", () => {
 
   it("envId is NOT forwarded as a useQuery option", () => {
     const domain = makeDomain();
-    useNiceQuery(domain.action("getUser"), { userId: "u1" }, { envId: "workerEnv" });
+    useNiceQuery(domain.action("getUser"), { userId: "u1" }, { tag: "workerEnv" });
 
     const opts = mockUseQuery.mock.lastCall![0] as any;
     expect(opts).not.toHaveProperty("envId");
@@ -253,10 +253,12 @@ describe("useNiceQuery — queryFn execution", () => {
     const calls = vi.fn();
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getUser", { execution: (primed) => {
-        calls(primed.input.userId);
-        return { id: primed.input.userId, name: "Alice" };
-      } }),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: (primed) => {
+          calls(primed.input.userId);
+          return { id: primed.input.userId, name: "Alice" };
+        },
+      }),
     );
 
     useNiceQuery(domain.action("getUser"), { userId: "u1" });
@@ -273,14 +275,16 @@ describe("useNiceQuery — queryFn execution", () => {
     const envCalls = vi.fn<(userId: string) => void>();
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getUser", { execution: (primed) => {
-        envCalls(primed.input.userId);
-        return { id: primed.input.userId, name: "Worker Alice" };
-      } }),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: (primed) => {
+          envCalls(primed.input.userId);
+          return { id: primed.input.userId, name: "Worker Alice" };
+        },
+      }),
       { matchTag: "workerEnv" },
     );
 
-    useNiceQuery(domain.action("getUser"), { userId: "u2" }, { envId: "workerEnv" });
+    useNiceQuery(domain.action("getUser"), { userId: "u2" }, { tag: "workerEnv" });
 
     const { queryFn } = mockUseQuery.mock.lastCall![0] as any;
     const result = await queryFn();
@@ -293,9 +297,11 @@ describe("useNiceQuery — queryFn execution", () => {
     const domain = makeDomain();
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getUser", { execution: () => {
-        throw err_user.fromId("not_found");
-      } }),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: () => {
+          throw err_user.fromId("not_found");
+        },
+      }),
     );
 
     useNiceQuery(domain.action("getUser"), { userId: "missing" });
@@ -314,10 +320,12 @@ describe("useNiceMutation — mutationFn execution", () => {
     const calls = vi.fn();
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "createPost", { execution: (primed) => {
-        calls(primed.input.title, primed.input.body);
-        return { postId: "p1" };
-      } }),
+      new ActionHandler().forAction(domain, "createPost", {
+        execution: (primed) => {
+          calls(primed.input.title, primed.input.body);
+          return { postId: "p1" };
+        },
+      }),
     );
 
     useNiceMutation(domain.action("createPost"));
@@ -334,14 +342,16 @@ describe("useNiceMutation — mutationFn execution", () => {
     const envCalls = vi.fn();
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "createPost", { execution: (primed) => {
-        envCalls(primed.input.title);
-        return { postId: "p2" };
-      } }),
+      new ActionHandler().forAction(domain, "createPost", {
+        execution: (primed) => {
+          envCalls(primed.input.title);
+          return { postId: "p2" };
+        },
+      }),
       { matchTag: "serverEnv" },
     );
 
-    useNiceMutation(domain.action("createPost"), { envId: "serverEnv" });
+    useNiceMutation(domain.action("createPost"), { tag: "serverEnv" });
 
     const { mutationFn } = mockUseMutation.mock.lastCall![0] as any;
     await mutationFn({ title: "From server", body: "body" });
@@ -351,7 +361,7 @@ describe("useNiceMutation — mutationFn execution", () => {
 
   it("envId is NOT forwarded as a useMutation option", () => {
     const domain = makeDomain();
-    useNiceMutation(domain.action("createPost"), { envId: "serverEnv" });
+    useNiceMutation(domain.action("createPost"), { tag: "serverEnv" });
 
     const opts = mockUseMutation.mock.lastCall![0] as any;
     expect(opts).not.toHaveProperty("envId");
@@ -379,9 +389,11 @@ describe("useNiceMutation — mutationFn execution", () => {
     const domain = makeDomain();
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "createPost", { execution: (primed) => {
-        throw err_post.fromId("duplicate_title", { title: primed.input.title });
-      } }),
+      new ActionHandler().forAction(domain, "createPost", {
+        execution: (primed) => {
+          throw err_post.fromId("duplicate_title", { title: primed.input.title });
+        },
+      }),
     );
 
     useNiceMutation(domain.action("createPost"));
@@ -401,10 +413,12 @@ describe("Integration — QueryClient.fetchQuery", () => {
     const domain = makeDomain();
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getUser", { execution: (primed) => ({
-        id: primed.input.userId,
-        name: "Alice",
-      }) }),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: (primed) => ({
+          id: primed.input.userId,
+          name: "Alice",
+        }),
+      }),
     );
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -423,10 +437,12 @@ describe("Integration — QueryClient.fetchQuery", () => {
     const calls = vi.fn();
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getUser", { execution: (primed) => {
-        calls(primed.input.userId);
-        return { id: primed.input.userId, name: "Cached" };
-      } }),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: (primed) => {
+          calls(primed.input.userId);
+          return { id: primed.input.userId, name: "Cached" };
+        },
+      }),
     );
 
     const client = new QueryClient({
@@ -446,9 +462,11 @@ describe("Integration — QueryClient.fetchQuery", () => {
     const domain = makeDomain();
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getUser", { execution: () => {
-        throw err_user.fromId("forbidden");
-      } }),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: () => {
+          throw err_user.fromId("forbidden");
+        },
+      }),
     );
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -474,9 +492,11 @@ describe("Integration — QueryClient.fetchQuery", () => {
     const domain = makeDomain();
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getUser", { execution: () => {
-        throw err_user.fromId("not_found");
-      } }),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: () => {
+          throw err_user.fromId("not_found");
+        },
+      }),
     );
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -505,10 +525,12 @@ describe("Integration — QueryClient.fetchQuery", () => {
     const receivedDates: Date[] = [];
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getSchedule", { execution: (primed) => {
-        receivedDates.push(primed.input.date);
-        return { slots: ["09:00", "14:00"] };
-      } }),
+      new ActionHandler().forAction(domain, "getSchedule", {
+        execution: (primed) => {
+          receivedDates.push(primed.input.date);
+          return { slots: ["09:00", "14:00"] };
+        },
+      }),
     );
 
     const date = new Date("2025-03-15T00:00:00.000Z");
@@ -532,10 +554,12 @@ describe("Query key invalidation — QueryClient", () => {
     const domain = makeDomain();
 
     domain.setHandler(
-      new ActionHandler().forAction(domain, "getUser", { execution: (primed) => ({
-        id: primed.input.userId,
-        name: "User",
-      }) }),
+      new ActionHandler().forAction(domain, "getUser", {
+        execution: (primed) => ({
+          id: primed.input.userId,
+          name: "User",
+        }),
+      }),
     );
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -570,7 +594,9 @@ describe("Query key invalidation — QueryClient", () => {
 
     domain.setHandler(
       new ActionHandler()
-        .forAction(domain, "getUser", { execution: (primed) => ({ id: primed.input.userId, name: "User" }) })
+        .forAction(domain, "getUser", {
+          execution: (primed) => ({ id: primed.input.userId, name: "User" }),
+        })
         .forAction(domain, "createPost", { execution: () => ({ postId: "p1" }) }),
     );
 

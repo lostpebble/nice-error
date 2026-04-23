@@ -3,6 +3,7 @@ import type {
   INiceActionErrorDeclaration,
   TTransportedValue,
 } from "../ActionSchema/NiceActionSchema.types";
+import type { TNiceActionInstanceAny } from "../NiceAction/NiceActionCombined.types";
 import type { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
 
 export type MaybePromise<T> = T | Promise<T>;
@@ -124,7 +125,9 @@ export type TActionPrimedHandlerForIds<
  * Observer called after each action is dispatched.
  * Return value is ignored. Use for logging, metrics, tracing, etc.
  */
-export type TActionListener = (action: NiceActionPrimed<any, any, any>) => MaybePromise<void>;
+export type TActionListener<DOM extends INiceActionDomain> = (
+  action: TNiceActionInstanceAny<DOM, keyof DOM["actions"] & string>,
+) => MaybePromise<void>;
 
 /**
  * Broad handler signature used internally for storage and dispatch.

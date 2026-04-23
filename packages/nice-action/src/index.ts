@@ -15,16 +15,18 @@ export type {
   TPossibleDomainId,
   TPossibleDomainIdList,
 } from "./ActionDomain/NiceActionDomain.types";
-export { ActionHandler } from "./ActionRuntimeEnvironment/ActionHandler/ActionHandler";
+export {
+  ActionHandler,
+  createHandler,
+} from "./ActionRuntimeEnvironment/ActionHandler/ActionHandler";
 export type {
-  IActionHandlerConfig,
+  IActionHandlerInputs as IActionHandlerConfig,
   TAtLeastOne,
   TExecutionAndResponseHandlers,
   THandleActionExecutionFn,
   THandleActionResponseFn,
   THandleActionResult,
 } from "./ActionRuntimeEnvironment/ActionHandler/ActionHandler.types";
-export { createHandler } from "./ActionRuntimeEnvironment/ActionHandler/createHandler";
 export { ActionRuntimeEnvironment } from "./ActionRuntimeEnvironment/ActionRuntimeEnvironment";
 export type { IActionRuntimeEnvironment_JsonObject } from "./ActionRuntimeEnvironment/ActionRuntimeEnvironment.types";
 export { action } from "./ActionSchema/action";

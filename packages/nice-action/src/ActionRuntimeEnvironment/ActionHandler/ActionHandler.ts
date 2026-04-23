@@ -11,7 +11,7 @@ import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
 import { NiceActionResponse } from "../../NiceAction/NiceActionResponse";
 import { isActionResponseJsonObject } from "../../utils/isActionResponseJsonObject";
 import type {
-  IActionHandlerConfig,
+  IActionHandlerInputs,
   TExecutionAndResponseHandlers,
   THandleActionResult,
   TMatchHandlerKey,
@@ -34,7 +34,7 @@ export class ActionHandler {
   private _handlersByKey = new Map<TMatchHandlerKey, TStoredHandlers>();
   private _defaultHandler?: TStoredHandlers;
 
-  constructor(config: IActionHandlerConfig = {}) {
+  constructor(config: IActionHandlerInputs = {}) {
     this.matchTag = config.matchTag ?? "_";
   }
 
@@ -274,3 +274,7 @@ export class ActionHandler {
     this._domains.set(domain.domain, domain);
   }
 }
+
+export const createHandler = (config: IActionHandlerInputs = {}) => {
+  return new ActionHandler(config);
+};

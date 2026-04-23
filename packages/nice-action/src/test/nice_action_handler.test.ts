@@ -391,7 +391,7 @@ describe("action listeners — envId dispatch", () => {
     dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => {} }), {
       matchTag: "env",
     });
-    dom.addActionListener((act) => seen(act.coreAction.id));
+    dom.addActionListener({ execution: (act) => seen(act.coreAction.id) });
 
     await dom.action("increment").execute({ by: 1 }, "env");
     expect(seen).toHaveBeenCalledWith("increment");
@@ -402,7 +402,7 @@ describe("action listeners — envId dispatch", () => {
     const seen = vi.fn();
 
     dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => {} }));
-    dom.addActionListener(() => seen());
+    dom.addActionListener({ execution: () => seen() });
 
     await dom.action("reset").execute({ to: 0 });
     expect(seen).toHaveBeenCalledTimes(1);

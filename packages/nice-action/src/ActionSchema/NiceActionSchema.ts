@@ -174,14 +174,19 @@ export class NiceActionSchema<
    * Returns the validated (and possibly coerced) value on success.
    * If no input schema was declared, the value is passed through as-is.
    */
-  async validateInput(
-    value: unknown,
-    meta: { domain: string; actionId: string },
-  ): Promise<INPUT[0]> {
+  validateInput(value: unknown, meta: { domain: string; actionId: string }): Promise<INPUT[0]> {
     if (this.inputOptions?.schema == null) {
       return value as INPUT[0];
     }
-    const result = await this.inputOptions.schema["~standard"].validate(value);
+    const result = this.inputOptions.schema["~standard"].validate(value);
+
+    if (result instanceof Promise) {
+      throw err_nice_action.fromId(EErrId_NiceAction.action_input_validation_promise, {
+        domain: meta.domain,
+        actionId: meta.actionId,
+      });
+    }
+
     if (result.issues != null) {
       throw err_nice_action.fromId(EErrId_NiceAction.action_input_validation_failed, {
         domain: meta.domain,
@@ -189,7 +194,32 @@ export class NiceActionSchema<
         validationMessage: extractMessageFromStandardSchema(result),
       });
     }
+
     return result.value as INPUT[0];
+  }
+
+  validateOutput(value: unknown, meta: { domain: string; actionId: string }): Promise<OUTPUT[0]> {
+    if (this.outputOptions?.schema == null) {
+      return value as OUTPUT[0];
+    }
+    const result = this.outputOptions.schema["~standard"].validate(value);
+
+    if (result instanceof Promise) {
+      throw err_nice_action.fromId(EErrId_NiceAction.action_output_validation_promise, {
+        domain: meta.domain,
+        actionId: meta.actionId,
+      });
+    }
+
+    if (result.issues != null) {
+      throw err_nice_action.fromId(EErrId_NiceAction.action_output_validation_failed, {
+        domain: meta.domain,
+        actionId: meta.actionId,
+        validationMessage: extractMessageFromStandardSchema(result),
+      });
+    }
+
+    return result.value as OUTPUT[0];
   }
 
   /**

@@ -15,7 +15,7 @@ import { NiceActionPrimed } from "./NiceActionPrimed";
 
 export class NiceActionResponse<
   DOM extends INiceActionDomain,
-  ID extends keyof DOM["actions"] & string,
+  ID extends keyof DOM["actions"] & string = keyof DOM["actions"] & string,
   SCH extends DOM["actions"][ID] = DOM["actions"][ID],
 > implements Omit<INiceAction<DOM, ID>, "schema" | "cuid" | "timeCreated">
 {
@@ -78,6 +78,18 @@ export class NiceActionResponse<
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
+  }
+
+  validateOutput(): this {
+    if (this.result.ok) {
+      const newOutput = this.primed.coreAction.schema.validateOutput(this.result.output, {
+        domain: this.domain,
+        actionId: this.id,
+      });
+      this.result.output = newOutput;
+    }
+
+    return this;
   }
 }
 

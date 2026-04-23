@@ -211,7 +211,7 @@ describe("matchTag fallback — action listeners still fire", () => {
     const domain = makeUserDomain();
     const listenerCalls = vi.fn();
 
-    domain.addActionListener((act) => listenerCalls(act.id));
+    domain.addActionListener({ execution: (act) => listenerCalls(act.id) });
 
     domain.setHandler(
       new ActionHandler().forAction(domain, "getUser", {

@@ -67,7 +67,7 @@ export type TUseNiceQueryOptions<
   UseQueryOptions<TInferOutputFromSchema<SCH>["Output"], TInferActionError<SCH>, TSelect, QueryKey>,
   "queryKey" | "queryFn"
 > & {
-  envId?: string;
+  tag?: string;
 };
 
 export type TUseNiceMutationOptions<
@@ -84,7 +84,7 @@ export type TUseNiceMutationOptions<
   >,
   "mutationFn"
 > & {
-  envId?: string;
+  tag?: string;
 };
 
 /**
@@ -119,11 +119,11 @@ export function useNiceQuery<
   input: TInferInputFromSchema<SCH>["Input"] | null | undefined,
   options?: TUseNiceQueryOptions<DOM, ID, SCH, TSelect>,
 ): UseQueryResult<TSelect, TInferActionError<SCH>> {
-  const { envId, enabled, ...queryOptions } = options ?? {};
+  const { tag, enabled, ...queryOptions } = options ?? {};
 
   return useQuery({
     queryKey: ["nice-action", action.domain, action.allDomains, action.id, input],
-    queryFn: () => action.execute(input!, envId),
+    queryFn: () => action.execute(input!, tag),
     enabled: input != null && (enabled ?? true),
     ...queryOptions,
   } as UseQueryOptions<TInferOutputFromSchema<SCH>["Output"], TInferActionError<SCH>, TSelect>);
@@ -160,10 +160,10 @@ export function useNiceMutation<
   TInferInputFromSchema<SCH>["Input"],
   TContext
 > {
-  const { envId, ...mutationOptions } = options ?? {};
+  const { tag, ...mutationOptions } = options ?? {};
 
   return useMutation({
-    mutationFn: (input: TInferInputFromSchema<SCH>["Input"]) => action.execute(input, envId),
+    mutationFn: (input: TInferInputFromSchema<SCH>["Input"]) => action.execute(input, tag),
     ...mutationOptions,
   });
 }

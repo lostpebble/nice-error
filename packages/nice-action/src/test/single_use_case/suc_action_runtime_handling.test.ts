@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { createHandler } from "../../ActionRuntimeEnvironment/ActionHandler/createHandler";
+import { createHandler } from "../../ActionRuntimeEnvironment/ActionHandler/ActionHandler";
 import { ActionRuntimeEnvironment } from "../../ActionRuntimeEnvironment/ActionRuntimeEnvironment";
 import { createTestDomains, ETestActId_UserComment } from "../test_data/test_action.data";
 

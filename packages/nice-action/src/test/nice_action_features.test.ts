@@ -43,9 +43,21 @@ describe("ActionHandler.forAction", () => {
 
     // handler built standalone, then attached to the domain
     const handler = new ActionHandler()
-      .forAction(dom, "increment", { execution: (primed) => { log(`increment:${primed.input.by}`); } })
-      .forAction(dom, "decrement", { execution: (primed) => { log(`decrement:${primed.input.by}`); } })
-      .forAction(dom, "reset", { execution: (primed) => { log(`reset:${primed.input.to}`); } });
+      .forAction(dom, "increment", {
+        execution: (primed) => {
+          log(`increment:${primed.input.by}`);
+        },
+      })
+      .forAction(dom, "decrement", {
+        execution: (primed) => {
+          log(`decrement:${primed.input.by}`);
+        },
+      })
+      .forAction(dom, "reset", {
+        execution: (primed) => {
+          log(`reset:${primed.input.to}`);
+        },
+      });
 
     dom.setHandler(handler);
 
@@ -71,7 +83,9 @@ describe("ActionHandler.forAction", () => {
 
     dom.setHandler(
       new ActionHandler().forAction(dom, "increment", {
-        execution: (primed) => { capturedBy = primed.input.by; },
+        execution: (primed) => {
+          capturedBy = primed.input.by;
+        },
       }),
     );
 
@@ -92,7 +106,9 @@ describe("ActionHandler.forActionIds", () => {
     dom.setHandler(
       new ActionHandler()
         .forActionIds(dom, ["increment", "decrement"] as const, {
-          execution: (primed) => { log(primed.coreAction.id); },
+          execution: (primed) => {
+            log(primed.coreAction.id);
+          },
         })
         .forAction(dom, "reset", { execution: () => {} }),
     );
@@ -110,9 +126,15 @@ describe("ActionHandler.forActionIds", () => {
     dom.setHandler(
       new ActionHandler()
         .forActionIds(dom, ["increment", "decrement"] as const, {
-          execution: () => { log("inc_or_dec"); },
+          execution: () => {
+            log("inc_or_dec");
+          },
         })
-        .forAction(dom, "reset", { execution: () => { log("reset"); } }),
+        .forAction(dom, "reset", {
+          execution: () => {
+            log("reset");
+          },
+        }),
     );
 
     await dom.action("reset").execute({ to: 0 });
@@ -126,8 +148,16 @@ describe("ActionHandler.forActionIds", () => {
 
     dom.setHandler(
       new ActionHandler()
-        .forAction(dom, "increment", { execution: () => { log("specific"); } })
-        .forDomain(dom, { execution: () => { log("catchall"); } }),
+        .forAction(dom, "increment", {
+          execution: () => {
+            log("specific");
+          },
+        })
+        .forDomain(dom, {
+          execution: () => {
+            log("catchall");
+          },
+        }),
     );
 
     await dom.action("increment").execute({ by: 1 });
@@ -172,8 +202,12 @@ describe("ActionHandler standalone", () => {
 
     // One handler covers both domains
     const handler = new ActionHandler()
-      .forAction(counterDom, "increment", { execution: (primed) => log(`counter:increment:${primed.input.by}`) })
-      .forAction(timerDom, "start", { execution: (primed) => log(`timer:start:${primed.input.ms}`) })
+      .forAction(counterDom, "increment", {
+        execution: (primed) => log(`counter:increment:${primed.input.by}`),
+      })
+      .forAction(timerDom, "start", {
+        execution: (primed) => log(`timer:start:${primed.input.ms}`),
+      })
       .setDefaultHandler({ execution: (primed) => log(`fallback:${primed.coreAction.id}`) });
 
     counterDom.setHandler(handler);
@@ -201,8 +235,10 @@ describe("NiceActionDomain.addActionListener", () => {
     const seen = vi.fn();
 
     dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => {} }));
-    dom.addActionListener((act) => {
-      seen(act.coreAction.id);
+    dom.addActionListener({
+      execution: (act) => {
+        seen(act.coreAction.id);
+      },
     });
 
     await dom.action("increment").execute({ by: 1 });
@@ -216,7 +252,7 @@ describe("NiceActionDomain.addActionListener", () => {
     const seen = vi.fn();
 
     dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => {} }));
-    const unsub = dom.addActionListener(() => seen());
+    const unsub = dom.addActionListener({ execution: () => seen() });
 
     await dom.action("increment").execute({ by: 1 });
     unsub();
@@ -231,8 +267,8 @@ describe("NiceActionDomain.addActionListener", () => {
     const b = vi.fn();
 
     dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => {} }));
-    dom.addActionListener(a);
-    dom.addActionListener(b);
+    dom.addActionListener({ execution: a });
+    dom.addActionListener({ execution: b });
 
     await dom.action("increment").execute({ by: 1 });
 
@@ -245,9 +281,11 @@ describe("NiceActionDomain.addActionListener", () => {
     let seenInput: { by: number } | undefined;
 
     dom.setHandler(new ActionHandler().forDomain(dom, { execution: () => {} }));
-    dom.addActionListener((act) => {
-      const match = dom.matchAction(act, "increment");
-      if (match) seenInput = match.input;
+    dom.addActionListener({
+      execution: (act) => {
+        const match = dom.matchAction(act, "increment");
+        if (match) seenInput = match.input;
+      },
     });
 
     await dom.action("increment").execute({ by: 42 });
@@ -353,7 +391,9 @@ describe("NiceActionDomain.hydrateAction", () => {
     const received = vi.fn();
     dom.setHandler(
       new ActionHandler().forAction(dom, "ping", {
-        execution: (primed) => { received(primed.input.msg); },
+        execution: (primed) => {
+          received(primed.input.msg);
+        },
       }),
     );
 
@@ -395,7 +435,9 @@ describe("NiceActionDomain.hydrateAction", () => {
     const received = vi.fn();
     dom.setHandler(
       new ActionHandler().forAction(dom, "schedule", {
-        execution: (primed) => { received(primed.input.at); },
+        execution: (primed) => {
+          received(primed.input.at);
+        },
       }),
     );
 
@@ -433,7 +475,9 @@ describe("NiceActionDomain.hydrateAction", () => {
     const received = vi.fn();
     dom.setHandler(
       new ActionHandler().forAction(dom, "send", {
-        execution: (primed) => { received(primed.input.ts, primed.input.label); },
+        execution: (primed) => {
+          received(primed.input.ts, primed.input.label);
+        },
       }),
     );
 

@@ -1,4 +1,5 @@
 import type { ActionHandler } from "../ActionRuntimeEnvironment/ActionHandler/ActionHandler";
+import type { IActionHandlerInputs } from "../ActionRuntimeEnvironment/ActionHandler/ActionHandler.types";
 import { EErrId_NiceAction, err_nice_action } from "../errors/err_nice_action";
 import { NiceAction } from "../NiceAction/NiceAction";
 import { EActionState } from "../NiceAction/NiceAction.enums";
@@ -97,12 +98,6 @@ export class NiceActionDomain<
     );
   }
 
-  isExactActionDomain<ID extends keyof ACT_DOM["actions"] & string>(
-    action: unknown,
-  ): action is NiceActionPrimed<ACT_DOM, ID, ACT_DOM["actions"][ID]> {
-    return action instanceof NiceActionPrimed && this.domain === action.domain;
-  }
-
   matchAction<ID extends keyof ACT_DOM["actions"] & string>(
     action: unknown,
     id: ID,
@@ -113,22 +108,18 @@ export class NiceActionDomain<
     return null;
   }
 
-  private async _withValidatedInput(
-    primed: NiceActionPrimed<any, any, any>,
-  ): Promise<NiceActionPrimed<any, any, any>> {
-    const validatedInput = await primed.coreAction.schema.validateInput(primed.input, {
-      domain: this.domain,
-      actionId: primed.coreAction.id,
-    });
-    return primed.coreAction.prime(validatedInput);
+  isExactActionDomain<ID extends keyof ACT_DOM["actions"] & string>(
+    action: unknown,
+  ): action is NiceActionPrimed<ACT_DOM, ID, ACT_DOM["actions"][ID]> {
+    return action instanceof NiceActionPrimed && this.domain === action.domain;
   }
 
   /**
    * Validate and return a primed action with confirmed input.
    * Used by ActionHandler.handleWire() for server-side wire dispatch.
    */
-  async validatePrimed<P extends NiceActionPrimed<any, any, any>>(primed: P): Promise<P> {
-    return this._withValidatedInput(primed) as Promise<P>;
+  validatePrimed<P extends NiceActionPrimed<any, any, any>>(primed: P): P {
+    return primed.validateInput();
   }
 
   /**
@@ -222,17 +213,25 @@ export class NiceActionDomain<
   /**
    * Delegates dispatch to the root domain. All handler/environment routing lives there.
    */
-  async _dispatchAction(
-    primed: NiceActionPrimed<any, any, any>,
-    matchTag?: string,
+  async _executeAction<P extends NiceActionPrimed<any, any, any>>(
+    primed: P,
+    {
+      matchTag,
+      listeners,
+    }: IActionHandlerInputs<P extends NiceActionPrimed<infer DOM, any, any> ? DOM : never> = {},
   ): Promise<unknown> {
     // Try exact-tag handler registered on this domain
     const taggedHandler = this._handlersByTag.get(matchTag ?? "_");
 
     if (taggedHandler != null) {
-      const validatedPrimed = await this._withValidatedInput(primed);
+      const validatedPrimed = primed.validateInput();
+      const allListeners = [...(listeners ?? []), ...this._listeners];
+
+      for (const listener of allListeners) {
+        listener.execution?.(validatedPrimed);
+      }
+
       const response = await taggedHandler.dispatchAction(validatedPrimed);
-      for (const listener of this._listeners) await listener(validatedPrimed);
       if (response.result.ok) return response.result.output;
       throw response.result.error;
     }
@@ -241,17 +240,27 @@ export class NiceActionDomain<
     // domain's default handler ("_") before escalating to the root domain.
     if (matchTag != null) {
       const defaultHandler = this._handlersByTag.get("_");
+
       if (defaultHandler != null) {
-        const validatedPrimed = await this._withValidatedInput(primed);
+        const validatedPrimed = primed.validateInput();
         const response = await defaultHandler.dispatchAction(validatedPrimed);
-        for (const listener of this._listeners) await listener(validatedPrimed);
+
+        const allListeners = [...(listeners ?? []), ...this._listeners];
+
+        for (const listener of allListeners) {
+          listener.execution?.(validatedPrimed);
+        }
+
         if (response.result.ok) return response.result.output;
         throw response.result.error;
       }
     }
 
     // No domain-level handler — try the root domain (runtime environment routing).
-    return this._rootDomain._dispatchAction(primed, matchTag);
+    // Fire child domain listeners after root dispatch so they fire regardless of handler path.
+    const output = await this._rootDomain._executeAction(primed, { matchTag });
+    for (const listener of this._listeners) await listener.execution?.(primed);
+    return output;
   }
 
   /**
