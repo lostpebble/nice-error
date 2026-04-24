@@ -83,70 +83,40 @@ export class NiceActionRootDomain<
     }: IActionHandlerInputs<P extends NiceActionPrimed<infer DOM, any, any> ? DOM : never>,
   ): Promise<unknown> {
     if (this._runtimeEnvironment != null) {
+      const envData = {
+        tag: actionMeta?.tag,
+        meta: actionMeta?.meta,
+        runtime: this.getEnvironmentMeta(),
+      };
+
       const handler = this._runtimeEnvironment.getHandlerForAction(primed, actionMeta?.tag);
+      const defaultExecution =
+        handler == null ? this._runtimeEnvironment.getDefaultHandler()?.execution : undefined;
 
-      if (handler != null) {
+      if (handler != null || defaultExecution != null) {
         const validatedPrimed = primed.validateInput();
         const allListeners = [...(listeners ?? []), ...this._listeners];
 
         for (const listener of allListeners) {
-          listener.execution?.(validatedPrimed, {
-            tag: actionMeta?.tag,
-            meta: actionMeta?.meta,
-            runtime: this.getEnvironmentMeta(),
-          });
+          listener.execution?.(validatedPrimed, envData);
         }
-
-        const response = await handler.dispatchAction(validatedPrimed);
-
-        for (const listener of allListeners) {
-          listener.response?.(response as any, {
-            tag: actionMeta?.tag,
-            meta: actionMeta?.meta,
-            runtime: this.getEnvironmentMeta(),
-          });
-        }
-
-        if (response.result.ok) return response.result.output;
-        throw response.result.error;
-      }
-
-      const defaultHandler = this._runtimeEnvironment.getDefaultHandler();
-
-      if (defaultHandler != null && defaultHandler.execution != null) {
-        const validatedPrimed = primed.validateInput();
-        const allListeners = [...(listeners ?? []), ...this._listeners];
-
-        for (const listener of allListeners) {
-          listener.execution?.(validatedPrimed, {
-            tag: actionMeta?.tag,
-            meta: actionMeta?.meta,
-            runtime: this.getEnvironmentMeta(),
-          });
-        }
-
-        const rawResult = await defaultHandler.execution(validatedPrimed, {
-          tag: actionMeta?.tag,
-          meta: actionMeta?.meta,
-          runtime: this.getEnvironmentMeta(),
-        });
 
         let response: NiceActionResponse<any, any>;
-        if (rawResult instanceof NiceActionResponse) {
-          response = rawResult;
-        } else if (rawResult != null && isActionResponseJsonObject(rawResult)) {
-          const domain = primed.coreAction.actionDomain;
-          response = domain.hydrateResponse(rawResult);
+        if (handler != null) {
+          response = await handler.dispatchAction(validatedPrimed);
         } else {
-          response = primed.setResponse(rawResult as any);
+          const rawResult = await defaultExecution!(validatedPrimed, envData);
+          if (rawResult instanceof NiceActionResponse) {
+            response = rawResult;
+          } else if (rawResult != null && isActionResponseJsonObject(rawResult)) {
+            response = primed.coreAction.actionDomain.hydrateResponse(rawResult);
+          } else {
+            response = primed.setResponse(rawResult as any);
+          }
         }
 
         for (const listener of allListeners) {
-          listener.response?.(response as any, {
-            tag: actionMeta?.tag,
-            meta: actionMeta?.meta,
-            runtime: this.getEnvironmentMeta(),
-          });
+          listener.response?.(response as any, envData);
         }
 
         if (response.result.ok) return response.result.output;
