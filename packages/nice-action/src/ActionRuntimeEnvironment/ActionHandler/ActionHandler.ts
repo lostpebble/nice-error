@@ -268,10 +268,6 @@ export class ActionHandler {
     });
   }
 
-  /**
-   * Called when this handler is registered on a domain via `domain.setHandler()`.
-   * Stores the domain reference for wire-format dispatch (`handleWire`).
-   */
   _onRegisteredWith(domain: NiceActionDomain<any>): void {
     this._domains.set(domain.domain, domain);
   }

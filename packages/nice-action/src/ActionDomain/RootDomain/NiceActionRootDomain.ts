@@ -98,6 +98,15 @@ export class NiceActionRootDomain<
         }
 
         const response = await handler.dispatchAction(validatedPrimed);
+
+        for (const listener of allListeners) {
+          listener.response?.(response as any, {
+            tag: actionMeta?.tag,
+            meta: actionMeta?.meta,
+            runtime: this.getEnvironmentMeta(),
+          });
+        }
+
         if (response.result.ok) return response.result.output;
         throw response.result.error;
       }
