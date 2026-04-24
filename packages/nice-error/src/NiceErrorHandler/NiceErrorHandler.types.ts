@@ -5,19 +5,10 @@ import type { NiceErrorHydrated } from "../NiceError/NiceErrorHydrated";
 export type MaybePromise<T> = T | Promise<T>;
 /**
  * Broad handler signature used internally for storage and dispatch.
- * Public-facing registration methods use narrower types (`TActionHandlerForDomain`,
- * `TActionIdHandlerForDomain`); they are cast to this for storage.
  */
 export type TBroadErrorHandler<E extends NiceError = NiceError, RES = unknown> = (
   action: E,
 ) => MaybePromise<RES>;
-
-// export interface IActionCase<
-//   P extends NiceActionPrimed<any, any, any> = NiceActionPrimed<any, any, any>,
-// > {
-//   readonly _matcher: (action: P) => boolean;
-//   readonly _requester: TBroadActionRequester<P>;
-// }
 
 /**
  * Handler registered via forDomain.

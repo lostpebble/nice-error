@@ -3,8 +3,6 @@ import type {
   INiceActionErrorDeclaration,
   TTransportedValue,
 } from "../ActionSchema/NiceActionSchema.types";
-import type { TNiceActionInstanceAny } from "../NiceAction/NiceActionCombined.types";
-import type { NiceActionPrimed } from "../NiceAction/NiceActionPrimed";
 
 export type MaybePromise<T> = T | Promise<T>;
 
@@ -41,19 +39,6 @@ export interface INiceActionRootDomain<ID extends TPossibleDomainId = TPossibleD
   actions: {};
 }
 
-/**
- * Structural interface implemented by `NiceActionDomainResolver`.
- * Used by `NiceActionDomain` to avoid a circular import with the concrete class.
- *
- * `_resolvePrimed` is the inline dispatch path — calls the registered fn directly
- * without re-serializing/deserializing. Errors from the fn propagate naturally.
- */
-// export interface INiceActionResolverLike {
-//   _resolvePrimed(
-//     primed: NiceActionPrimed<INiceActionDomain, NiceActionSchema<any, any, any>>,
-//   ): Promise<unknown>;
-// }
-
 export interface INiceActionDomainChildOptions<
   ERR_DOMAIN extends string = string,
   SCHEMA extends TNiceActionDomainSchema = TNiceActionDomainSchema,
@@ -86,68 +71,3 @@ export type TInferOutputFromSchema<SCH> =
         SerdeOutput: OUT[1];
       }
     : never;
-
-/**
- * Handler registered via forDomain.
- *
- * `act.input` is typed as the union of input types for every action in `ACT_DOM`,
- * and `act.coreAction` carries the matching schema — the same narrowing you get
- * from `forActionIds` over all action IDs in the domain.
- */
-export type TActionHandlerForDomain<ACT_DOM extends INiceActionDomain> = (
-  action: NiceActionPrimed<
-    ACT_DOM,
-    keyof ACT_DOM["actions"] & string,
-    ACT_DOM["actions"][keyof ACT_DOM["actions"] & string]
-  >,
-) => MaybePromise<unknown>;
-
-/**
- * Handler registered via forAction — receives just the typed input for that
- * specific action ID. Use this for direct in-process resolution.
- */
-export type TActionIdHandlerForDomain<
-  ACT_DOM extends INiceActionDomain,
-  ID extends keyof ACT_DOM["actions"] & string,
-> = (input: TInferInputFromSchema<ACT_DOM["actions"][ID]>["Input"]) => MaybePromise<unknown>;
-
-/**
- * Handler registered via forActionIds — receives the full primed action
- * narrowed to the union of registered IDs. Use this when you need to branch
- * on `act.coreAction.id` or access routing metadata.
- */
-export type TActionPrimedHandlerForIds<
-  ACT_DOM extends INiceActionDomain,
-  ID extends keyof ACT_DOM["actions"] & string,
-> = (action: NiceActionPrimed<ACT_DOM, ID, ACT_DOM["actions"][ID]>) => MaybePromise<unknown>;
-
-/**
- * Observer called after each action is dispatched.
- * Return value is ignored. Use for logging, metrics, tracing, etc.
- */
-export type TActionListener<DOM extends INiceActionDomain> = (
-  action: TNiceActionInstanceAny<DOM, keyof DOM["actions"] & string>,
-) => MaybePromise<void>;
-
-/**
- * Broad handler signature used internally for storage and dispatch.
- * Public-facing registration methods use narrower types (`TActionHandlerForDomain`,
- * `TActionIdHandlerForDomain`); they are cast to this for storage.
- */
-export type TBroadActionRequester<P extends NiceActionPrimed<any, any, any>> = (
-  action: P,
-) => MaybePromise<unknown>;
-
-/**
- * A single case in a `NiceActionRequester`.
- *
- * Construct via `forDomain` / `forActionId` / `forActionIds` — do not build directly.
- */
-export interface IActionCase<
-  P extends NiceActionPrimed<any, any, any> = NiceActionPrimed<any, any, any>,
-> {
-  readonly _matcher: (action: P) => boolean;
-  readonly _requester: TBroadActionRequester<P>;
-}
-
-export type TDomainActionId<DOM extends INiceActionDomain> = keyof DOM["actions"] & string;

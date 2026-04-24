@@ -1,5 +1,5 @@
+import { extractMessageFromStandardSchema } from "@nice-code/common-errors";
 import { castNiceError } from "@nice-code/error";
-import { extractMessageFromStandardSchema } from "../../../common-errors/src/validation";
 import type {
   INiceActionDomain,
   TInferInputFromSchema,
@@ -117,17 +117,6 @@ export class NiceActionPrimed<
    * Intended for use inside `NiceActionRequester` handlers that receive a
    * `TNiceActionResponse_JsonObject` from a network call, so the caller of `execute()`
    * always gets the raw output type without manually deserializing.
-   *
-   * @example
-   * ```ts
-   * dom.setActionRequester().forDomain(dom, async (act) => {
-   *   const wire = await fetch("/api/actions", {
-   *     method: "POST",
-   *     body: JSON.stringify(act.toJsonObject()),
-   *   }).then((r) => r.json());
-   *   return act.processResponse(wire);
-   * });
-   * ```
    */
   processResponse(wire: TNiceActionResponse_JsonObject): TInferOutputFromSchema<SCH>["Output"] {
     if (!wire.ok) {

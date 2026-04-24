@@ -158,7 +158,7 @@ export class NiceAction<
   /**
    * Prime this action with input, execute it, and return a `NiceActionResponse`
    * that carries both the original primed action (domain + actionId + input) and
-   * the result (`{ ok: true, value }` or `{ ok: false, error }`).
+   * the result (`{ ok: true, output }` or `{ ok: false, error }`).
    *
    * The response can be serialized for cross-boundary transport via `toJsonObject()`.
    * Reconstruct on the receiving end with `domain.hydrateResponse(wire)`.

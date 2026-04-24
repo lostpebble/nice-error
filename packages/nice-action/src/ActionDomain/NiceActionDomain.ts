@@ -71,7 +71,7 @@ export class NiceActionDomain<
   }
 
   primeUnknown(
-    actionId: ACT_DOM["allDomains"][number],
+    actionId: keyof ACT_DOM["actions"] & string,
     input: unknown,
   ): NiceActionPrimed<ACT_DOM, string, ACT_DOM["actions"][string]> {
     const action = this.action(actionId as keyof ACT_DOM["actions"] & string).prime(
