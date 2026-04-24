@@ -47,7 +47,7 @@ export class NiceActionPrimed<
   }
 
   getEnvironmentMeta(): IRuntimeEnvironmentMeta {
-    return this.coreAction._actionDomain.getEnvironmentMeta();
+    return this.coreAction.actionDomain.getEnvironmentMeta();
   }
 
   /**
@@ -115,14 +115,8 @@ export class NiceActionPrimed<
     return this.coreAction.schema.deserializeOutput(wire.output as any);
   }
 
-  /**
-   * Re-execute this primed action through the domain handler or resolver.
-   * Useful for deferred or cross-environment execution of a hydrated action.
-   *
-   * Pass `matchTag` to target a specific named handler/resolver on the domain.
-   */
   async execute(meta?: IActionMetaInputs): Promise<TInferOutputFromSchema<SCH>["Output"]> {
-    return this.coreAction._actionDomain._executeAction(this, { actionMeta: meta ?? {} });
+    return this.coreAction.actionDomain._executeAction(this, { actionMeta: meta ?? {} });
   }
 
   validateInput(): this {

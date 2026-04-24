@@ -1,4 +1,3 @@
-import { isActionResponseJsonObject } from "../..";
 import type { IActionHandlerInputs } from "../../ActionRuntimeEnvironment/ActionHandler/ActionHandler.types";
 import type { ActionRuntimeEnvironment } from "../../ActionRuntimeEnvironment/ActionRuntimeEnvironment";
 import type { IRuntimeEnvironmentMeta } from "../../ActionRuntimeEnvironment/ActionRuntimeEnvironment.types";
@@ -6,6 +5,7 @@ import { getAssumedRuntimeInfo } from "../../ActionRuntimeEnvironment/utils/getA
 import { EErrId_NiceAction, err_nice_action } from "../../errors/err_nice_action";
 import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
 import { NiceActionResponse } from "../../NiceAction/NiceActionResponse";
+import { isActionResponseJsonObject } from "../../utils/isActionResponseJsonObject";
 import { NiceActionDomain } from "../NiceActionDomain";
 import type {
   INiceActionDomainChildOptions,
@@ -127,11 +127,6 @@ export class NiceActionRootDomain<
           response = rawResult;
         } else if (rawResult != null && isActionResponseJsonObject(rawResult)) {
           const domain = primed.coreAction.actionDomain;
-          if (domain == null) {
-            throw err_nice_action.fromId(EErrId_NiceAction.domain_no_handler, {
-              domain: primed.domain,
-            });
-          }
           response = domain.hydrateResponse(rawResult);
         } else {
           response = primed.setResponse(rawResult as any);

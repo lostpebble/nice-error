@@ -42,7 +42,7 @@ export class NiceActionResponse<
   }
 
   getEnvironmentMeta(): IRuntimeEnvironmentMeta {
-    return this.primed.coreAction._actionDomain.getEnvironmentMeta();
+    return this.primed.coreAction.actionDomain.getEnvironmentMeta();
   }
 
   /**

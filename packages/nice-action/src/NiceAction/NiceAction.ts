@@ -29,7 +29,6 @@ export class NiceAction<
   readonly type = EActionState.empty;
   readonly domain: DOM["domain"];
   readonly allDomains: DOM["allDomains"];
-  readonly _actionDomain: NiceActionDomain<DOM>;
   readonly timeCreated: number;
   readonly cuid: string;
   readonly route: IActionRouteEntry[];
@@ -40,7 +39,6 @@ export class NiceAction<
     readonly id: ID,
     hydrationData?: Pick<INiceAction_JsonObject<DOM, ID>, "cuid" | "timeCreated" | "route">,
   ) {
-    this._actionDomain = actionDomain;
     this.domain = actionDomain.domain;
     this.allDomains = actionDomain.allDomains;
     this.timeCreated = hydrationData?.timeCreated ?? Date.now();
@@ -114,7 +112,7 @@ export class NiceAction<
     meta?: IActionMetaInputs,
   ): Promise<TInferOutputFromSchema<SCH>["Output"]> {
     const primed = new NiceActionPrimed(this, input);
-    return this._actionDomain._executeAction(primed, { actionMeta: meta ?? {} });
+    return this.actionDomain._executeAction(primed, { actionMeta: meta ?? {} });
   }
 
   /**
