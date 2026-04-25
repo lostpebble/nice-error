@@ -14,6 +14,7 @@ export type {
 } from "./ActionDomain/NiceActionDomain.types";
 export { ActionConnect } from "./ActionRuntimeEnvironment/ActionConnect/ActionConnect";
 export * from "./ActionRuntimeEnvironment/ActionConnect/ActionConnect.types";
+export { ConnectionConfig as Transport } from "./ActionRuntimeEnvironment/ActionConnect/ConnectionConfig/ConnectionConfig";
 export * from "./ActionRuntimeEnvironment/ActionConnect/err_nice_connect";
 export {
   ActionHandler,

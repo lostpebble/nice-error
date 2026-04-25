@@ -5,7 +5,7 @@
  * Tests verify:
  *  - dispatch → transport.send → onMessage response → correlation resolves
  *  - Request timeout
- *  - HTTP fallback when WS transport is absent/disconnected
+ *  - HTTP transport (fallback when no WS connected)
  *  - No transport → reject immediately
  *  - disconnect() clears pending requests
  *  - routeDomain: all domain actions forwarded via transport
@@ -21,6 +21,11 @@ import { createActionRootDomain } from "../../ActionDomain/helpers/createRootAct
 import { action } from "../../ActionSchema/action";
 import { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
 import { ActionConnect } from "./ActionConnect";
+import { ConnectionConfig } from "./ConnectionConfig/ConnectionConfig";
+import {
+  ETransportType,
+  type IActionTransportDef_Ws,
+} from "./ConnectionConfig/ConnectionConfig.types";
 
 // ---------------------------------------------------------------------------
 // Shared test domain
@@ -41,8 +46,8 @@ function makeTestDomain() {
   });
 }
 
-function makeMockTransport(connected = true) {
-  return { send: vi.fn<(data: string) => void>(), connected };
+function makeWsImpl(connected = true): IActionTransportDef_Ws {
+  return { send: vi.fn<(data: string) => void>(), connected, type: ETransportType.ws };
 }
 
 // ---------------------------------------------------------------------------
@@ -53,13 +58,13 @@ describe("dispatch — response correlation over mock transport", () => {
   it("sends serialized primed wire to transport.send", async () => {
     const dom = makeTestDomain();
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "hello" });
-    const transport = makeMockTransport(true);
+    const impl = makeWsImpl(true);
 
-    const ac = new ActionConnect().attachTransport(transport).routeDomain(dom);
+    const ac = new ActionConnect([new ConnectionConfig([impl])]).routeDomain(dom);
     void ac.dispatchAction(primed);
 
-    expect(transport.send).toHaveBeenCalledOnce();
-    const wire = JSON.parse(transport.send.mock.calls[0][0] as string);
+    expect(impl.send).toHaveBeenCalledOnce();
+    const wire = JSON.parse(impl.send.mock.calls[0][0] as string);
     expect(wire.id).toBe("echo");
     expect(wire.domain).toBe("test_domain");
   });
@@ -67,9 +72,9 @@ describe("dispatch — response correlation over mock transport", () => {
   it("resolves with output when matching response arrives via onMessage", async () => {
     const dom = makeTestDomain();
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "world" });
-    const transport = makeMockTransport(true);
+    const impl = makeWsImpl(true);
 
-    const ac = new ActionConnect().attachTransport(transport).routeDomain(dom);
+    const ac = new ActionConnect([new ConnectionConfig(impl)]).routeDomain(dom);
     const dispatchPromise = ac.dispatchAction(primed);
 
     await ac.onMessage(primed.setResponse({ echoed: "world" }).toJsonString());
@@ -82,9 +87,9 @@ describe("dispatch — response correlation over mock transport", () => {
     const dom = makeTestDomain();
     const a = new NiceActionPrimed(dom.action("echo"), { text: "a" });
     const b = new NiceActionPrimed(dom.action("echo"), { text: "b" });
-    const transport = makeMockTransport(true);
+    const impl = makeWsImpl(true);
 
-    const ac = new ActionConnect().attachTransport(transport).routeDomain(dom);
+    const ac = new ActionConnect([new ConnectionConfig(impl)]).routeDomain(dom);
     const pa = ac.dispatchAction(a);
     const pb = ac.dispatchAction(b);
 
@@ -107,11 +112,11 @@ describe("dispatch — timeout", () => {
   it("rejects with a timeout error when no response arrives within requestTimeout", async () => {
     const dom = makeTestDomain();
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "x" });
-    const transport = makeMockTransport(true);
+    const impl = makeWsImpl(true);
 
-    const ac = new ActionConnect({ requestTimeout: 5_000 })
-      .attachTransport(transport)
-      .routeDomain(dom);
+    const ac = new ActionConnect([new ConnectionConfig(impl)], {
+      requestTimeout: 5_000,
+    }).routeDomain(dom);
     const p = ac.dispatchAction(primed);
 
     vi.runAllTimers();
@@ -133,9 +138,9 @@ describe("dispatch — HTTP transport", () => {
 
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => responseWire }));
 
-    const ac = new ActionConnect()
-      .attachTransport({ url: "http://test.local/api" })
-      .routeDomain(dom);
+    const ac = new ActionConnect([
+      new ConnectionConfig({ url: "http://test.local/api" }),
+    ]).routeDomain(dom);
 
     const response = await ac.dispatchAction(primed);
     expect(response.result).toEqual({ ok: true, output: { echoed: "fetched" } });
@@ -149,7 +154,7 @@ describe("dispatch — HTTP transport", () => {
     const dom = makeTestDomain();
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "x" });
 
-    const ac = new ActionConnect().routeDomain(dom);
+    const ac = new ActionConnect([]).routeDomain(dom);
     await expect(ac.dispatchAction(primed)).rejects.toThrow(/no connected transport/i);
   });
 });
@@ -162,9 +167,9 @@ describe("disconnect", () => {
   it("rejects all pending dispatches", async () => {
     const dom = makeTestDomain();
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "x" });
-    const transport = makeMockTransport(true);
+    const impl = makeWsImpl(true);
 
-    const ac = new ActionConnect().attachTransport(transport).routeDomain(dom);
+    const ac = new ActionConnect([new ConnectionConfig(impl)]).routeDomain(dom);
     const p = ac.dispatchAction(primed);
 
     ac.disconnect();
@@ -179,9 +184,9 @@ describe("disconnect", () => {
 describe("routeDomain", () => {
   it("registers all domain actions to the default transport", async () => {
     const dom = makeTestDomain();
-    const transport = makeMockTransport(true);
+    const impl = makeWsImpl(true);
 
-    const ac = new ActionConnect().attachTransport(transport).routeDomain(dom);
+    const ac = new ActionConnect([new ConnectionConfig(impl)]).routeDomain(dom);
 
     const echoKeys = ac.allHandlerKeys.filter((k) => k.includes("test_domain"));
     expect(echoKeys).toContain("_::test_domain::_");
@@ -189,7 +194,7 @@ describe("routeDomain", () => {
     void ac.dispatchAction(new NiceActionPrimed(dom.action("echo"), { text: "a" }));
     void ac.dispatchAction(new NiceActionPrimed(dom.action("ping"), { n: 1 }));
 
-    expect(transport.send).toHaveBeenCalledTimes(2);
+    expect(impl.send).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -200,22 +205,23 @@ describe("routeDomain", () => {
 describe("routeAction — per-action transport override", () => {
   it("routes the specific action to the named transport, others use domain default", async () => {
     const dom = makeTestDomain();
-    const defaultTransport = makeMockTransport(true);
-    const edgeTransport = makeMockTransport(true);
+    const defaultImpl = makeWsImpl(true);
+    const edgeImpl = makeWsImpl(true);
 
-    const ac = new ActionConnect()
-      .attachTransport(defaultTransport)
-      .attachTransport(edgeTransport, { key: "edge" })
+    const ac = new ActionConnect([
+      new ConnectionConfig(defaultImpl),
+      new ConnectionConfig(edgeImpl, "edge"),
+    ])
       .routeDomain(dom)
-      .routeAction(dom, "ping", { transportKey: "edge" });
+      .routeAction(dom, "ping", { routeKey: "edge" });
 
     void ac.dispatchAction(new NiceActionPrimed(dom.action("echo"), { text: "x" }));
     void ac.dispatchAction(new NiceActionPrimed(dom.action("ping"), { n: 42 }));
 
-    expect(defaultTransport.send).toHaveBeenCalledOnce();
-    expect(edgeTransport.send).toHaveBeenCalledOnce();
+    expect(defaultImpl.send).toHaveBeenCalledOnce();
+    expect(edgeImpl.send).toHaveBeenCalledOnce();
 
-    const pingWire = JSON.parse(edgeTransport.send.mock.calls[0][0] as string);
+    const pingWire = JSON.parse(edgeImpl.send.mock.calls[0][0] as string);
     expect(pingWire.id).toBe("ping");
   });
 });
@@ -227,19 +233,19 @@ describe("routeAction — per-action transport override", () => {
 describe("routeActionIds", () => {
   it("registers all listed actions to the named transport", async () => {
     const dom = makeTestDomain();
-    const defaultTransport = makeMockTransport(true);
-    const edgeTransport = makeMockTransport(true);
+    const defaultImpl = makeWsImpl(true);
+    const edgeImpl = makeWsImpl(true);
 
-    const ac = new ActionConnect()
-      .attachTransport(defaultTransport)
-      .attachTransport(edgeTransport, { key: "edge" })
-      .routeActionIds(dom, ["echo", "ping"], { transportKey: "edge" });
+    const ac = new ActionConnect([
+      new ConnectionConfig(defaultImpl),
+      new ConnectionConfig(edgeImpl, "edge"),
+    ]).routeActionIds(dom, ["echo", "ping"], { routeKey: "edge" });
 
     void ac.dispatchAction(new NiceActionPrimed(dom.action("echo"), { text: "a" }));
     void ac.dispatchAction(new NiceActionPrimed(dom.action("ping"), { n: 1 }));
 
-    expect(edgeTransport.send).toHaveBeenCalledTimes(2);
-    expect(defaultTransport.send).not.toHaveBeenCalled();
+    expect(edgeImpl.send).toHaveBeenCalledTimes(2);
+    expect(defaultImpl.send).not.toHaveBeenCalled();
   });
 });
 
@@ -251,9 +257,9 @@ describe("onMessage — only handles response wires", () => {
   it("resolves a pending dispatch from a response wire", async () => {
     const dom = makeTestDomain();
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "hi" });
-    const transport = makeMockTransport(true);
+    const impl = makeWsImpl(true);
 
-    const ac = new ActionConnect().attachTransport(transport).routeDomain(dom);
+    const ac = new ActionConnect([new ConnectionConfig(impl)]).routeDomain(dom);
     const p = ac.dispatchAction(primed);
 
     await ac.onMessage(primed.setResponse({ echoed: "hi" }).toJsonString());
@@ -264,7 +270,7 @@ describe("onMessage — only handles response wires", () => {
     const dom = makeTestDomain();
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "ignored" });
 
-    const ac = new ActionConnect();
+    const ac = new ActionConnect([]);
     await expect(ac.onMessage(primed.toJsonString())).resolves.toBeUndefined();
   });
 });
@@ -275,7 +281,7 @@ describe("onMessage — only handles response wires", () => {
 
 describe("edge cases", () => {
   it("silently ignores malformed JSON", async () => {
-    const ac = new ActionConnect();
+    const ac = new ActionConnect([]);
     await expect(ac.onMessage("not json {{{")).resolves.toBeUndefined();
   });
 
@@ -284,12 +290,12 @@ describe("edge cases", () => {
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "x" });
     const responseWire = { ...primed.setResponse({ echoed: "x" }).toJsonObject(), cuid: "ghost" };
 
-    const ac = new ActionConnect();
+    const ac = new ActionConnect([]);
     await expect(ac.onMessage(JSON.stringify(responseWire))).resolves.toBeUndefined();
   });
 
   it("silently ignores unrecognised message shapes", async () => {
-    const ac = new ActionConnect();
+    const ac = new ActionConnect([]);
     await expect(ac.onMessage(JSON.stringify({ random: "data" }))).resolves.toBeUndefined();
   });
 });
