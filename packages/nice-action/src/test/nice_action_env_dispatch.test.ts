@@ -140,7 +140,7 @@ describe("matchTag dispatch — error when no handler found", () => {
 
     await expect(
       domain.action("getUser").execute({ userId: "u1" }, { tag: "ghost" }),
-    ).rejects.toThrow(/environment id "ghost"/i);
+    ).rejects.toThrow('No handler registered for tag "ghost" on domain "user_domain_root".');
   });
 
   it("throws domain_no_handler when no matchTag given and no handler registered", async () => {
@@ -148,7 +148,7 @@ describe("matchTag dispatch — error when no handler found", () => {
     root.setRuntimeEnvironment(createActionRuntime({ envId: "test" }));
 
     await expect(domain.action("getUser").execute({ userId: "u1" })).rejects.toThrow(
-      /no action handler/i,
+      /no action handler registered/i,
     );
   });
 });

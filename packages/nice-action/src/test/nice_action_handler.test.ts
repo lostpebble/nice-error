@@ -379,7 +379,7 @@ describe("named environment — handler tag", () => {
     );
 
     await expect(dom.action("increment").execute({ by: 1 }, { tag: "missing" })).rejects.toThrow(
-      /no handler or resolver registered with environment id/i,
+      /no handler registered for tag/i,
     );
   });
 

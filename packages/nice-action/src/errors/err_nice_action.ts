@@ -43,7 +43,7 @@ export const err_nice_action = err_nice.createChildDomain({
     }),
     [EErrId_NiceAction.domain_no_handler]: err<{ domain: string }>({
       message: ({ domain }) =>
-        `Domain "${domain}" has no action handler registered. Set a runtime environment via setRuntimeEnvironment() before executing actions.`,
+        `Domain "${domain}" has no action handler registered. Set a runtime environment via setRuntimeEnvironment() and add handlers before executing actions.`,
     }),
     [EErrId_NiceAction.hydration_domain_mismatch]: err<{
       expected: string;

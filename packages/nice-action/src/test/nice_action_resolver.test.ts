@@ -306,7 +306,7 @@ describe("ActionHandler({ tag }) — named environment", () => {
     );
 
     await expect(dom.action("greet").execute({ name: "x" }, { tag: "ghost" })).rejects.toThrow(
-      /no handler or resolver registered with environment id/i,
+      /no handler registered for tag/i,
     );
   });
 
