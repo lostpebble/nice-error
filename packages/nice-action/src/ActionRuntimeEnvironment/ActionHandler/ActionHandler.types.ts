@@ -87,17 +87,18 @@ export type THandleActionResult =
   | { handled: true; response: NiceActionResponse<any, any> }
   | { handled: false };
 
-export type TStoredHandlers = {
-  execution?(
-    primed: NiceActionPrimed<any, any, any>,
-    envMeta: IActionMetaInputsWithRuntime,
-  ): MaybePromise<
-    NiceActionResponse<any, any> | TNiceActionResponse_JsonObject<any, any> | undefined
-  >;
-  response?(
-    response: NiceActionResponse<any, any>,
-    envMeta: IActionMetaInputsWithRuntime,
-  ): MaybePromise<
-    NiceActionResponse<any, any> | TNiceActionResponse_JsonObject<any, any> | undefined
-  >;
+export type TStoredHandlers<A extends INiceAction<any, any> = INiceAction<any, any>> = {
+  execution?: THandleActionExecutionFn<A>;
+  response?: THandleActionResponseFn<A>;
 };
+
+export enum EActionHandlerType {
+  connect = "connect",
+  custom = "custom",
+}
+
+export interface IActionHandler {
+  cuid: string;
+  handlerType: EActionHandlerType;
+  dispatchAction: (primed: NiceActionPrimed<any, any>) => Promise<NiceActionResponse<any, any>>;
+}

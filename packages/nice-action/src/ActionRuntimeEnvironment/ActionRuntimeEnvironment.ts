@@ -1,7 +1,11 @@
 import { nanoid } from "nanoid";
 import type { INiceAction } from "../NiceAction/NiceAction.types";
 import { ActionHandler } from "./ActionHandler/ActionHandler";
-import type { TMatchHandlerKey, TStoredHandlers } from "./ActionHandler/ActionHandler.types";
+import type {
+  IActionHandler,
+  TMatchHandlerKey,
+  TStoredHandlers,
+} from "./ActionHandler/ActionHandler.types";
 import type {
   IActionRuntimeEnvironment_JsonObject,
   IRuntimeMeta,
@@ -25,7 +29,7 @@ export class ActionRuntimeEnvironment {
   readonly timeCreated: number;
   readonly runtimeInfo: IRuntimeMeta = getAssumedRuntimeInfo();
 
-  private _handlersByTag = new Map<TMatchHandlerKey, ActionHandler[]>();
+  private _handlersByTag = new Map<TMatchHandlerKey, IActionHandler[]>();
   private _defaultHandlers = new Map<string, TStoredHandlers>();
 
   constructor(input: IActionRuntimeEnvironment_Constructor_Input) {
@@ -67,7 +71,7 @@ export class ActionRuntimeEnvironment {
   getHandlerForAction(
     action: Pick<INiceAction<any, any>, "domain" | "id">,
     tag?: string,
-  ): ActionHandler | undefined {
+  ): IActionHandler | undefined {
     const matchTag = tag ?? "_";
     return (
       this._handlersByTag.get(`${matchTag}::${action.domain}::${action.id}`)?.[0] ??

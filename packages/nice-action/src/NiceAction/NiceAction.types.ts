@@ -8,7 +8,7 @@ import type { EActionState } from "./NiceAction.enums";
 
 export interface INiceAction<
   DOM extends INiceActionDomain,
-  ID extends keyof DOM["actions"] & string,
+  ID extends keyof DOM["actions"] & string = keyof DOM["actions"] & string,
 > {
   id: ID;
   domain: DOM["domain"];

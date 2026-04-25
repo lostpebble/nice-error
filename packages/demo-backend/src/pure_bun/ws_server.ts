@@ -7,17 +7,14 @@
  * Each incoming connection gets a per-connection reply transport so responses
  * are routed back to the correct client.
  */
-import type { IActionConnectTransport } from "@nice-code/connect";
-import { ActionConnect, EActionConnectRole } from "@nice-code/connect";
+import { ActionConnect, type IActionConnectTransport } from "@nice-code/action";
 import { getDemoBackendHandler, registerDemoActionHandler } from "../nice_actions/demo_resolver";
 
 const PORT = 4567;
 
 // One server-side ActionConnect instance shared across connections.
 // Each call to onMessage supplies a per-connection replyTransport.
-const serverConnect = registerDemoActionHandler(
-  new ActionConnect({ role: EActionConnectRole.server }),
-);
+const serverConnect = registerDemoActionHandler(new ActionConnect());
 
 Bun.serve({
   port: PORT,

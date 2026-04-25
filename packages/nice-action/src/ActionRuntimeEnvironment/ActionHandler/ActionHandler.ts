@@ -11,16 +11,19 @@ import type {
 import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
 import { NiceActionResponse } from "../../NiceAction/NiceActionResponse";
 import { isActionResponseJsonObject } from "../../utils/isActionResponseJsonObject";
-import type {
-  IActionHandlerInputs,
-  TExecutionAndResponseHandlers,
-  THandleActionResult,
-  TMatchHandlerKey,
-  TStoredHandlers,
+import {
+  EActionHandlerType,
+  type IActionHandler,
+  type IActionHandlerInputs,
+  type TExecutionAndResponseHandlers,
+  type THandleActionResult,
+  type TMatchHandlerKey,
+  type TStoredHandlers,
 } from "./ActionHandler.types";
 
-export class ActionHandler {
-  readonly matchTag: string | "_";
+export class ActionHandler implements IActionHandler {
+  readonly tag: string | "_";
+  readonly handlerType = EActionHandlerType.custom;
   readonly cuid: string;
 
   readonly _domains = new Map<string, NiceActionDomain<any>>();
@@ -28,7 +31,7 @@ export class ActionHandler {
   private _handlersByKey = new Map<TMatchHandlerKey, TStoredHandlers>();
 
   constructor(config: IActionHandlerInputs["actionMeta"] = {}) {
-    this.matchTag = config.tag ?? "_";
+    this.tag = config.tag ?? "_";
     this.cuid = nanoid();
   }
 
@@ -40,7 +43,7 @@ export class ActionHandler {
     action: INiceAction<any, any>,
     matchTag: string = "_",
   ): TStoredHandlers | undefined {
-    if (matchTag !== this.matchTag) {
+    if (matchTag !== this.tag) {
       return undefined;
     }
 
@@ -70,7 +73,7 @@ export class ActionHandler {
     >,
   ): this {
     this._domains.set(domain.domain, domain);
-    const matchKey: TMatchHandlerKey = `${this.matchTag}::${domain.domain}::_`;
+    const matchKey: TMatchHandlerKey = `${this.tag}::${domain.domain}::_`;
     this._handlersByKey.set(matchKey, handlers);
     return this;
   }
@@ -86,7 +89,7 @@ export class ActionHandler {
     handlers: TExecutionAndResponseHandlers<INiceAction<ACT_DOM, ID>>,
   ): this {
     this._domains.set(domain.domain, domain);
-    const matchKey: TMatchHandlerKey = `${this.matchTag}::${domain.domain}::${id}`;
+    const matchKey: TMatchHandlerKey = `${this.tag}::${domain.domain}::${id}`;
     this._handlersByKey.set(matchKey, handlers);
     return this;
   }
@@ -135,7 +138,7 @@ export class ActionHandler {
     for (const id of Object.keys(cases) as Array<keyof FOR_DOM["actions"] & string>) {
       const handlers = cases[id];
       if (handlers != null) {
-        const matchKey: TMatchHandlerKey = `${this.matchTag}::${domain.domain}::${id}`;
+        const matchKey: TMatchHandlerKey = `${this.tag}::${domain.domain}::${id}`;
         this._handlersByKey.set(matchKey, handlers);
       }
     }
@@ -145,10 +148,10 @@ export class ActionHandler {
   private async _tryHandleResponse(
     response: NiceActionResponse<any, any>,
   ): Promise<THandleActionResult> {
-    const handlers = this.getHandlersForAction(response.primed.coreAction, this.matchTag);
+    const handlers = this.getHandlersForAction(response.primed.coreAction, this.tag);
     if (handlers?.response) {
       const result = await handlers.response(response, {
-        tag: this.matchTag,
+        tag: this.tag,
         runtime: response.getEnvironmentMeta(),
       });
       if (result === undefined) {
@@ -171,13 +174,13 @@ export class ActionHandler {
   protected async _tryExecute(
     primed: NiceActionPrimed<any, any, any>,
   ): Promise<THandleActionResult> {
-    const handlers = this.getHandlersForAction(primed.coreAction, this.matchTag);
+    const handlers = this.getHandlersForAction(primed.coreAction, this.tag);
     if (handlers?.execution == null) {
       return { handled: false };
     }
 
     const rawResult = await handlers.execution(primed, {
-      tag: this.matchTag,
+      tag: this.tag,
       runtime: primed.getEnvironmentMeta(),
     });
 
@@ -193,7 +196,7 @@ export class ActionHandler {
       }
       response = domain.hydrateResponse(rawResult);
     } else {
-      response = primed.setResponse(rawResult as any);
+      response = primed.setResponse(rawResult);
     }
 
     return { handled: true, response };

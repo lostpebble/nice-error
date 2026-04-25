@@ -1,6 +1,4 @@
-import { ActionHandler } from "@nice-code/action";
-import type { IActionConnectTransport } from "@nice-code/connect";
-import { ActionConnect, EActionConnectRole } from "@nice-code/connect";
+import { ActionConnect, ActionHandler, type IActionConnectTransport } from "@nice-code/action";
 import { act_domain_demo } from "demo-shared";
 import { BACKEND_BASE_URL, WS_BACKEND_URL } from "../frontend_env";
 
@@ -16,7 +14,6 @@ const wsTransport: IActionConnectTransport = {
 };
 
 export const actionConnect = new ActionConnect({
-  role: EActionConnectRole.client,
   httpFallbackUrl: `${BACKEND_BASE_URL}/resolve_action`,
   enableHttpFallback: true,
 }).setTransport(wsTransport);

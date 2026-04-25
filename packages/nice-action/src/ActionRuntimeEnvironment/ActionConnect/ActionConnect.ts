@@ -1,18 +1,22 @@
-import {
-  ActionHandler,
-  type INiceActionPrimed_JsonObject,
-  isActionResponseJsonObject,
-  isPrimedActionJsonObject,
-  NiceActionResponse,
-  type TNiceActionResponse_JsonObject,
-} from "@nice-code/action";
 import { castNiceError } from "@nice-code/error";
+import { nanoid } from "nanoid/non-secure";
+import type { NiceActionDomain } from "../../ActionDomain/NiceActionDomain";
+import type {
+  INiceActionPrimed_JsonObject,
+  TNiceActionResponse_JsonObject,
+} from "../../NiceAction/NiceAction.types";
+import { NiceActionResponse } from "../../NiceAction/NiceActionResponse";
+import { isActionResponseJsonObject } from "../../utils/isActionResponseJsonObject";
+import { isPrimedActionJsonObject } from "../../utils/isPrimedActionJsonObject";
+import { ActionHandler } from "../ActionHandler/ActionHandler";
+import { EActionHandlerType, type IActionHandler } from "../ActionHandler/ActionHandler.types";
 import type {
   IActionConnectConfig,
   IActionConnectTransport,
   IDispatchOptions,
   IPendingRequest,
 } from "./ActionConnect.types";
+import { EErrId_NiceConnect, err_nice_connect } from "./err_nice_connect";
 
 type TWirePrimedMessage = INiceActionPrimed_JsonObject & { ncEnv?: string };
 
@@ -45,18 +49,23 @@ const DEFAULT_TIMEOUT = 30_000;
  * // Incoming actions via onMessage() are dispatched locally.
  * ```
  */
-export class ActionConnect extends ActionHandler {
+export class ActionConnect implements IActionHandler {
   private _config: IActionConnectConfig;
   private _pendingRequests = new Map<string, IPendingRequest>();
   private _transports = new Map<string | undefined, IActionConnectTransport>();
+  readonly tag: string | "_";
+  readonly handlerType = EActionHandlerType.connect;
+  readonly _domains = new Map<string, NiceActionDomain<any>>();
+  readonly cuid: string;
 
-  constructor(config: IActionConnectConfig) {
-    super({ tag: config.tag });
+  constructor(config: IActionConnectConfig = {}) {
+    this.tag = config.tag ?? "_";
     this._config = {
       enableHttpFallback: true,
       requestTimeout: DEFAULT_TIMEOUT,
       ...config,
     };
+    this.cuid = nanoid();
   }
 
   setTransport(transport: IActionConnectTransport, options?: { environment?: string }): this {
@@ -71,13 +80,12 @@ export class ActionConnect extends ActionHandler {
    * This override is what makes ActionConnect a transparent forwarder: setting it
    * as a domain's handler causes unresolved actions to automatically flow to transport.
    */
-  override async dispatchAction(
+  async dispatchAction(
     primed: Parameters<ActionHandler["dispatchAction"]>[0],
   ): Promise<NiceActionResponse<any, any>> {
-    const local = await this._tryExecute(primed);
-    if (local.handled) return local.response;
-    const output = await this._dispatchViaTransport(primed);
-    return primed.setResponse(output as any);
+    // const local = await this._tryExecute(primed);
+    // if (local.handled) return local.response;
+    return await this._dispatchViaTransport(primed);
   }
 
   /**
@@ -87,7 +95,7 @@ export class ActionConnect extends ActionHandler {
   async dispatch(
     action: Parameters<ActionHandler["dispatchAction"]>[0],
     options?: IDispatchOptions,
-  ): Promise<unknown> {
+  ): Promise<NiceActionResponse<any>> {
     return this._dispatchViaTransport(action, options);
   }
 
@@ -123,7 +131,7 @@ export class ActionConnect extends ActionHandler {
   disconnect(): void {
     for (const [, pending] of this._pendingRequests) {
       clearTimeout(pending.timer);
-      pending.reject(new Error("ActionConnect disconnected"));
+      pending.reject(err_nice_connect.fromId(EErrId_NiceConnect.disconnected));
     }
     this._pendingRequests.clear();
   }
@@ -131,12 +139,12 @@ export class ActionConnect extends ActionHandler {
   private async _dispatchViaTransport(
     action: Parameters<ActionHandler["dispatchAction"]>[0],
     options?: IDispatchOptions,
-  ): Promise<unknown> {
+  ): Promise<NiceActionResponse<any>> {
     const wire = action.toJsonObject();
     const { cuid } = wire;
     const timeout = this._config.requestTimeout ?? DEFAULT_TIMEOUT;
 
-    return new Promise<unknown>((resolve, reject) => {
+    return new Promise<NiceActionResponse<any>>((resolve, reject) => {
       const timer = setTimeout(() => {
         this._pendingRequests.delete(cuid);
         reject(new Error(`Action "${action.coreAction.id}" timed out after ${timeout}ms`));
@@ -145,25 +153,20 @@ export class ActionConnect extends ActionHandler {
       this._pendingRequests.set(cuid, { resolve, reject, timer, primed: action });
 
       const message: TWirePrimedMessage =
-        options?.environment != null ? { ...wire, ncEnv: options.environment } : wire;
+        options?.envId != null ? { ...wire, ncEnv: options.envId } : wire;
       const serialized = JSON.stringify(message);
 
-      const transport =
-        this._transports.get(options?.environment) ?? this._transports.get(undefined);
+      const transport = this._transports.get(options?.envId) ?? this._transports.get(undefined);
 
       if (transport?.connected) {
         transport.send(serialized);
         return;
       }
 
-      if (
-        this._config.role === "client" &&
-        (this._config.enableHttpFallback ?? true) &&
-        this._config.httpFallbackUrl != null
-      ) {
+      if ((this._config.enableHttpFallback ?? true) && this._config.httpFallbackUrl != null) {
         this._dispatchHttp(message).then(
-          (responseWire) => this._resolveRequest(cuid, responseWire),
-          (err) => this._rejectRequest(cuid, err),
+          (responseWire) => this._handleResponse(responseWire),
+          (err) => this._rejectRequest(cuid, castNiceError(err)),
         );
         return;
       }
@@ -172,26 +175,10 @@ export class ActionConnect extends ActionHandler {
       this._pendingRequests.delete(cuid);
       reject(
         new Error(
-          `Cannot dispatch action "${action.coreAction.id}": no connected transport available` +
-            (this._config.role === "server"
-              ? " (server instances do not support HTTP fallback)"
-              : ""),
+          `Cannot dispatch action "${action.coreAction.id}": no connected transport available`,
         ),
       );
     });
-  }
-
-  private _resolveRequest(cuid: string, responseWire: TNiceActionResponse_JsonObject): void {
-    const pending = this._pendingRequests.get(cuid);
-    if (pending == null) return;
-    clearTimeout(pending.timer);
-    this._pendingRequests.delete(cuid);
-    try {
-      const output = pending.primed.extractOutput(responseWire);
-      pending.resolve(output);
-    } catch (e) {
-      pending.reject(e);
-    }
   }
 
   private _rejectRequest(cuid: string, error: unknown): void {
@@ -199,11 +186,21 @@ export class ActionConnect extends ActionHandler {
     if (pending == null) return;
     clearTimeout(pending.timer);
     this._pendingRequests.delete(cuid);
-    pending.reject(error);
+    pending.reject(castNiceError(error));
   }
 
   private _handleResponse(wire: TNiceActionResponse_JsonObject): void {
-    this._resolveRequest(wire.cuid, wire);
+    const pending = this._pendingRequests.get(wire.cuid);
+    if (pending == null) return;
+    clearTimeout(pending.timer);
+    this._pendingRequests.delete(wire.cuid);
+    try {
+      const hydratedResponse = pending.primed.coreAction.actionDomain.hydrateResponse(wire);
+      // const output = pending.primed.extractOutput(wire);
+      pending.resolve(hydratedResponse);
+    } catch (e) {
+      pending.reject(castNiceError(e));
+    }
   }
 
   /**
@@ -225,10 +222,10 @@ export class ActionConnect extends ActionHandler {
 
     try {
       primed = domain.hydratePrimed(wire);
-      const validatedPrimed = await domain.validatePrimed(primed);
+      const validatedPrimed = domain.validatePrimed(primed);
 
       // Use _tryExecute (not dispatchAction) to avoid transport fallback on the receiving side.
-      const result = await this._tryExecute(validatedPrimed);
+      const result = await validatedPrimed.executeSafe();
 
       if (result.handled) {
         responseWire = result.response.toJsonObject();

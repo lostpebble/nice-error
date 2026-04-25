@@ -13,11 +13,12 @@
  *  - Edge cases: malformed JSON, unknown cuid, unknown message type
  */
 
-import { action, createActionRootDomain, NiceActionPrimed } from "@nice-code/action";
 import * as v from "valibot";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ActionConnect } from "../ActionConnect/ActionConnect";
-import { EActionConnectRole } from "../ActionConnect/ActionConnect.types";
+import { createActionRootDomain } from "../../ActionDomain/helpers/createRootActionDomain";
+import { action } from "../../ActionSchema/action";
+import { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
+import { ActionConnect } from "./ActionConnect";
 
 // ---------------------------------------------------------------------------
 // Shared test domain
@@ -56,7 +57,7 @@ describe("dispatch — response correlation over mock transport", () => {
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "hello" });
     const transport = makeMockTransport(true);
 
-    const ac = new ActionConnect({ role: EActionConnectRole.client }).setTransport(transport);
+    const ac = new ActionConnect().setTransport(transport);
     void ac.dispatch(primed);
 
     expect(transport.send).toHaveBeenCalledOnce();
@@ -70,14 +71,13 @@ describe("dispatch — response correlation over mock transport", () => {
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "world" });
     const transport = makeMockTransport(true);
 
-    const ac = new ActionConnect({ role: EActionConnectRole.client }).setTransport(transport);
+    const ac = new ActionConnect().setTransport(transport);
     const dispatchPromise = ac.dispatch(primed);
 
-    const responseWire = primed.setResponse({ echoed: "world" }).toJsonObject();
-    await ac.onMessage(JSON.stringify(responseWire));
+    await ac.onMessage(primed.setResponse({ echoed: "world" }).toJsonString());
 
-    const output = await dispatchPromise;
-    expect(output).toEqual({ echoed: "world" });
+    const response = await dispatchPromise;
+    expect(response.result).toEqual({ ok: true, output: { echoed: "world" } });
   });
 
   it("multiple concurrent dispatches resolve independently by cuid", async () => {
@@ -86,16 +86,16 @@ describe("dispatch — response correlation over mock transport", () => {
     const b = new NiceActionPrimed(dom.action("echo"), { text: "b" });
     const transport = makeMockTransport(true);
 
-    const ac = new ActionConnect({ role: EActionConnectRole.client }).setTransport(transport);
+    const ac = new ActionConnect().setTransport(transport);
     const pa = ac.dispatch(a);
     const pb = ac.dispatch(b);
 
     // Resolve in reverse order to verify independence
-    await ac.onMessage(JSON.stringify(b.setResponse({ echoed: "b" }).toJsonObject()));
-    await ac.onMessage(JSON.stringify(a.setResponse({ echoed: "a" }).toJsonObject()));
+    await ac.onMessage(b.setResponse({ echoed: "b" }).toJsonString());
+    await ac.onMessage(a.setResponse({ echoed: "a" }).toJsonString());
 
-    expect(await pa).toEqual({ echoed: "a" });
-    expect(await pb).toEqual({ echoed: "b" });
+    expect((await pa).result).toEqual({ ok: true, output: { echoed: "a" } });
+    expect((await pb).result).toEqual({ ok: true, output: { echoed: "b" } });
   });
 });
 
@@ -117,7 +117,6 @@ describe("dispatch — timeout", () => {
     const transport = makeMockTransport(true);
 
     const ac = new ActionConnect({
-      role: EActionConnectRole.client,
       requestTimeout: 5_000,
     }).setTransport(transport);
     const p = ac.dispatch(primed);
@@ -144,13 +143,12 @@ describe("dispatch — HTTP fallback", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => responseWire }));
 
     const ac = new ActionConnect({
-      role: EActionConnectRole.client,
       httpFallbackUrl: "http://test.local/api",
       enableHttpFallback: true,
     });
 
-    const output = await ac.dispatch(primed);
-    expect(output).toEqual({ echoed: "fetched" });
+    const response = await ac.dispatch(primed);
+    expect(response.result).toEqual({ ok: true, output: { echoed: "fetched" } });
 
     const fetchMock = vi.mocked(fetch);
     expect(fetchMock).toHaveBeenCalledOnce();
@@ -164,7 +162,6 @@ describe("dispatch — HTTP fallback", () => {
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "x" });
 
     const ac = new ActionConnect({
-      role: EActionConnectRole.client,
       enableHttpFallback: false,
     });
 
@@ -175,9 +172,9 @@ describe("dispatch — HTTP fallback", () => {
     const dom = makeTestDomain();
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "x" });
 
-    const ac = new ActionConnect({ role: EActionConnectRole.server });
+    const ac = new ActionConnect();
     await expect(ac.dispatch(primed)).rejects.toThrow(
-      /server instances do not support HTTP fallback/i,
+      /Cannot dispatch action "echo": no connected transport available/i,
     );
   });
 });
@@ -192,7 +189,7 @@ describe("disconnect", () => {
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "x" });
     const transport = makeMockTransport(true);
 
-    const ac = new ActionConnect({ role: EActionConnectRole.client }).setTransport(transport);
+    const ac = new ActionConnect().setTransport(transport);
     const p = ac.dispatch(primed);
 
     ac.disconnect();
@@ -208,7 +205,7 @@ describe("onMessage — forAction handler dispatch", () => {
   it("routes primed action to registered handler and sends reply via replyTransport", async () => {
     const dom = makeTestDomain();
 
-    const ac = new ActionConnect({ role: EActionConnectRole.server })
+    const ac = new ActionConnect()
       .forAction(dom, "echo", {
         execution: (primed) => primed.setResponse({ echoed: primed.input.text }),
       })
@@ -232,7 +229,7 @@ describe("onMessage — forAction handler dispatch", () => {
   it("sends ok:false reply when handler throws", async () => {
     const dom = makeTestDomain();
 
-    const ac = new ActionConnect({ role: EActionConnectRole.server })
+    const ac = new ActionConnect()
       .forAction(dom, "echo", {
         execution: (primed) => primed.setResponse({ echoed: primed.input.text }),
       })
@@ -256,11 +253,9 @@ describe("onMessage — forAction handler dispatch", () => {
     const dom = makeTestDomain();
 
     const defaultTransport = makeMockTransport();
-    const ac = new ActionConnect({ role: EActionConnectRole.server })
-      .setTransport(defaultTransport)
-      .forAction(dom, "echo", {
-        execution: (primed) => primed.setResponse({ echoed: primed.input.text }),
-      });
+    const ac = new ActionConnect().setTransport(defaultTransport).forAction(dom, "echo", {
+      execution: (primed) => primed.setResponse({ echoed: primed.input.text }),
+    });
 
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "via-default" });
     await ac.onMessage(JSON.stringify(primed.toJsonObject()));
@@ -279,7 +274,7 @@ describe("onMessage — forAction handler dispatch (client-side)", () => {
   it("routes primed action to registered forAction handler and sends reply", async () => {
     const dom = makeTestDomain();
 
-    const ac = new ActionConnect({ role: EActionConnectRole.client }).forAction(dom, "echo", {
+    const ac = new ActionConnect().forAction(dom, "echo", {
       execution: (primed) => primed.setResponse({ echoed: `client:${primed.input.text}` }),
     });
 
@@ -306,11 +301,11 @@ describe("onMessage — environment routing", () => {
     const defaultTransport = makeMockTransport(true);
     const edgeTransport = makeMockTransport(true);
 
-    const ac = new ActionConnect({ role: EActionConnectRole.client })
+    const ac = new ActionConnect()
       .setTransport(defaultTransport)
       .setTransport(edgeTransport, { environment: "edge" });
 
-    void ac.dispatch(primed, { environment: "edge" });
+    void ac.dispatch(primed, { envId: "edge" });
 
     expect(edgeTransport.send).toHaveBeenCalledOnce();
     expect(defaultTransport.send).not.toHaveBeenCalled();
@@ -326,7 +321,7 @@ describe("onMessage — environment routing", () => {
 
 describe("edge cases", () => {
   it("silently ignores malformed JSON in onMessage", async () => {
-    const ac = new ActionConnect({ role: EActionConnectRole.server });
+    const ac = new ActionConnect();
     await expect(ac.onMessage("not json at all {{{")).resolves.toBeUndefined();
   });
 
@@ -338,12 +333,12 @@ describe("edge cases", () => {
       cuid: "ghost-cuid",
     };
 
-    const ac = new ActionConnect({ role: EActionConnectRole.client });
+    const ac = new ActionConnect();
     await expect(ac.onMessage(JSON.stringify(responseWire))).resolves.toBeUndefined();
   });
 
   it("silently ignores a message that is neither primed nor response", async () => {
-    const ac = new ActionConnect({ role: EActionConnectRole.server });
+    const ac = new ActionConnect();
     await expect(ac.onMessage(JSON.stringify({ random: "data" }))).resolves.toBeUndefined();
   });
 });

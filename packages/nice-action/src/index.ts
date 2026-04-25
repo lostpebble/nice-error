@@ -12,6 +12,9 @@ export type {
   TPossibleDomainId,
   TPossibleDomainIdList,
 } from "./ActionDomain/NiceActionDomain.types";
+export { ActionConnect } from "./ActionRuntimeEnvironment/ActionConnect/ActionConnect";
+export * from "./ActionRuntimeEnvironment/ActionConnect/ActionConnect.types";
+export * from "./ActionRuntimeEnvironment/ActionConnect/err_nice_connect";
 export {
   ActionHandler,
   createHandler,

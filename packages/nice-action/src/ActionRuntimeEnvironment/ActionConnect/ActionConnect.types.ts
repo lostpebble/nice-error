@@ -1,14 +1,14 @@
-import type { NiceActionPrimed } from "@nice-code/action";
+import type { NiceError } from "@nice-code/error";
+import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
+import type { NiceActionResponse } from "../../NiceAction/NiceActionResponse";
 
-export enum EActionConnectRole {
-  client = "client",
-  server = "server",
-}
+// export enum EActionConnectRole {
+//   client = "client",
+//   server = "server",
+// }
 
 export interface IActionConnectConfig {
   tag?: string;
-  /** Whether this node is a client (frontend) or server (backend). Determines HTTP fallback eligibility. */
-  role: EActionConnectRole;
   /** URL for HTTP fallback POST requests. Required when role is "client" and HTTP fallback is enabled. */
   httpFallbackUrl?: string;
   /** Enable HTTP POST fallback when WebSocket is unavailable. Clients only. Default: true */
@@ -23,13 +23,13 @@ export interface IActionConnectTransport {
 }
 
 export interface IPendingRequest {
-  resolve: (output: unknown) => void;
-  reject: (error: unknown) => void;
+  resolve: (output: NiceActionResponse<any>) => void;
+  reject: (error: NiceError) => void;
   timer: ReturnType<typeof setTimeout>;
-  primed: NiceActionPrimed<any, any, any>;
+  primed: NiceActionPrimed<any>;
 }
 
 export interface IDispatchOptions {
   /** Route this dispatch to a specific named environment's transport. */
-  environment?: string;
+  envId?: string;
 }
