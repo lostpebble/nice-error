@@ -23,7 +23,7 @@ import {
 
 export class ActionHandler implements IActionHandler {
   readonly tag: string | "_";
-  readonly handlerType = EActionHandlerType.custom;
+  readonly handlerType: EActionHandlerType = EActionHandlerType.custom;
   readonly cuid: string;
 
   readonly _domains = new Map<string, NiceActionDomain<any>>();

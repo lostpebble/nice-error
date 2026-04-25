@@ -1,133 +1,164 @@
 import { castNiceError } from "@nice-code/error";
-import { nanoid } from "nanoid/non-secure";
 import type { NiceActionDomain } from "../../ActionDomain/NiceActionDomain";
+import type { INiceActionDomain } from "../../ActionDomain/NiceActionDomain.types";
 import type {
   INiceActionPrimed_JsonObject,
   TNiceActionResponse_JsonObject,
 } from "../../NiceAction/NiceAction.types";
+import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
 import { NiceActionResponse } from "../../NiceAction/NiceActionResponse";
 import { isActionResponseJsonObject } from "../../utils/isActionResponseJsonObject";
 import { isPrimedActionJsonObject } from "../../utils/isPrimedActionJsonObject";
 import { ActionHandler } from "../ActionHandler/ActionHandler";
-import { EActionHandlerType, type IActionHandler } from "../ActionHandler/ActionHandler.types";
+import { EActionHandlerType } from "../ActionHandler/ActionHandler.types";
 import type {
   IActionConnectConfig,
   IActionConnectTransport,
+  IAttachTransportOptions,
   IDispatchOptions,
-  IPendingRequest,
+  IReceiveOptions,
 } from "./ActionConnect.types";
 import { EErrId_NiceConnect, err_nice_connect } from "./err_nice_connect";
 
-type TWirePrimedMessage = INiceActionPrimed_JsonObject & { ncEnv?: string };
+interface IPendingRequest {
+  resolve: (response: NiceActionResponse<any>) => void;
+  reject: (error: unknown) => void;
+  timer: ReturnType<typeof setTimeout>;
+  primed: NiceActionPrimed<any>;
+}
 
 const DEFAULT_TIMEOUT = 30_000;
 
 /**
  * ActionConnect — a plug-and-play ActionHandler for cross-environment action routing.
  *
- * Extends ActionHandler with transport management so actions dispatched through a
- * domain are transparently forwarded over WebSocket or HTTP when no local resolver
- * matches. Register resolvers via the inherited `.resolve()` / `.forDomain()` /
- * `.forAction()` methods, then attach to a domain with `domain.setHandler(connect)`.
+ * Extends ActionHandler so all local handler registration (forAction, forDomain,
+ * forDomainActionCases, handleWire) is available out of the box. Transport wiring is
+ * layered on top.
  *
- * @example — client (forwards unresolved actions to server)
+ * @example — client (forwards all domain actions to server)
  * ```ts
- * const connect = new ActionConnect({ role: "client", httpFallbackUrl: "/api/actions" });
- * connect.setTransport(socket);
- * myDomain.setHandler(connect);
- * // Now myDomain.action("x").execute(input) transparently sends over the transport.
+ * const connect = new ActionConnect({ httpFallbackUrl: "/api/actions" });
+ * connect.attachTransport(wsTransport).proxyDomain(myDomain);
+ * ws.onmessage = (e) => connect.onMessage(e.data);
+ * myRuntime.addHandlers([connect]);
  * ```
  *
  * @example — server (resolves incoming actions locally)
  * ```ts
- * const connect = new ActionConnect({ role: "server" });
- * connect
- *   .resolve(myDomain, "createUser", async ({ name }) => ({ id: await db.insert(name) }))
- *   .resolve(myDomain, "deleteUser", async ({ id }) => { await db.delete(id); });
- * myDomain.setHandler(connect);
- * connect.setTransport(serverSocket);
- * // Incoming actions via onMessage() are dispatched locally.
+ * const connect = new ActionConnect();
+ * connect.forDomainActionCases(myDomain, {
+ *   createUser: { execution: async (p) => ({ id: await db.insert(p.input) }) },
+ * });
+ *
+ * // HTTP endpoint
+ * app.post("/actions", async (req, res) => {
+ *   const result = await connect.handleWire(await req.json());
+ *   if (!result.handled) return res.status(404).end();
+ *   res.json(result.response.toJsonObject());
+ * });
+ *
+ * // WebSocket
+ * ws.onmessage = (e) => connect.onMessage(e.data, { replyTransport: wsTransport });
+ * ```
+ *
+ * @example — HTTP endpoint that responds via WebSocket when the client has one open
+ * ```ts
+ * app.post("/actions", async (req, res) => {
+ *   const clientWs = wsRegistry.get(req.headers["x-client-id"]);
+ *   const result = await connect.handleWire(await req.json());
+ *   if (!result.handled) return res.status(404).end();
+ *   if (clientWs?.connected) {
+ *     clientWs.send(result.response.toJsonString());
+ *     return res.status(202).end();
+ *   }
+ *   res.json(result.response.toJsonObject());
+ * });
  * ```
  */
-export class ActionConnect implements IActionHandler {
-  private _config: IActionConnectConfig;
+export class ActionConnect extends ActionHandler {
+  override readonly handlerType = EActionHandlerType.connect;
+
   private _pendingRequests = new Map<string, IPendingRequest>();
   private _transports = new Map<string | undefined, IActionConnectTransport>();
-  readonly tag: string | "_";
-  readonly handlerType = EActionHandlerType.connect;
-  readonly _domains = new Map<string, NiceActionDomain<any>>();
-  readonly cuid: string;
+  private _config: IActionConnectConfig;
 
   constructor(config: IActionConnectConfig = {}) {
-    this.tag = config.tag ?? "_";
+    super({ tag: config.tag });
     this._config = {
       enableHttpFallback: true,
       requestTimeout: DEFAULT_TIMEOUT,
       ...config,
     };
-    this.cuid = nanoid();
   }
 
-  setTransport(transport: IActionConnectTransport, options?: { environment?: string }): this {
-    this._transports.set(options?.environment, transport);
+  /**
+   * Register a WebSocket-like transport. Multiple transports can be attached
+   * with distinct keys for targeted routing via dispatch({ transportKey }).
+   */
+  attachTransport(transport: IActionConnectTransport, options?: IAttachTransportOptions): this {
+    this._transports.set(options?.key, transport);
     return this;
   }
 
   /**
-   * Dispatch a primed action. Tries local resolvers/cases first (inherited from
-   * ActionHandler). If nothing matches, forwards via the registered transport.
-   *
-   * This override is what makes ActionConnect a transparent forwarder: setting it
-   * as a domain's handler causes unresolved actions to automatically flow to transport.
+   * Register this ActionConnect as a transparent proxy for all actions in the domain.
+   * Actions execute locally if a local handler matches; otherwise forwarded via transport.
+   * Call this on the client side to forward an entire domain to the server.
    */
-  async dispatchAction(
-    primed: Parameters<ActionHandler["dispatchAction"]>[0],
-  ): Promise<NiceActionResponse<any, any>> {
-    // const local = await this._tryExecute(primed);
-    // if (local.handled) return local.response;
-    return await this._dispatchViaTransport(primed);
+  proxyDomain<DOM extends INiceActionDomain>(domain: NiceActionDomain<DOM>): this {
+    return this.forDomain(domain, {
+      execution: (primed) => this.dispatch(primed),
+    });
   }
 
   /**
-   * Explicitly send a primed action via transport, bypassing local resolvers.
-   * Useful when you need direct transport access with environment routing.
+   * Override dispatchAction: tries local handlers first, then forwards via transport.
+   * This is what the ActionRuntimeEnvironment calls when executing an action.
    */
-  async dispatch(
-    action: Parameters<ActionHandler["dispatchAction"]>[0],
-    options?: IDispatchOptions,
-  ): Promise<NiceActionResponse<any>> {
-    return this._dispatchViaTransport(action, options);
+  override async dispatchAction(primed: NiceActionPrimed<any, any>): Promise<NiceActionResponse<any, any>> {
+    const local = await this._tryExecute(primed);
+    if (local.handled) return local.response;
+    return this._sendViaTransport(primed);
   }
 
   /**
-   * Handle an incoming wire message (primed action or response).
-   *
-   * - If it's a response: resolves the corresponding pending `dispatch` promise.
-   * - If it's a primed action: dispatches it locally via registered resolvers/cases
-   *   and sends a response back on `replyTransport` (or the default transport).
+   * Explicitly dispatch via transport, bypassing local handlers.
+   * Used internally by proxyDomain and available for direct use when guaranteed
+   * remote execution is needed.
    */
-  async onMessage(
-    rawMessage: string,
-    options?: { replyTransport?: IActionConnectTransport },
-  ): Promise<void> {
+  async dispatch(primed: NiceActionPrimed<any, any>, options?: IDispatchOptions): Promise<NiceActionResponse<any, any>> {
+    return this._sendViaTransport(primed, options);
+  }
+
+  /**
+   * Handle an incoming wire message string.
+   *
+   * - **Response wire** → resolves the matching pending `dispatch` promise.
+   * - **Primed wire** → executes locally via registered handlers, replies via
+   *   `options.replyTransport` (or the default transport if none is provided).
+   */
+  async onMessage(raw: string, options?: IReceiveOptions): Promise<void> {
     let parsed: unknown;
     try {
-      parsed = JSON.parse(rawMessage);
+      parsed = JSON.parse(raw);
     } catch {
       return;
     }
 
     if (isActionResponseJsonObject(parsed)) {
-      this._handleResponse(parsed);
+      this._resolveResponse(parsed);
       return;
     }
 
     if (isPrimedActionJsonObject(parsed)) {
-      const ncEnv = (parsed as TWirePrimedMessage).ncEnv;
-      await this._handleIncomingPrimed(parsed, ncEnv, options?.replyTransport);
+      await this._executeAndReply(parsed, options?.replyTransport);
     }
   }
 
+  /**
+   * Reject all pending dispatches. Call when the connection drops.
+   */
   disconnect(): void {
     for (const [, pending] of this._pendingRequests) {
       clearTimeout(pending.timer);
@@ -136,52 +167,55 @@ export class ActionConnect implements IActionHandler {
     this._pendingRequests.clear();
   }
 
-  private async _dispatchViaTransport(
-    action: Parameters<ActionHandler["dispatchAction"]>[0],
+  private async _sendViaTransport(
+    primed: NiceActionPrimed<any, any>,
     options?: IDispatchOptions,
-  ): Promise<NiceActionResponse<any>> {
-    const wire = action.toJsonObject();
-    const { cuid } = wire;
+  ): Promise<NiceActionResponse<any, any>> {
+    const wire = primed.toJsonObject();
     const timeout = this._config.requestTimeout ?? DEFAULT_TIMEOUT;
 
-    return new Promise<NiceActionResponse<any>>((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
-        this._pendingRequests.delete(cuid);
-        reject(new Error(`Action "${action.coreAction.id}" timed out after ${timeout}ms`));
+        this._pendingRequests.delete(wire.cuid);
+        reject(new Error(`Action "${primed.id}" timed out after ${timeout}ms`));
       }, timeout);
 
-      this._pendingRequests.set(cuid, { resolve, reject, timer, primed: action });
+      this._pendingRequests.set(wire.cuid, { resolve, reject, timer, primed });
 
-      const message: TWirePrimedMessage =
-        options?.envId != null ? { ...wire, ncEnv: options.envId } : wire;
-      const serialized = JSON.stringify(message);
-
-      const transport = this._transports.get(options?.envId) ?? this._transports.get(undefined);
+      const transport =
+        this._transports.get(options?.transportKey) ?? this._transports.get(undefined);
 
       if (transport?.connected) {
-        transport.send(serialized);
+        transport.send(JSON.stringify(wire));
         return;
       }
 
-      if ((this._config.enableHttpFallback ?? true) && this._config.httpFallbackUrl != null) {
-        this._dispatchHttp(message).then(
-          (responseWire) => this._handleResponse(responseWire),
-          (err) => this._rejectRequest(cuid, castNiceError(err)),
-        );
+      if (this._config.enableHttpFallback !== false && this._config.httpFallbackUrl != null) {
+        this._sendHttp(wire)
+          .then((response) => this._resolveResponse(response))
+          .catch((err) => this._rejectPending(wire.cuid, err));
         return;
       }
 
       clearTimeout(timer);
-      this._pendingRequests.delete(cuid);
-      reject(
-        new Error(
-          `Cannot dispatch action "${action.coreAction.id}": no connected transport available`,
-        ),
-      );
+      this._pendingRequests.delete(wire.cuid);
+      reject(new Error(`Cannot dispatch "${primed.id}": no connected transport available`));
     });
   }
 
-  private _rejectRequest(cuid: string, error: unknown): void {
+  private _resolveResponse(wire: TNiceActionResponse_JsonObject): void {
+    const pending = this._pendingRequests.get(wire.cuid);
+    if (pending == null) return;
+    clearTimeout(pending.timer);
+    this._pendingRequests.delete(wire.cuid);
+    try {
+      pending.resolve(pending.primed.coreAction.actionDomain.hydrateResponse(wire));
+    } catch (e) {
+      pending.reject(e);
+    }
+  }
+
+  private _rejectPending(cuid: string, error: unknown): void {
     const pending = this._pendingRequests.get(cuid);
     if (pending == null) return;
     clearTimeout(pending.timer);
@@ -189,29 +223,8 @@ export class ActionConnect implements IActionHandler {
     pending.reject(castNiceError(error));
   }
 
-  private _handleResponse(wire: TNiceActionResponse_JsonObject): void {
-    const pending = this._pendingRequests.get(wire.cuid);
-    if (pending == null) return;
-    clearTimeout(pending.timer);
-    this._pendingRequests.delete(wire.cuid);
-    try {
-      const hydratedResponse = pending.primed.coreAction.actionDomain.hydrateResponse(wire);
-      // const output = pending.primed.extractOutput(wire);
-      pending.resolve(hydratedResponse);
-    } catch (e) {
-      pending.reject(castNiceError(e));
-    }
-  }
-
-  /**
-   * Handle an incoming primed-action wire message.
-   * Dispatches locally (no transport fallback) and sends the response.
-   * The `ncEnv` field is preserved for informational/routing purposes but
-   * handler selection is managed at domain registration time via `setHandler`.
-   */
-  private async _handleIncomingPrimed(
+  private async _executeAndReply(
     wire: INiceActionPrimed_JsonObject,
-    _ncEnv: string | undefined,
     replyTransport: IActionConnectTransport | undefined,
   ): Promise<void> {
     const domain = this._domains.get(wire.domain);
@@ -222,44 +235,44 @@ export class ActionConnect implements IActionHandler {
 
     try {
       primed = domain.hydratePrimed(wire);
-      const validatedPrimed = domain.validatePrimed(primed);
-
-      // Use _tryExecute (not dispatchAction) to avoid transport fallback on the receiving side.
-      const result = await validatedPrimed.executeSafe();
+      const result = await this._tryExecute(primed);
 
       if (result.handled) {
         responseWire = result.response.toJsonObject();
       } else {
-        const error = castNiceError(
-          new Error(
-            `ActionConnect: no local handler for action "${wire.id}" in domain "${wire.domain}"`,
+        responseWire = new NiceActionResponse(primed, {
+          ok: false,
+          error: castNiceError(
+            new Error(`No handler for "${wire.id}" in domain "${wire.domain}"`),
           ),
-        );
-        responseWire = new NiceActionResponse(validatedPrimed, { ok: false, error }).toJsonObject();
+        }).toJsonObject();
       }
     } catch (e) {
-      if (primed == null) return; // hydration failed — nothing to reply with
+      if (primed == null) return;
       responseWire = new NiceActionResponse(primed, {
         ok: false,
         error: castNiceError(e),
       }).toJsonObject();
     }
 
-    this._sendReply(JSON.stringify(responseWire), replyTransport);
+    const transport = replyTransport ?? this._transports.get(undefined);
+    transport?.send(JSON.stringify(responseWire));
   }
 
-  private async _dispatchHttp(wire: TWirePrimedMessage): Promise<TNiceActionResponse_JsonObject> {
+  private async _sendHttp(
+    wire: INiceActionPrimed_JsonObject,
+  ): Promise<TNiceActionResponse_JsonObject> {
     const url = this._config.httpFallbackUrl!;
     const timeout = this._config.requestTimeout ?? DEFAULT_TIMEOUT;
-    const abortController = new AbortController();
-    const timer = setTimeout(() => abortController.abort(), timeout);
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), timeout);
 
     try {
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(wire),
-        signal: abortController.signal,
+        signal: ac.signal,
       });
 
       if (!res.ok) {
@@ -274,10 +287,5 @@ export class ActionConnect implements IActionHandler {
     } finally {
       clearTimeout(timer);
     }
-  }
-
-  private _sendReply(message: string, replyTransport: IActionConnectTransport | undefined): void {
-    const transport = replyTransport ?? this._transports.get(undefined);
-    transport?.send(message);
   }
 }

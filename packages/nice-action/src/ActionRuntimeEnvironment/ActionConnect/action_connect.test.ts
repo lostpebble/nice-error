@@ -2,14 +2,15 @@
  * Unit tests for ActionConnect.
  *
  * Uses mock transports and real domain/handler instances to verify:
- *  - Dispatch → transport.send → onMessage response → correlation resolves
+ *  - dispatch → transport.send → onMessage response → correlation resolves
  *  - Request timeout
  *  - HTTP fallback when WS transport is absent/disconnected
- *  - Server role rejection when no transport available
- *  - Disconnect clears pending requests
- *  - onMessage: primed action routed to forAction handler (reply via replyTransport)
- *  - onMessage: primed action routed via forAction handler (reverse direction)
- *  - Environment routing via ncEnv wire field (transport only)
+ *  - No transport → reject immediately
+ *  - disconnect() clears pending requests
+ *  - onMessage: primed action routed to forAction handler, reply via replyTransport
+ *  - onMessage: primed action routed to forAction handler (reverse direction)
+ *  - proxyDomain: all domain actions forwarded via transport
+ *  - Targeted transport routing via transportKey
  *  - Edge cases: malformed JSON, unknown cuid, unknown message type
  */
 
@@ -57,7 +58,7 @@ describe("dispatch — response correlation over mock transport", () => {
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "hello" });
     const transport = makeMockTransport(true);
 
-    const ac = new ActionConnect().setTransport(transport);
+    const ac = new ActionConnect().attachTransport(transport);
     void ac.dispatch(primed);
 
     expect(transport.send).toHaveBeenCalledOnce();
@@ -71,7 +72,7 @@ describe("dispatch — response correlation over mock transport", () => {
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "world" });
     const transport = makeMockTransport(true);
 
-    const ac = new ActionConnect().setTransport(transport);
+    const ac = new ActionConnect().attachTransport(transport);
     const dispatchPromise = ac.dispatch(primed);
 
     await ac.onMessage(primed.setResponse({ echoed: "world" }).toJsonString());
@@ -86,7 +87,7 @@ describe("dispatch — response correlation over mock transport", () => {
     const b = new NiceActionPrimed(dom.action("echo"), { text: "b" });
     const transport = makeMockTransport(true);
 
-    const ac = new ActionConnect().setTransport(transport);
+    const ac = new ActionConnect().attachTransport(transport);
     const pa = ac.dispatch(a);
     const pb = ac.dispatch(b);
 
@@ -116,9 +117,7 @@ describe("dispatch — timeout", () => {
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "x" });
     const transport = makeMockTransport(true);
 
-    const ac = new ActionConnect({
-      requestTimeout: 5_000,
-    }).setTransport(transport);
+    const ac = new ActionConnect({ requestTimeout: 5_000 }).attachTransport(transport);
     const p = ac.dispatch(primed);
 
     vi.runAllTimers();
@@ -161,21 +160,17 @@ describe("dispatch — HTTP fallback", () => {
     const dom = makeTestDomain();
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "x" });
 
-    const ac = new ActionConnect({
-      enableHttpFallback: false,
-    });
+    const ac = new ActionConnect({ enableHttpFallback: false });
 
     await expect(ac.dispatch(primed)).rejects.toThrow(/no connected transport/i);
   });
 
-  it("rejects immediately for server role with no transport (no HTTP fallback allowed)", async () => {
+  it("rejects immediately when no transport and HTTP fallback not configured", async () => {
     const dom = makeTestDomain();
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "x" });
 
     const ac = new ActionConnect();
-    await expect(ac.dispatch(primed)).rejects.toThrow(
-      /Cannot dispatch action "echo": no connected transport available/i,
-    );
+    await expect(ac.dispatch(primed)).rejects.toThrow(/no connected transport/i);
   });
 });
 
@@ -189,7 +184,7 @@ describe("disconnect", () => {
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "x" });
     const transport = makeMockTransport(true);
 
-    const ac = new ActionConnect().setTransport(transport);
+    const ac = new ActionConnect().attachTransport(transport);
     const p = ac.dispatch(primed);
 
     ac.disconnect();
@@ -253,7 +248,7 @@ describe("onMessage — forAction handler dispatch", () => {
     const dom = makeTestDomain();
 
     const defaultTransport = makeMockTransport();
-    const ac = new ActionConnect().setTransport(defaultTransport).forAction(dom, "echo", {
+    const ac = new ActionConnect().attachTransport(defaultTransport).forAction(dom, "echo", {
       execution: (primed) => primed.setResponse({ echoed: primed.input.text }),
     });
 
@@ -290,11 +285,31 @@ describe("onMessage — forAction handler dispatch (client-side)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 7. Environment routing via ncEnv (transport selection)
+// 7. proxyDomain — forwards all domain actions via transport
 // ---------------------------------------------------------------------------
 
-describe("onMessage — environment routing", () => {
-  it("dispatch routes to env-specific transport when environment option provided", async () => {
+describe("proxyDomain", () => {
+  it("forwards all domain actions to transport when no local handler matches", async () => {
+    const dom = makeTestDomain();
+    const transport = makeMockTransport(true);
+
+    const ac = new ActionConnect().attachTransport(transport).proxyDomain(dom);
+
+    const primed = new NiceActionPrimed(dom.action("echo"), { text: "proxy" });
+    void ac.dispatchAction(primed);
+
+    expect(transport.send).toHaveBeenCalledOnce();
+    const wire = JSON.parse(transport.send.mock.calls[0][0] as string);
+    expect(wire.id).toBe("echo");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8. Targeted transport routing via transportKey
+// ---------------------------------------------------------------------------
+
+describe("dispatch — targeted transport routing", () => {
+  it("routes to the named transport when transportKey is provided", async () => {
     const dom = makeTestDomain();
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "env" });
 
@@ -302,21 +317,18 @@ describe("onMessage — environment routing", () => {
     const edgeTransport = makeMockTransport(true);
 
     const ac = new ActionConnect()
-      .setTransport(defaultTransport)
-      .setTransport(edgeTransport, { environment: "edge" });
+      .attachTransport(defaultTransport)
+      .attachTransport(edgeTransport, { key: "edge" });
 
-    void ac.dispatch(primed, { envId: "edge" });
+    void ac.dispatch(primed, { transportKey: "edge" });
 
     expect(edgeTransport.send).toHaveBeenCalledOnce();
     expect(defaultTransport.send).not.toHaveBeenCalled();
-
-    const wire = JSON.parse(edgeTransport.send.mock.calls[0][0] as string);
-    expect(wire.ncEnv).toBe("edge");
   });
 });
 
 // ---------------------------------------------------------------------------
-// 8. Edge cases
+// 9. Edge cases
 // ---------------------------------------------------------------------------
 
 describe("edge cases", () => {

@@ -5,11 +5,11 @@ import App from "./App.tsx";
 import "./index.css";
 import { createActionRuntime } from "@nice-code/action";
 import { act_domain_demo_root } from "demo-shared";
-import { connect_requester } from "./connect/demo_action_connect.ts";
+import { actionConnect } from "./connect/demo_action_connect.ts";
 import { queryClient } from "./queryClient.ts";
 
 act_domain_demo_root.setRuntimeEnvironment(
-  createActionRuntime({ envId: "frontend" }).addHandlers([connect_requester]),
+  createActionRuntime({ envId: "frontend" }).addHandlers([actionConnect]),
 );
 
 createRoot(document.getElementById("root")!).render(

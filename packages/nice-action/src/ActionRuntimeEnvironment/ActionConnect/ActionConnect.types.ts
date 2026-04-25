@@ -1,19 +1,10 @@
-import type { NiceError } from "@nice-code/error";
-import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
-import type { NiceActionResponse } from "../../NiceAction/NiceActionResponse";
-
-// export enum EActionConnectRole {
-//   client = "client",
-//   server = "server",
-// }
-
 export interface IActionConnectConfig {
   tag?: string;
-  /** URL for HTTP fallback POST requests. Required when role is "client" and HTTP fallback is enabled. */
+  /** URL for HTTP fallback POST requests. Required when enableHttpFallback is true. */
   httpFallbackUrl?: string;
-  /** Enable HTTP POST fallback when WebSocket is unavailable. Clients only. Default: true */
+  /** Enable HTTP POST fallback when no WebSocket transport is connected. Default: true */
   enableHttpFallback?: boolean;
-  /** Timeout in milliseconds for pending dispatched requests. Default: 30_000 */
+  /** Timeout (ms) for pending dispatched requests. Default: 30_000 */
   requestTimeout?: number;
 }
 
@@ -22,14 +13,17 @@ export interface IActionConnectTransport {
   readonly connected: boolean;
 }
 
-export interface IPendingRequest {
-  resolve: (output: NiceActionResponse<any>) => void;
-  reject: (error: NiceError) => void;
-  timer: ReturnType<typeof setTimeout>;
-  primed: NiceActionPrimed<any>;
+export interface IAttachTransportOptions {
+  /** Named key for this transport — used with dispatch({ transportKey }) to target it. */
+  key?: string;
 }
 
 export interface IDispatchOptions {
-  /** Route this dispatch to a specific named environment's transport. */
-  envId?: string;
+  /** Route this dispatch to a named transport instead of the default. */
+  transportKey?: string;
+}
+
+export interface IReceiveOptions {
+  /** Transport to reply on when handling an incoming primed action. */
+  replyTransport?: IActionConnectTransport;
 }
