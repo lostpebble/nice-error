@@ -120,23 +120,22 @@ describe("dispatch — timeout", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 3. HTTP fallback
+// 3. HTTP transport (fallback when no WS connected)
 // ---------------------------------------------------------------------------
 
-describe("dispatch — HTTP fallback", () => {
+describe("dispatch — HTTP transport", () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it("calls fetch POST when no connected transport is available", async () => {
+  it("calls fetch POST when attached HTTP transport and no connected WS", async () => {
     const dom = makeTestDomain();
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "fetched" });
     const responseWire = primed.setResponse({ echoed: "fetched" }).toJsonObject();
 
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => responseWire }));
 
-    const ac = new ActionConnect({
-      httpFallbackUrl: "http://test.local/api",
-      enableHttpFallback: true,
-    }).routeDomain(dom);
+    const ac = new ActionConnect()
+      .attachTransport({ url: "http://test.local/api" })
+      .routeDomain(dom);
 
     const response = await ac.dispatchAction(primed);
     expect(response.result).toEqual({ ok: true, output: { echoed: "fetched" } });
@@ -146,15 +145,7 @@ describe("dispatch — HTTP fallback", () => {
     expect((init as RequestInit).method).toBe("POST");
   });
 
-  it("rejects when no transport and HTTP fallback disabled", async () => {
-    const dom = makeTestDomain();
-    const primed = new NiceActionPrimed(dom.action("echo"), { text: "x" });
-
-    const ac = new ActionConnect({ enableHttpFallback: false }).routeDomain(dom);
-    await expect(ac.dispatchAction(primed)).rejects.toThrow(/no connected transport/i);
-  });
-
-  it("rejects when no transport and no HTTP fallback configured", async () => {
+  it("rejects when no transport attached", async () => {
     const dom = makeTestDomain();
     const primed = new NiceActionPrimed(dom.action("echo"), { text: "x" });
 

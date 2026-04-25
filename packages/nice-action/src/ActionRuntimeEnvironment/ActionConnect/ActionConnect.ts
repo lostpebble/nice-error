@@ -17,6 +17,8 @@ import type {
   IActionConnectTransport,
   IAttachTransportOptions,
   IDispatchOptions,
+  IHttpTransport,
+  IWsTransport,
 } from "./ActionConnect.types";
 import { EErrId_NiceConnect, err_nice_connect } from "./err_nice_connect";
 
@@ -29,33 +31,37 @@ interface IPendingRequest {
 
 const DEFAULT_TIMEOUT = 30_000;
 
+function isWsTransport(t: IActionConnectTransport): t is IWsTransport {
+  return typeof (t as IWsTransport).send === "function";
+}
+
 /**
  * ActionConnect — a pure transport router for cross-environment action dispatch.
  *
  * Implements IActionHandler so it can be registered in an ActionRuntimeEnvironment
  * alongside ActionHandlers. When an action matches a routing rule, it is forwarded
- * via the configured transport (WebSocket or HTTP fallback).
+ * via the configured transport (WebSocket or HTTP).
  *
  * Local execution is NOT done here — use ActionHandler for that.
  *
- * @example — client: route all demo domain actions to the server
+ * @example — client: route all demo domain actions via WebSocket with HTTP fallback
  * ```ts
- * const connect = new ActionConnect({ httpFallbackUrl: "/api/actions" });
- * connect
- *   .attachTransport(wsTransport)
+ * const ac = new ActionConnect()
+ *   .attachTransport({ send: (d) => ws.send(d), get connected() { return ws.readyState === WebSocket.OPEN; } })
+ *   .attachTransport({ url: "/api/actions" })
  *   .routeDomain(act_domain_demo);
  *
- * ws.onmessage = (e) => connect.onMessage(e.data);
- * myRuntime.addHandlers([connect]);
+ * ws.onmessage = (e) => ac.onMessage(e.data);
+ * myRuntime.addHandlers([ac]);
  * ```
  *
  * @example — route different actions to different backends
  * ```ts
- * const connect = new ActionConnect()
+ * const ac = new ActionConnect()
  *   .attachTransport(primaryWs)
  *   .attachTransport(edgeWs, { key: "edge" })
- *   .routeDomain(act_domain_demo)                          // default transport
- *   .routeAction(act_domain_demo, "heavyOp", { transportKey: "edge" }); // edge transport
+ *   .routeDomain(act_domain_demo)
+ *   .routeAction(act_domain_demo, "heavyOp", { transportKey: "edge" });
  * ```
  *
  * @example — server: receive and execute actions (ActionConnect not needed)
@@ -65,27 +71,20 @@ const DEFAULT_TIMEOUT = 30_000;
  *     createUser: { execution: async (p) => ({ id: await db.insert(p.input) }) },
  *   });
  *
- * // HTTP
- * app.post("/actions", async (req, res) => {
- *   const result = await handler.handleWire(await req.json());
- *   if (!result.handled) return res.status(404).end();
- *   res.json(result.response.toJsonObject());
- * });
- *
- * // WebSocket
  * ws.onmessage = async (event) => {
  *   const result = await handler.handleWire(JSON.parse(event.data));
  *   if (result.handled) ws.send(result.response.toJsonString());
  * };
  * ```
  */
-export class ActionConnect implements IActionHandler {
+export class ActionConnect<TTransportKey extends string = never> implements IActionHandler {
   readonly tag: string | "_";
   readonly handlerType = EActionHandlerType.connect;
   readonly cuid: string;
 
   private _config: IActionConnectConfig;
-  private _transports = new Map<string | undefined, IActionConnectTransport>();
+  private _wsTransports = new Map<string | undefined, IWsTransport>();
+  private _httpTransports = new Map<string | undefined, IHttpTransport>();
   private _routesByAction = new Map<string, IActionConnectRoute>();
   private _handlerKeys = new Set<TMatchHandlerKey>();
   private _pendingRequests = new Map<string, IPendingRequest>();
@@ -93,11 +92,7 @@ export class ActionConnect implements IActionHandler {
   constructor(config: IActionConnectConfig = {}) {
     this.tag = config.tag ?? "_";
     this.cuid = nanoid();
-    this._config = {
-      enableHttpFallback: true,
-      requestTimeout: DEFAULT_TIMEOUT,
-      ...config,
-    };
+    this._config = { requestTimeout: DEFAULT_TIMEOUT, ...config };
   }
 
   get allHandlerKeys(): TMatchHandlerKey[] {
@@ -105,11 +100,29 @@ export class ActionConnect implements IActionHandler {
   }
 
   /**
-   * Register a WebSocket-like transport. Multiple transports can be attached
-   * with distinct keys for targeted routing via routeAction({ transportKey }).
+   * Register a transport. Pass a WebSocket-like object `{ send, connected }` for
+   * real-time dispatch, or an HTTP object `{ url }` for HTTP POST dispatch.
+   *
+   * An HTTP transport without a key becomes the automatic fallback when no
+   * connected WebSocket transport is available for a given dispatch.
+   *
+   * Multiple transports can be attached with distinct keys for targeted routing
+   * via `routeAction({ transportKey })`.
    */
-  attachTransport(transport: IActionConnectTransport, options?: IAttachTransportOptions): this {
-    this._transports.set(options?.key, transport);
+  attachTransport<K extends string>(
+    transport: IActionConnectTransport,
+    options: IAttachTransportOptions & { key: K },
+  ): ActionConnect<TTransportKey | K>;
+  attachTransport(
+    transport: IActionConnectTransport,
+    options?: IAttachTransportOptions & { key?: undefined },
+  ): this;
+  attachTransport(transport: IActionConnectTransport, options?: IAttachTransportOptions): any {
+    if (isWsTransport(transport)) {
+      this._wsTransports.set(options?.key, transport);
+    } else {
+      this._httpTransports.set(options?.key, transport);
+    }
     return this;
   }
 
@@ -119,7 +132,7 @@ export class ActionConnect implements IActionHandler {
    */
   routeDomain<DOM extends INiceActionDomain>(
     domain: NiceActionDomain<DOM>,
-    route: IActionConnectRoute = {},
+    route: IActionConnectRoute<TTransportKey> = {},
   ): this {
     this._routesByAction.set(`${domain.domain}::_`, route);
     this._handlerKeys.add(`${this.tag}::${domain.domain}::_`);
@@ -133,7 +146,7 @@ export class ActionConnect implements IActionHandler {
   routeAction<DOM extends INiceActionDomain, ID extends keyof DOM["actions"] & string>(
     domain: NiceActionDomain<DOM>,
     id: ID,
-    route: IActionConnectRoute = {},
+    route: IActionConnectRoute<TTransportKey> = {},
   ): this {
     this._routesByAction.set(`${domain.domain}::${id}`, route);
     this._handlerKeys.add(`${this.tag}::${domain.domain}::${id}`);
@@ -141,12 +154,12 @@ export class ActionConnect implements IActionHandler {
   }
 
   /**
-   * Route multiple action IDs via transport. Each action can share the same route config.
+   * Route multiple action IDs via transport. Each action shares the same route config.
    */
   routeActionIds<
     DOM extends INiceActionDomain,
     IDS extends ReadonlyArray<keyof DOM["actions"] & string>,
-  >(domain: NiceActionDomain<DOM>, ids: IDS, route: IActionConnectRoute = {}): this {
+  >(domain: NiceActionDomain<DOM>, ids: IDS, route: IActionConnectRoute<TTransportKey> = {}): this {
     for (const id of ids) {
       this.routeAction(domain, id, route);
     }
@@ -169,7 +182,7 @@ export class ActionConnect implements IActionHandler {
    */
   async dispatch(
     primed: NiceActionPrimed<any, any>,
-    options?: IDispatchOptions,
+    options?: IDispatchOptions<TTransportKey>,
   ): Promise<NiceActionResponse<any, any>> {
     return this._sendViaTransport(primed, options?.transportKey);
   }
@@ -218,16 +231,19 @@ export class ActionConnect implements IActionHandler {
 
       this._pendingRequests.set(wire.cuid, { resolve, reject, timer, primed });
 
-      const transport =
-        this._transports.get(transportKey) ?? this._transports.get(undefined);
+      const wsTransport =
+        this._wsTransports.get(transportKey) ?? this._wsTransports.get(undefined);
 
-      if (transport?.connected) {
-        transport.send(JSON.stringify(wire));
+      if (wsTransport?.connected) {
+        wsTransport.send(JSON.stringify(wire));
         return;
       }
 
-      if (this._config.enableHttpFallback !== false && this._config.httpFallbackUrl != null) {
-        this._sendHttp(wire)
+      const httpTransport =
+        this._httpTransports.get(transportKey) ?? this._httpTransports.get(undefined);
+
+      if (httpTransport != null) {
+        this._sendHttp(wire, httpTransport)
           .then((response) => this._resolveResponse(response))
           .catch((err) => this._rejectPending(wire.cuid, err));
         return;
@@ -261,14 +277,14 @@ export class ActionConnect implements IActionHandler {
 
   private async _sendHttp(
     wire: ReturnType<NiceActionPrimed<any, any>["toJsonObject"]>,
+    transport: IHttpTransport,
   ): Promise<TNiceActionResponse_JsonObject> {
-    const url = this._config.httpFallbackUrl!;
-    const timeout = this._config.requestTimeout ?? DEFAULT_TIMEOUT;
+    const timeout = transport.timeout ?? this._config.requestTimeout ?? DEFAULT_TIMEOUT;
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), timeout);
 
     try {
-      const res = await fetch(url, {
+      const res = await fetch(transport.url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(wire),

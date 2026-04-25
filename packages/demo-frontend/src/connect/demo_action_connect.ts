@@ -4,15 +4,14 @@ import { BACKEND_BASE_URL, WS_BACKEND_URL } from "../frontend_env";
 
 const ws = new WebSocket(`${WS_BACKEND_URL}/ws`);
 
-export const actionConnect = new ActionConnect({
-  httpFallbackUrl: `${BACKEND_BASE_URL}/resolve_action`,
-})
+export const actionConnect = new ActionConnect()
   .attachTransport({
     send: (data) => ws.send(data),
     get connected() {
       return ws.readyState === WebSocket.OPEN;
     },
   })
+  .attachTransport({ url: `${BACKEND_BASE_URL}/resolve_action` })
   .routeDomain(act_domain_demo);
 
 ws.onmessage = (event) => void actionConnect.onMessage(event.data as string);
