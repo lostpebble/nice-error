@@ -187,7 +187,7 @@ export class ActionConnect extends ActionHandler {
     clearTimeout(pending.timer);
     this._pendingRequests.delete(cuid);
     try {
-      const output = pending.primed.processResponse(responseWire);
+      const output = pending.primed.extractOutput(responseWire);
       pending.resolve(output);
     } catch (e) {
       pending.reject(e);

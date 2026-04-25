@@ -23,9 +23,11 @@ const messageStore: Array<{ message: string; messageTime: Date }> = [];
 
 export function registerDemoActionHandler<T extends ActionHandler>(handler: T): T {
   return handler
-    .forAction(act_domain_demo, "greet", {
-      execution: async (action) => {
-        return { message: `Hello, ${action.input.name}! Greetings from the server.` };
+    .forDomainActionCases(act_domain_demo, {
+      greet: {
+        execution: async (action) => {
+          return { message: `Hello, ${action.input.name}! Greetings from the server.` };
+        },
       },
     })
     .forAction(act_domain_demo, "add_numbers", {
@@ -64,4 +66,13 @@ export function registerDemoActionHandler<T extends ActionHandler>(handler: T): 
 // Shared handler for HTTP endpoint (Hono / Cloudflare Worker)
 // ---------------------------------------------------------------------------
 
-export const demoActionHandler = registerDemoActionHandler(new ActionHandler());
+const state: {
+  actionHandler?: ActionHandler;
+} = {};
+
+export const getDemoBackendHandler = () => {
+  if (!state.actionHandler) {
+    state.actionHandler = registerDemoActionHandler(new ActionHandler());
+  }
+  return state.actionHandler;
+};

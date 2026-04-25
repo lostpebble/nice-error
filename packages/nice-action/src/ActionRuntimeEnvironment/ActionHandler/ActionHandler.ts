@@ -21,7 +21,7 @@ import type {
 
 export class ActionHandler {
   readonly matchTag: string | "_";
-  readonly cuid: string = nanoid();
+  readonly cuid: string;
 
   readonly _domains = new Map<string, NiceActionDomain<any>>();
 
@@ -29,6 +29,7 @@ export class ActionHandler {
 
   constructor(config: IActionHandlerInputs["actionMeta"] = {}) {
     this.matchTag = config.tag ?? "_";
+    this.cuid = nanoid();
   }
 
   get allHandlerKeys(): TMatchHandlerKey[] {
@@ -267,7 +268,6 @@ export class ActionHandler {
       actionState: unknownWire.type,
     });
   }
-
 }
 
 export const createHandler = (config: IActionHandlerInputs["actionMeta"] = {}) => {

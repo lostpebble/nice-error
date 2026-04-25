@@ -9,7 +9,7 @@
  */
 import type { IActionConnectTransport } from "@nice-code/connect";
 import { ActionConnect, EActionConnectRole } from "@nice-code/connect";
-import { demoActionHandler, registerDemoActionHandler } from "../nice_actions/demo_resolver";
+import { getDemoBackendHandler, registerDemoActionHandler } from "../nice_actions/demo_resolver";
 
 const PORT = 4567;
 
@@ -37,7 +37,7 @@ Bun.serve({
       }
       if (req.method === "POST") {
         const wire = await req.json();
-        const result = await demoActionHandler.handleWire(wire);
+        const result = await getDemoBackendHandler().handleWire(wire);
         if (!result.handled) return new Response(null, { status: 404 });
         return new Response(result.response.toJsonString(), {
           headers: { "Content-Type": "application/json", ...corsHeaders },

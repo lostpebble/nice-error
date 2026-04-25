@@ -1,4 +1,3 @@
-import { castNiceError } from "@nice-code/error";
 import type {
   INiceActionDomain,
   TInferInputFromSchema,
@@ -12,7 +11,6 @@ import { EActionState } from "./NiceAction.enums";
 import {
   type INiceAction,
   type INiceActionPrimed_JsonObject,
-  type TNiceActionResponse_JsonObject,
   type TNiceActionResult,
 } from "./NiceAction.types";
 import { NiceActionResponse } from "./NiceActionResponse";
@@ -84,13 +82,6 @@ export class NiceActionPrimed<
       actionId: this.id,
     });
     return new NiceActionResponse(this, { ok: true, output: finalOutput });
-  }
-
-  processResponse(wire: TNiceActionResponse_JsonObject): TInferOutputFromSchema<SCH>["Output"] {
-    if (!wire.ok) {
-      throw castNiceError(wire.error);
-    }
-    return this.coreAction.schema.deserializeOutput(wire.output as any);
   }
 
   async execute(meta?: IActionMetaInputs): Promise<TInferOutputFromSchema<SCH>["Output"]> {

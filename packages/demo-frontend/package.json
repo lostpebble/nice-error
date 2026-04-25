@@ -17,7 +17,7 @@
     "@nice-code/connect": "workspace:*",
     "demo-shared": "workspace:*",
     "valibot": "^1.3.1",
-    "@tanstack/react-query": "^5.99.0",
+    "@tanstack/react-query": "^5.100.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -26,6 +26,6 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "globals": "^17.5.0",
-    "vite": "^8.0.8"
+    "vite": "^8.0.10"
   }
 }
