@@ -2,7 +2,6 @@ import type { NiceActionPrimed } from "../../../NiceAction/NiceActionPrimed";
 import type { NiceActionResponse } from "../../../NiceAction/NiceActionResponse";
 import { EErrId_NiceTransport, err_nice_transport } from "../Transport/err_nice_transport";
 import { Transport } from "../Transport/Transport";
-import type { TTransportStatusInfo } from "../Transport/Transport.types";
 import { TransportHttp } from "../Transport/TransportHttp";
 import { TransportWebSocket } from "../Transport/TransportWebSocket";
 import { ETransportStatus, ETransportType, type IConnectionConfig } from "./ConnectionConfig.types";
@@ -32,44 +31,47 @@ export class ConnectionConfig<K extends string | undefined = undefined> {
     return this._transports.some((t) => t.status.status === ETransportStatus.ready);
   }
 
-  dispatch(
+  async dispatch(
     primed: NiceActionPrimed<any>,
     defaultTimeout: number,
   ): Promise<NiceActionResponse<any>> {
     const timeout = this.config.defaultTimeout ?? defaultTimeout;
 
-    const transportsAndStatuses: {
-      transport: Transport<any>;
-      statusInfo: TTransportStatusInfo;
-    }[] = [];
+    const initializingWaiters: Promise<Transport<any>>[] = [];
 
     for (const transport of this._transports) {
       const statusInfo = transport.checkAndPrepare();
-      const status = statusInfo.status;
-      transportsAndStatuses.push({ transport, statusInfo });
 
-      if (status === ETransportStatus.ready) {
+      if (statusInfo.status === ETransportStatus.ready) {
         return transport.makeRequest(primed, timeout);
       }
-      // initializing → being set up, skip for this request
-      // failed → excluded, skip
+      if (statusInfo.status === ETransportStatus.initializing) {
+        initializingWaiters.push(
+          statusInfo.waitForInitialization.then((info) => {
+            if (info.newStatus.status !== ETransportStatus.ready) {
+              throw info.newStatus;
+            }
+            return transport;
+          }),
+        );
+      }
+      // failed → skip
     }
 
-    // if (transportsAndStatuses.length > 0) {
-    //   const details = transportsAndStatuses.map(({ transport, statusInfo }) => ({
-    //     type: transport.type,
-    //     status: statusInfo.status,
-    //     error: statusInfo.status === ETransportStatus.failed ? statusInfo.error : undefined,
-    //   }));
-    //   throw err_nice_transport.fromId(EErrId_NiceTransport.transport_no_ready, {
-    //     actionId: primed.id,
-    //     details,
-    //   });
-    // }
+    if (initializingWaiters.length === 0) {
+      throw err_nice_transport.fromId(EErrId_NiceTransport.transport_not_found, {
+        actionId: primed.id,
+      });
+    }
 
-    throw err_nice_transport.fromId(EErrId_NiceTransport.transport_not_found, {
-      actionId: primed.id,
-    });
+    try {
+      const firstReady = await Promise.any(initializingWaiters);
+      return firstReady.makeRequest(primed, timeout);
+    } catch {
+      throw err_nice_transport.fromId(EErrId_NiceTransport.transport_not_found, {
+        actionId: primed.id,
+      });
+    }
   }
 
   disconnect(): void {

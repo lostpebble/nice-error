@@ -449,15 +449,17 @@ describe("ConnectionConfig — transport selection", () => {
     expect(fetchMock).toHaveBeenCalledWith("http://fallback", expect.anything());
   });
 
-  it("dispatch throws transport_not_found when no transport is ready", () => {
+  it("dispatch awaits initializing transports and throws when all fail", async () => {
     const { domain } = makeDomain();
     const primed = domain.action("run").prime({ x: 5 });
 
     const cfg = new ConnectionConfig({
-      transports: [{ type: ETransportType.ws, createWebSocket: () => new Promise(() => {}) }],
+      transports: [
+        { type: ETransportType.ws, createWebSocket: () => Promise.reject(new Error("failed")) },
+      ],
     });
 
-    expect(() => cfg.dispatch(primed, 5_000)).toThrow(/transport/i);
+    await expect(cfg.dispatch(primed, 5_000)).rejects.toThrow(/transport/i);
   });
 
   it("disconnect closes established WebSocket connections", async () => {
@@ -474,14 +476,11 @@ describe("ConnectionConfig — transport selection", () => {
       ],
     });
 
-    // Trigger WS init; throws transport_not_found (WS is still initializing), that's expected
-    try {
-      cfg.dispatch(primed, 5_000);
-    } catch (_) {
-      // ignore
-    }
-    await Promise.resolve();
-    ws.$open(); // WS becomes ready
+    // Trigger WS init — dispatch awaits initialization then makeRequest
+    cfg.dispatch(primed, 5_000).catch(() => {});
+    await Promise.resolve(); // createWebSocket resolves, event listeners attach
+    ws.$open(); // WS becomes ready → waitForInitialization resolves
+    await Promise.resolve(); // dispatch resumes, makeRequest starts
 
     cfg.disconnect();
     expect(ws.close).toHaveBeenCalledOnce();
@@ -602,13 +601,6 @@ describe("ActionConnect", () => {
     conn.routeDomain(domain);
     root.setRuntimeEnvironment(createActionRuntime({ envId: "test_ws" }).addHandlers([conn]));
 
-    // First dispatch: WS initializes in background but isn't ready yet → fails
-    const firstResult = await domain.action("run").executeSafe({ x: 1 }, { tag: "remote" });
-    expect(firstResult.ok).toBe(false); // transport_not_found
-
-    // By now createWebSocket has resolved (multiple async ticks have passed)
-    ws.$open(); // WS becomes ready
-
     // Auto-respond to outgoing WS messages by echoing back the request with doubled output
     ws.send.mockImplementation((data: string) => {
       const body = JSON.parse(data);
@@ -625,10 +617,15 @@ describe("ActionConnect", () => {
       });
     });
 
-    const secondResult = await domain.action("run").executeSafe({ x: 5 }, { tag: "remote" });
-    expect(secondResult.ok).toBe(true);
-    if (secondResult.ok) {
-      expect(secondResult.output).toEqual({ result: 10 });
+    // Dispatch awaits WS initialization — start it, then open the socket
+    const dispatchPromise = domain.action("run").executeSafe({ x: 5 }, { tag: "remote" });
+    await Promise.resolve(); // createWebSocket resolves, event listeners attach
+    ws.$open(); // WS becomes ready → waitForInitialization resolves → dispatch proceeds
+
+    const result = await dispatchPromise;
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.output).toEqual({ result: 10 });
     }
   });
 });
