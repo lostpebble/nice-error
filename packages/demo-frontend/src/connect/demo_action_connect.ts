@@ -19,4 +19,21 @@ const connectionConfig = new ConnectionConfig({
   ],
 });
 
-export const demoActionConnect = new ActionConnect([connectionConfig]).routeDomain(act_domain_demo);
+export const demoActionConnect = new ActionConnect([connectionConfig]).routeDomain(
+  act_domain_demo,
+  {
+    onResponse: (response) => {
+      console.log(
+        `ACTION RESPONSE [${response.id}] Received response for action with result:`,
+        response.result,
+      );
+
+      if (response.id === "add_numbers") {
+        if (response.result.ok) {
+          const { sum } = response.result.output;
+          console.log(`Sum is: ${sum}`);
+        }
+      }
+    },
+  },
+);
