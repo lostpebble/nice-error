@@ -20,7 +20,7 @@ export class NiceActionPrimed<
   DOM extends INiceActionDomain,
   ID extends keyof DOM["actions"] & string = keyof DOM["actions"] & string,
   SCH extends DOM["actions"][ID] = DOM["actions"][ID],
-> implements Omit<INiceAction<DOM, ID>, "schema" | "cuid" | "timeCreated">
+> implements INiceAction<DOM, ID>
 {
   readonly type = EActionState.primed;
   readonly domain: DOM["domain"];
@@ -28,6 +28,8 @@ export class NiceActionPrimed<
   readonly id: ID;
   readonly timePrimed: number;
   readonly cuid: string;
+  readonly schema: SCH;
+  readonly timeCreated: number;
 
   constructor(
     readonly coreAction: NiceAction<DOM, ID, SCH>,
@@ -39,6 +41,8 @@ export class NiceActionPrimed<
     this.id = coreAction.id;
     this.timePrimed = hydrationData?.timePrimed ?? Date.now();
     this.cuid = coreAction.cuid;
+    this.schema = coreAction.schema;
+    this.timeCreated = coreAction.timeCreated;
   }
 
   get input() {

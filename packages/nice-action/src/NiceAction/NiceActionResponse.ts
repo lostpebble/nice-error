@@ -18,7 +18,7 @@ export class NiceActionResponse<
   DOM extends INiceActionDomain,
   ID extends keyof DOM["actions"] & string = keyof DOM["actions"] & string,
   SCH extends DOM["actions"][ID] = DOM["actions"][ID],
-> implements Omit<INiceAction<DOM, ID>, "schema" | "cuid" | "timeCreated">
+> implements INiceAction<DOM, ID>
 {
   readonly type = EActionState.resolved;
   readonly domain: DOM["domain"];
@@ -28,6 +28,8 @@ export class NiceActionResponse<
   readonly result: TNiceActionResult<TInferOutputFromSchema<SCH>["Output"], TInferActionError<SCH>>;
   readonly timeResponded: number;
   readonly cuid;
+  readonly schema: SCH;
+  readonly timeCreated: number;
 
   constructor(
     primed: NiceActionPrimed<DOM, ID, SCH>,
@@ -40,6 +42,8 @@ export class NiceActionResponse<
     this.allDomains = primed.coreAction.allDomains;
     this.id = primed.coreAction.id;
     this.cuid = primed.coreAction.cuid;
+    this.schema = primed.coreAction.schema;
+    this.timeCreated = primed.coreAction.timeCreated;
     this.timeResponded = hydrationData?.timeResponded ?? Date.now();
   }
 
