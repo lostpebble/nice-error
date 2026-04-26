@@ -1,4 +1,5 @@
 export {
+  ETransportStatus,
   ETransportType,
   type IActionTransportDef_Http,
   type IActionTransportDef_Ws,

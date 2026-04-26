@@ -20,8 +20,12 @@ export abstract class Transport<DEF extends TActionTransportDef> {
     return this._status;
   }
 
+  checkAndPrepare(): TTransportStatusInfo {
+    return this._status;
+  }
+
   protected abstract send(primed: NiceActionPrimed<any>): Promise<void>;
-  protected abstract disconnect(): void;
+  abstract disconnect(): void;
 
   protected respond(response: NiceActionResponse<any>): void {
     const resolver = this.requestResolvers.get(response.cuid);

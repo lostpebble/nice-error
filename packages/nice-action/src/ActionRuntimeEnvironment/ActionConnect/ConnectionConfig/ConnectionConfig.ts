@@ -1,16 +1,16 @@
 import type { NiceActionPrimed } from "../../../NiceAction/NiceActionPrimed";
 import type { NiceActionResponse } from "../../../NiceAction/NiceActionResponse";
 import { EErrId_NiceTransport, err_nice_transport } from "../Transport/err_nice_transport";
+import { Transport } from "../Transport/Transport";
 import { TransportHttp } from "../Transport/TransportHttp";
 import { TransportWebSocket } from "../Transport/TransportWebSocket";
-import { ETransportType, type IConnectionConfig } from "./ConnectionConfig.types";
+import { ETransportStatus, ETransportType, type IConnectionConfig } from "./ConnectionConfig.types";
 
 export class ConnectionConfig<K extends string | undefined = undefined> {
   readonly config: IConnectionConfig;
   readonly routeKey: K | undefined;
 
-  private _wsTransports: TransportWebSocket[] = [];
-  private _httpTransports: TransportHttp[] = [];
+  private _transports: Transport<any>[] = [];
 
   constructor(input: IConnectionConfig, routeKey?: K) {
     this.config = input;
@@ -18,9 +18,9 @@ export class ConnectionConfig<K extends string | undefined = undefined> {
 
     for (const def of this.config.transports) {
       if (def.type === ETransportType.ws) {
-        this._wsTransports.push(new TransportWebSocket(def));
+        this._transports.push(new TransportWebSocket(def));
       } else if (def.type === ETransportType.http) {
-        this._httpTransports.push(new TransportHttp(def));
+        this._transports.push(new TransportHttp(def));
       } else {
         throw new Error(`Unsupported transport type: ${(def as any).type}`);
       }
@@ -28,7 +28,7 @@ export class ConnectionConfig<K extends string | undefined = undefined> {
   }
 
   get connected(): boolean {
-    return this._wsTransports.some((t) => t.connected);
+    return this._transports.some((t) => t.status.status === ETransportStatus.ready);
   }
 
   dispatch(
@@ -37,11 +37,15 @@ export class ConnectionConfig<K extends string | undefined = undefined> {
   ): Promise<NiceActionResponse<any>> {
     const timeout = this.config.defaultTimeout ?? defaultTimeout;
 
-    const ws = this._wsTransports[0];
-    if (ws != null) return ws.makeRequest(primed, timeout);
+    for (const transport of this._transports) {
+      const { status } = transport.checkAndPrepare();
 
-    const http = this._httpTransports[0];
-    if (http != null) return http.makeRequest(primed, timeout);
+      if (status === ETransportStatus.ready) {
+        return transport.makeRequest(primed, timeout);
+      }
+      // initializing → being set up, skip for this request
+      // failed → excluded, skip
+    }
 
     throw err_nice_transport.fromId(EErrId_NiceTransport.transport_not_found, {
       actionId: primed.id,
@@ -49,8 +53,8 @@ export class ConnectionConfig<K extends string | undefined = undefined> {
   }
 
   disconnect(): void {
-    for (const ws of this._wsTransports) {
-      ws.disconnect();
+    for (const transport of this._transports) {
+      transport.disconnect();
     }
   }
 }
