@@ -42,7 +42,9 @@ export class ActionRuntimeEnvironment {
       for (const matchKey of handler.allHandlerKeys) {
         if (!this._handlersByTag.has(matchKey)) {
           this._handlersByTag.set(matchKey, []);
-        } else if (this._handlersByTag.get(matchKey)!.some((h) => h.cuid === handler.cuid)) {
+        } else if (
+          this._handlersByTag.get(matchKey)?.some((h) => h.cuid === handler.cuid) === true
+        ) {
           continue;
         }
 

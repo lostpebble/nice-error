@@ -41,7 +41,10 @@ export abstract class Transport<DEF extends TActionTransportDef> {
         primed,
       });
 
-      this.send(primed);
+      this.send(primed).catch((err) => {
+        this.requestResolvers.delete(primed.cuid);
+        reject(err);
+      });
     });
   }
 }

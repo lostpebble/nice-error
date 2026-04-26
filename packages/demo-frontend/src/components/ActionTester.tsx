@@ -245,7 +245,7 @@ export function ActionTester() {
         ))}
 
         <div className="execute-row">
-          <button className="btn-primary" onClick={handleExecute} disabled={loading}>
+          <button className="btn-primary" onClick={handleExecute} disabled={false && loading}>
             {loading ? "Executing..." : "Execute"}
           </button>
         </div>

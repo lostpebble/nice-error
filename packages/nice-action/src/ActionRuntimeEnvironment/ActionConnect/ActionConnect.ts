@@ -8,11 +8,7 @@ import {
   type IActionHandler,
   type TMatchHandlerKey,
 } from "../ActionHandler/ActionHandler.types";
-import type {
-  IActionConnectConfig,
-  IActionConnectRoute,
-  IDispatchOptions,
-} from "./ActionConnect.types";
+import type { IActionConnectConfig, IActionConnectRoute } from "./ActionConnect.types";
 import { ConnectionConfig } from "./ConnectionConfig/ConnectionConfig";
 import { EErrId_NiceTransport, err_nice_transport } from "./Transport/err_nice_transport";
 
@@ -25,7 +21,7 @@ export class ActionConnect<TRANS_KEY extends string = never> implements IActionH
 
   private _config: IActionConnectConfig;
   private _connections: Map<TRANS_KEY | "_", ConnectionConfig<any>> = new Map();
-  private _connectionByMatchKey = new Map<TMatchHandlerKey, IActionConnectRoute<TRANS_KEY>>();
+  private _connectionByMatchKey = new Map<TMatchHandlerKey, IActionConnectRoute<any, TRANS_KEY>>();
   private _handlerKeys = new Set<TMatchHandlerKey>();
 
   constructor(
@@ -47,7 +43,7 @@ export class ActionConnect<TRANS_KEY extends string = never> implements IActionH
 
   routeDomain<DOM extends INiceActionDomain>(
     domain: NiceActionDomain<DOM>,
-    route: IActionConnectRoute<TRANS_KEY> = {},
+    route: IActionConnectRoute<DOM, TRANS_KEY> = {},
   ): this {
     this._connectionByMatchKey.set(`${domain.domain}::_`, route);
     this._handlerKeys.add(`${this.tag}::${domain.domain}::_`);
@@ -57,7 +53,7 @@ export class ActionConnect<TRANS_KEY extends string = never> implements IActionH
   routeAction<DOM extends INiceActionDomain, ID extends keyof DOM["actions"] & string>(
     domain: NiceActionDomain<DOM>,
     id: ID,
-    route: IActionConnectRoute<TRANS_KEY> = {},
+    route: IActionConnectRoute<DOM, TRANS_KEY> = {},
   ): this {
     this._connectionByMatchKey.set(`${domain.domain}::${id}`, route);
     this._handlerKeys.add(`${this.tag}::${domain.domain}::${id}`);
@@ -67,7 +63,11 @@ export class ActionConnect<TRANS_KEY extends string = never> implements IActionH
   routeActionIds<
     DOM extends INiceActionDomain,
     IDS extends ReadonlyArray<keyof DOM["actions"] & string>,
-  >(domain: NiceActionDomain<DOM>, ids: IDS, route: IActionConnectRoute<TRANS_KEY> = {}): this {
+  >(
+    domain: NiceActionDomain<DOM>,
+    ids: IDS,
+    route: IActionConnectRoute<DOM, TRANS_KEY> = {},
+  ): this {
     for (const id of ids) {
       this.routeAction(domain, id, route);
     }
@@ -82,22 +82,15 @@ export class ActionConnect<TRANS_KEY extends string = never> implements IActionH
     return this._dispatchViaRoute(primed, route);
   }
 
-  async dispatch(
-    primed: NiceActionPrimed<any, any>,
-    options?: IDispatchOptions<TRANS_KEY>,
-  ): Promise<NiceActionResponse<any, any>> {
-    return this._dispatchViaRoute(primed, options);
-  }
-
   disconnect(): void {
     for (const conn of this._connections.values()) {
       conn.disconnect();
     }
   }
 
-  private _dispatchViaRoute(
+  private async _dispatchViaRoute(
     primed: NiceActionPrimed<any, any>,
-    route?: IActionConnectRoute<TRANS_KEY>,
+    route?: IActionConnectRoute<any, TRANS_KEY>,
   ): Promise<NiceActionResponse<any, any>> {
     const conn = this._connections.get(route?.routeKey ?? "_");
 
@@ -111,6 +104,12 @@ export class ActionConnect<TRANS_KEY extends string = never> implements IActionH
       );
     }
 
-    return conn.dispatch(primed, this._config.requestTimeout ?? DEFAULT_TIMEOUT);
+    const response = await conn.dispatch(primed, this._config.requestTimeout ?? DEFAULT_TIMEOUT);
+
+    if (route?.onResponse) {
+      route.onResponse(response);
+    }
+
+    return response;
   }
 }

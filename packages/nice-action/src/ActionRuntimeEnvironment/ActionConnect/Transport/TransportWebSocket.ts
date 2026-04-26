@@ -1,5 +1,4 @@
 import type { NiceError } from "@nice-code/error";
-import type { INiceActionPrimed_JsonObject } from "../../../NiceAction/NiceAction.types";
 import type { NiceActionPrimed } from "../../../NiceAction/NiceActionPrimed";
 import { isActionResponseJsonObject } from "../../../utils/isActionResponseJsonObject";
 import { EErrId_NiceTransport, err_nice_transport } from "./err_nice_transport";
@@ -9,6 +8,9 @@ import type { IActionTransportDef_Ws } from "./Transport.types";
 export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
   connected: boolean = false;
   websocket?: WebSocket;
+  messageQueue: string[] = [];
+
+  private isInitializingWebSocket: boolean = false;
 
   constructor(def: IActionTransportDef_Ws) {
     super(def);
@@ -44,14 +46,32 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
     }
   }
 
-  private async createWebSocketConnection(
-    initialPayload: INiceActionPrimed_JsonObject,
-  ): Promise<void> {
-    this.websocket = await this.def.createWebSocket();
+  private async createWebSocketConnection(): Promise<void> {
+    if (this.isInitializingWebSocket) {
+      return;
+    }
+    this.isInitializingWebSocket = true;
+    try {
+      this.websocket = await this.def.createWebSocket();
+    } catch (e) {
+      this.connected = false;
+      this.isInitializingWebSocket = false;
+      console.error("Failed to create WebSocket:", e);
+      this.rejectPendingWebSocketRequests(
+        err_nice_transport.fromId(EErrId_NiceTransport.transport_ws_create_failed, {
+          originalError: e instanceof Error ? e : undefined,
+        }),
+      );
+      return;
+    }
 
     this.websocket.addEventListener("open", () => {
+      for (const message of this.messageQueue) {
+        this.websocket?.send(message);
+      }
+      this.messageQueue = [];
       this.connected = true;
-      this.websocket?.send(JSON.stringify(initialPayload));
+      this.isInitializingWebSocket = false;
     });
 
     this.websocket.addEventListener("message", (event) => {
@@ -62,18 +82,20 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
 
     this.websocket.addEventListener("close", (event) => {
       console.error("WebSocket closed:", event);
-      this.connected = false;
       this.rejectPendingWebSocketRequests(
         err_nice_transport.fromId(EErrId_NiceTransport.transport_ws_disconnected),
       );
+      this.connected = false;
+      this.isInitializingWebSocket = false;
     });
 
     this.websocket.addEventListener("error", (event) => {
       console.error("WebSocket error:", event);
-      this.connected = false;
       this.rejectPendingWebSocketRequests(
         err_nice_transport.fromId(EErrId_NiceTransport.transport_ws_send_failed),
       );
+      this.connected = false;
+      this.isInitializingWebSocket = false;
     });
 
     return;
@@ -83,7 +105,8 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
     const wire = primed.toJsonObject();
 
     if (!this.connected) {
-      await this.createWebSocketConnection(wire);
+      this.messageQueue.push(JSON.stringify(wire));
+      await this.createWebSocketConnection();
       return;
     }
 

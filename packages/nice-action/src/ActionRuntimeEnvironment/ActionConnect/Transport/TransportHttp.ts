@@ -22,8 +22,14 @@ export class TransportHttp extends Transport<IActionTransportDef_Http> {
 
     if (!res.ok) {
       try {
-        const errorJson = await res.json();
-        throw castNiceError(errorJson);
+        const jsonData = await res.json();
+
+        if (isActionResponseJsonObject(jsonData)) {
+          this.respond(primed.coreAction.actionDomain.hydrateResponse(jsonData));
+        } else {
+          this.respond(primed.errorResponse(castNiceError(jsonData)));
+        }
+        return;
       } catch (e: any) {
         throw err_nice_transport
           .fromId(EErrId_NiceTransport.transport_send_failed, {

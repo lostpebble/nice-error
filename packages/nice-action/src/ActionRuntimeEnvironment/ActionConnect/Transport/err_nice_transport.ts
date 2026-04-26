@@ -8,6 +8,7 @@ export enum EErrId_NiceTransport {
   transport_invalid_action_response = "transport_invalid_action_response",
   transport_ws_disconnected = "transport_ws_disconnected",
   transport_ws_send_failed = "transport_ws_send_failed",
+  transport_ws_create_failed = "transport_ws_create_failed",
 }
 
 export const err_nice_transport = err_nice_connect.createChildDomain({
@@ -43,6 +44,12 @@ export const err_nice_transport = err_nice_connect.createChildDomain({
     }),
     [EErrId_NiceTransport.transport_ws_send_failed]: err({
       message: () => `Failed to send message over WebSocket transport.`,
+    }),
+    [EErrId_NiceTransport.transport_ws_create_failed]: err<{
+      originalError?: Error;
+    }>({
+      message: ({ originalError }) =>
+        `Failed to create WebSocket transport.${originalError ? ` Original error: ${originalError.message}` : ""}`,
     }),
   },
 });
