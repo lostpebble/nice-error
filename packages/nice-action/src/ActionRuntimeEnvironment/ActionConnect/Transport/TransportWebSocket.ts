@@ -7,6 +7,8 @@ import {
   ETransportStatus,
   type IActionTransportDef_Ws,
   type ITransportInitializationFinishedInfo,
+  type ITransportStatusInfo_Base,
+  type ITransportStatusInfo_Failed,
   type ITransportStatusInfo_Initializing,
   type TTransportStatusInfo,
 } from "./Transport.types";
@@ -75,8 +77,9 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
   private async _connect(
     onInitialized: (info: ITransportInitializationFinishedInfo) => void,
   ): Promise<void> {
+    type TInitStatus = ITransportStatusInfo_Base<ETransportStatus.ready> | ITransportStatusInfo_Failed;
     let initNotified = false;
-    const notifyInit = (newStatus: TTransportStatusInfo) => {
+    const notifyInit = (newStatus: TInitStatus) => {
       if (!initNotified) {
         initNotified = true;
         onInitialized({ transport: this, newStatus });
@@ -90,15 +93,23 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
       const error = err_nice_transport.fromId(EErrId_NiceTransport.transport_ws_create_failed, {
         originalError: e instanceof Error ? e : undefined,
       });
-      this._status = { status: ETransportStatus.failed, error, timeFailed: Date.now() };
-      notifyInit(this._status);
+      const failedStatus: ITransportStatusInfo_Failed = {
+        status: ETransportStatus.failed,
+        error,
+        timeFailed: Date.now(),
+      };
+      this._status = failedStatus;
+      notifyInit(failedStatus);
       this.rejectPendingWebSocketRequests(error);
       return;
     }
 
     this.websocket.addEventListener("open", () => {
-      this._status = { status: ETransportStatus.ready };
-      notifyInit(this._status);
+      const readyStatus: ITransportStatusInfo_Base<ETransportStatus.ready> = {
+        status: ETransportStatus.ready,
+      };
+      this._status = readyStatus;
+      notifyInit(readyStatus);
     });
 
     this.websocket.addEventListener("message", (event) => {
@@ -114,8 +125,13 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
       if (this._status.status !== ETransportStatus.failed) {
         console.error("WebSocket closed:", event);
         const error = err_nice_transport.fromId(EErrId_NiceTransport.transport_ws_disconnected);
-        this._status = { status: ETransportStatus.failed, error, timeFailed: Date.now() };
-        notifyInit(this._status);
+        const failedStatus: ITransportStatusInfo_Failed = {
+          status: ETransportStatus.failed,
+          error,
+          timeFailed: Date.now(),
+        };
+        this._status = failedStatus;
+        notifyInit(failedStatus);
         this.rejectPendingWebSocketRequests(error);
       }
     });
@@ -123,8 +139,13 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
     this.websocket.addEventListener("error", (event) => {
       console.error("WebSocket error:", event);
       const error = err_nice_transport.fromId(EErrId_NiceTransport.transport_ws_send_failed);
-      this._status = { status: ETransportStatus.failed, error, timeFailed: Date.now() };
-      notifyInit(this._status);
+      const failedStatus: ITransportStatusInfo_Failed = {
+        status: ETransportStatus.failed,
+        error,
+        timeFailed: Date.now(),
+      };
+      this._status = failedStatus;
+      notifyInit(failedStatus);
       this.rejectPendingWebSocketRequests(error);
     });
   }
@@ -134,8 +155,10 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
   }
 
   disconnect(): void {
+    const error = err_nice_transport.fromId(EErrId_NiceTransport.transport_ws_disconnected);
     // Set uninitialized before close() so the close event handler skips the failed transition
     this._status = { status: ETransportStatus.uninitialized };
+    this.rejectPendingWebSocketRequests(error);
     this.websocket?.close();
     this.websocket = undefined;
   }

@@ -27,7 +27,7 @@ export interface ITransportStatusInfo_Failed
 
 export interface ITransportInitializationFinishedInfo {
   transport: Transport<any>;
-  newStatus: TTransportStatusInfo;
+  newStatus: ITransportStatusInfo_Base<ETransportStatus.ready> | ITransportStatusInfo_Failed;
 }
 
 export interface ITransportStatusInfo_Initializing

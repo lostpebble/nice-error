@@ -387,6 +387,74 @@ describe("TransportWebSocket", () => {
 
     expect(t.status.status).toBe(ETransportStatus.failed);
   });
+
+  it("waitForInitialization resolves with ready status when WebSocket opens", async () => {
+    const ws = makeMockWs();
+    const t = new TransportWebSocket({
+      type: ETransportType.ws,
+      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+    });
+
+    const statusInfo = t.checkAndPrepare();
+    if (statusInfo.status !== ETransportStatus.initializing) throw new Error("expected initializing");
+
+    await Promise.resolve(); // createWebSocket resolves, event listeners attach
+    ws.$open();
+
+    const info = await statusInfo.waitForInitialization;
+    expect(info.newStatus.status).toBe(ETransportStatus.ready);
+    expect(info.transport).toBe(t);
+  });
+
+  it("waitForInitialization resolves with failed status when createWebSocket rejects", async () => {
+    const t = new TransportWebSocket({
+      type: ETransportType.ws,
+      createWebSocket: () => Promise.reject(new Error("connection refused")),
+    });
+
+    const statusInfo = t.checkAndPrepare();
+    if (statusInfo.status !== ETransportStatus.initializing) throw new Error("expected initializing");
+
+    const info = await statusInfo.waitForInitialization;
+    expect(info.newStatus.status).toBe(ETransportStatus.failed);
+  });
+
+  it("waitForInitialization resolves with failed status when WebSocket errors before opening", async () => {
+    const ws = makeMockWs();
+    const t = new TransportWebSocket({
+      type: ETransportType.ws,
+      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+    });
+
+    const statusInfo = t.checkAndPrepare();
+    if (statusInfo.status !== ETransportStatus.initializing) throw new Error("expected initializing");
+
+    await Promise.resolve(); // event listeners attach
+    ws.$error();
+
+    const info = await statusInfo.waitForInitialization;
+    expect(info.newStatus.status).toBe(ETransportStatus.failed);
+  });
+
+  it("disconnect rejects all pending requests immediately", async () => {
+    const ws = makeMockWs();
+    const { domain } = makeDomain();
+    const primed = domain.action("run").prime({ x: 5 });
+
+    const t = new TransportWebSocket({
+      type: ETransportType.ws,
+      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+    });
+
+    t.checkAndPrepare();
+    await Promise.resolve(); // event listeners attach
+    ws.$open();
+
+    const p = t.makeRequest(primed, 5_000);
+    t.disconnect();
+
+    await expect(p).rejects.toThrow(/websocket/i);
+  });
 });
 
 // ── ConnectionConfig ──────────────────────────────────────────────────────────
@@ -447,6 +515,45 @@ describe("ConnectionConfig — transport selection", () => {
 
     expect(createWebSocket).toHaveBeenCalledOnce();
     expect(fetchMock).toHaveBeenCalledWith("http://fallback", expect.anything());
+  });
+
+  it("dispatch uses the first initializing transport to become ready (first-ready-wins)", async () => {
+    const { domain } = makeDomain();
+    const primed = domain.action("run").prime({ x: 5 });
+
+    const ws1 = makeMockWs(); // opens second — should NOT be used
+    const ws2 = makeMockWs(); // opens first — should be used
+
+    ws2.send.mockImplementation((data: string) => {
+      const body = JSON.parse(data);
+      Promise.resolve().then(() => {
+        ws2.$message(
+          JSON.stringify({
+            ...body,
+            type: "resolved",
+            ok: true,
+            output: { result: body.input.x },
+            timeResponded: Date.now(),
+          }),
+        );
+      });
+    });
+
+    const cfg = new ConnectionConfig({
+      transports: [
+        { type: ETransportType.ws, createWebSocket: () => Promise.resolve(ws1 as unknown as WebSocket) },
+        { type: ETransportType.ws, createWebSocket: () => Promise.resolve(ws2 as unknown as WebSocket) },
+      ],
+    });
+
+    const dispatchPromise = cfg.dispatch(primed, 5_000);
+    await Promise.resolve(); // both WS listeners attach
+    ws2.$open(); // second WS opens first
+
+    await dispatchPromise;
+
+    expect(ws2.send).toHaveBeenCalledOnce();
+    expect(ws1.send).not.toHaveBeenCalled();
   });
 
   it("dispatch awaits initializing transports and throws when all fail", async () => {
