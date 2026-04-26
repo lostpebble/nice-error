@@ -3,14 +3,22 @@ import type { NiceActionPrimed } from "../../../NiceAction/NiceActionPrimed";
 import { isActionResponseJsonObject } from "../../../utils/isActionResponseJsonObject";
 import { EErrId_NiceTransport, err_nice_transport } from "./err_nice_transport";
 import { Transport } from "./Transport";
-import type { IActionTransportDef_Ws } from "./Transport.types";
+import {
+  ETransportStatus,
+  type IActionTransportDef_Ws,
+  type TTransportStatusInfo,
+} from "./Transport.types";
 
 export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
   connected: boolean = false;
   websocket?: WebSocket;
-  messageQueue: string[] = [];
+  private messageQueue: string[] = [];
 
   private isInitializingWebSocket: boolean = false;
+
+  protected _status: TTransportStatusInfo = {
+    status: ETransportStatus.uninitialized,
+  };
 
   constructor(def: IActionTransportDef_Ws) {
     super(def);
@@ -37,6 +45,8 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
   }
 
   private rejectPendingWebSocketRequests(error: NiceError): void {
+    this.messageQueue = [];
+
     for (const [, pending] of this.requestResolvers) {
       if (pending.type === this.type) {
         clearTimeout(pending.timer);
@@ -102,15 +112,15 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
   }
 
   protected async send(primed: NiceActionPrimed<any>): Promise<void> {
-    const wire = primed.toJsonObject();
+    const wire = primed.toJsonString();
 
     if (!this.connected) {
-      this.messageQueue.push(JSON.stringify(wire));
+      this.messageQueue.push(wire);
       await this.createWebSocketConnection();
       return;
     }
 
-    this.websocket?.send(JSON.stringify(wire));
+    this.websocket?.send(wire);
   }
 
   disconnect(): void {

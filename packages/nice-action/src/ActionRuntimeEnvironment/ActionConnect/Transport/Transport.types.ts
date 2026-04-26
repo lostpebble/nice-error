@@ -1,3 +1,4 @@
+import type { NiceError } from "@nice-code/error";
 import type { NiceActionPrimed } from "../../../NiceAction/NiceActionPrimed";
 import type { NiceActionResponse } from "../../../NiceAction/NiceActionResponse";
 
@@ -5,6 +6,29 @@ export enum ETransportType {
   ws = "ws",
   http = "http",
 }
+
+export enum ETransportStatus {
+  uninitialized = "uninitialized",
+  initializing = "initializing",
+  ready = "ready",
+  failed = "failed",
+}
+
+export interface ITransportStatusInfo_Base<S extends ETransportStatus> {
+  status: S;
+}
+
+export interface ITransportStatusInfo_Failed
+  extends ITransportStatusInfo_Base<ETransportStatus.failed> {
+  error: NiceError;
+  timeFailed: number;
+}
+
+export type TTransportStatusInfo =
+  | ITransportStatusInfo_Base<ETransportStatus.uninitialized>
+  | ITransportStatusInfo_Base<ETransportStatus.initializing>
+  | ITransportStatusInfo_Base<ETransportStatus.ready>
+  | ITransportStatusInfo_Failed;
 
 export interface IActionTransport_Base {
   /** Per-transport timeout override (ms) */

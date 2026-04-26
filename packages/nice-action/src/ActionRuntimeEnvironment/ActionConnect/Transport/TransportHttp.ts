@@ -3,10 +3,17 @@ import type { NiceActionPrimed } from "../../../NiceAction/NiceActionPrimed";
 import { isActionResponseJsonObject } from "../../../utils/isActionResponseJsonObject";
 import { EErrId_NiceTransport, err_nice_transport } from "./err_nice_transport";
 import { Transport } from "./Transport";
-import type { IActionTransportDef_Http } from "./Transport.types";
+import {
+  ETransportStatus,
+  type IActionTransportDef_Http,
+  type TTransportStatusInfo,
+} from "./Transport.types";
 
 export class TransportHttp extends Transport<IActionTransportDef_Http> {
   readonly abortControllers = new Map<string, AbortController>();
+  protected _status: TTransportStatusInfo = {
+    status: ETransportStatus.ready,
+  };
 
   async send(primed: NiceActionPrimed<any>): Promise<void> {
     const wire = primed.toJsonObject();
@@ -19,6 +26,8 @@ export class TransportHttp extends Transport<IActionTransportDef_Http> {
       body: JSON.stringify(wire),
       signal: ac.signal,
     });
+
+    this.abortControllers.delete(primed.cuid);
 
     if (!res.ok) {
       try {

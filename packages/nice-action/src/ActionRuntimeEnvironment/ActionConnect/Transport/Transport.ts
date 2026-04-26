@@ -1,14 +1,23 @@
 import type { NiceActionPrimed } from "../../../NiceAction/NiceActionPrimed";
 import type { NiceActionResponse } from "../../../NiceAction/NiceActionResponse";
 import { EErrId_NiceTransport, err_nice_transport } from "./err_nice_transport";
-import type { ITransportPendingRequest, TActionTransportDef } from "./Transport.types";
+import {
+  type ITransportPendingRequest,
+  type TActionTransportDef,
+  type TTransportStatusInfo,
+} from "./Transport.types";
 
 export abstract class Transport<DEF extends TActionTransportDef> {
   readonly type: DEF["type"];
   readonly requestResolvers = new Map<string, ITransportPendingRequest>();
+  protected abstract _status: TTransportStatusInfo;
 
   constructor(readonly def: DEF) {
     this.type = def.type;
+  }
+
+  get status(): TTransportStatusInfo {
+    return this._status;
   }
 
   protected abstract send(primed: NiceActionPrimed<any>): Promise<void>;
