@@ -2,6 +2,7 @@ import type { NiceActionPrimed } from "../../../NiceAction/NiceActionPrimed";
 import type { NiceActionResponse } from "../../../NiceAction/NiceActionResponse";
 import { EErrId_NiceTransport, err_nice_transport } from "../Transport/err_nice_transport";
 import { Transport } from "../Transport/Transport";
+import type { TTransportStatusInfo } from "../Transport/Transport.types";
 import { TransportHttp } from "../Transport/TransportHttp";
 import { TransportWebSocket } from "../Transport/TransportWebSocket";
 import { ETransportStatus, ETransportType, type IConnectionConfig } from "./ConnectionConfig.types";
@@ -37,8 +38,15 @@ export class ConnectionConfig<K extends string | undefined = undefined> {
   ): Promise<NiceActionResponse<any>> {
     const timeout = this.config.defaultTimeout ?? defaultTimeout;
 
+    const transportsAndStatuses: {
+      transport: Transport<any>;
+      statusInfo: TTransportStatusInfo;
+    }[] = [];
+
     for (const transport of this._transports) {
-      const { status } = transport.checkAndPrepare();
+      const statusInfo = transport.checkAndPrepare();
+      const status = statusInfo.status;
+      transportsAndStatuses.push({ transport, statusInfo });
 
       if (status === ETransportStatus.ready) {
         return transport.makeRequest(primed, timeout);
@@ -46,6 +54,18 @@ export class ConnectionConfig<K extends string | undefined = undefined> {
       // initializing → being set up, skip for this request
       // failed → excluded, skip
     }
+
+    // if (transportsAndStatuses.length > 0) {
+    //   const details = transportsAndStatuses.map(({ transport, statusInfo }) => ({
+    //     type: transport.type,
+    //     status: statusInfo.status,
+    //     error: statusInfo.status === ETransportStatus.failed ? statusInfo.error : undefined,
+    //   }));
+    //   throw err_nice_transport.fromId(EErrId_NiceTransport.transport_no_ready, {
+    //     actionId: primed.id,
+    //     details,
+    //   });
+    // }
 
     throw err_nice_transport.fromId(EErrId_NiceTransport.transport_not_found, {
       actionId: primed.id,

@@ -6,6 +6,8 @@ import { Transport } from "./Transport";
 import {
   ETransportStatus,
   type IActionTransportDef_Ws,
+  type ITransportInitializationFinishedInfo,
+  type ITransportStatusInfo_Initializing,
   type TTransportStatusInfo,
 } from "./Transport.types";
 
@@ -20,10 +22,26 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
 
   override checkAndPrepare(): TTransportStatusInfo {
     if (this._status.status === ETransportStatus.uninitialized) {
-      this._status = { status: ETransportStatus.initializing };
-      this._connect();
+      this._status = this.startInitializing();
     }
     return this._status;
+  }
+
+  private startInitializing(): ITransportStatusInfo_Initializing {
+    const waitForInitialization = new Promise<ITransportInitializationFinishedInfo>((resolve) => {
+      resolve({
+        transport: this,
+        newStatus: {},
+      });
+    });
+
+    this._connect();
+
+    return {
+      status: ETransportStatus.initializing,
+      timeStarted: Date.now(),
+      waitForInitialization,
+    };
   }
 
   private handleMessage(data: string): void {

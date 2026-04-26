@@ -1,6 +1,7 @@
 import type { NiceError } from "@nice-code/error";
 import type { NiceActionPrimed } from "../../../NiceAction/NiceActionPrimed";
 import type { NiceActionResponse } from "../../../NiceAction/NiceActionResponse";
+import type { Transport } from "./Transport";
 
 export enum ETransportType {
   ws = "ws",
@@ -24,9 +25,20 @@ export interface ITransportStatusInfo_Failed
   timeFailed: number;
 }
 
+export interface ITransportInitializationFinishedInfo {
+  transport: Transport<any>;
+  newStatus: TTransportStatusInfo;
+}
+
+export interface ITransportStatusInfo_Initializing
+  extends ITransportStatusInfo_Base<ETransportStatus.initializing> {
+  timeStarted: number;
+  waitForInitialization: Promise<ITransportInitializationFinishedInfo>;
+}
+
 export type TTransportStatusInfo =
   | ITransportStatusInfo_Base<ETransportStatus.uninitialized>
-  | ITransportStatusInfo_Base<ETransportStatus.initializing>
+  | ITransportStatusInfo_Initializing
   | ITransportStatusInfo_Base<ETransportStatus.ready>
   | ITransportStatusInfo_Failed;
 
