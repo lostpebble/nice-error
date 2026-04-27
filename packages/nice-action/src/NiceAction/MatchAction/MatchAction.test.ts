@@ -45,7 +45,7 @@ describe("matchAction — domain-only matching", () => {
     const handler = vi.fn();
     const primed = domA.action("foo").prime({ x: 1 });
 
-    const matched = await matchAction(primed)
+    const matched = matchAction(primed)
       .with({ domain: domA, handler: async (a) => handler(a) })
       .run();
 

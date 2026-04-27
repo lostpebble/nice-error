@@ -51,7 +51,7 @@ export function niceActionQueryKey<
   DOM["allDomains"],
   ID,
   TInferInputFromSchema<DOM["actions"][ID]>["Input"],
-  IActionMetaInputs | undefined,
+  string | undefined,
 ];
 
 export function niceActionQueryKey(
