@@ -21,7 +21,10 @@ export class ActionConnect<TRANS_KEY extends string = never> implements IActionH
 
   private _config: IActionConnectConfig;
   private _connections: Map<TRANS_KEY | "_", ConnectionConfig<any>> = new Map();
-  private _connectionByMatchKey = new Map<TMatchHandlerKey, IActionConnectRoute<any, TRANS_KEY, any>>();
+  private _connectionByMatchKey = new Map<
+    TMatchHandlerKey,
+    IActionConnectRoute<any, TRANS_KEY, any>
+  >();
   private _handlerKeys = new Set<TMatchHandlerKey>();
 
   constructor(
@@ -96,7 +99,7 @@ export class ActionConnect<TRANS_KEY extends string = never> implements IActionH
 
     if (conn == null) {
       return Promise.reject(
-        err_nice_transport.fromId(EErrId_NiceTransport.transport_not_found, {
+        err_nice_transport.fromId(EErrId_NiceTransport.not_found, {
           actionId: primed.id,
           routeKey: route?.routeKey,
           tag: this.tag !== "_" ? this.tag : undefined,

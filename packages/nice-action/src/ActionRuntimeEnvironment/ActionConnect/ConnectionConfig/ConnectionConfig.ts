@@ -59,7 +59,7 @@ export class ConnectionConfig<K extends string | undefined = undefined> {
     }
 
     if (initializingWaiters.length === 0) {
-      throw err_nice_transport.fromId(EErrId_NiceTransport.transport_not_found, {
+      throw err_nice_transport.fromId(EErrId_NiceTransport.not_found, {
         actionId: primed.id,
       });
     }
@@ -68,7 +68,7 @@ export class ConnectionConfig<K extends string | undefined = undefined> {
       const firstReady = await Promise.any(initializingWaiters);
       return firstReady.makeRequest(primed, timeout);
     } catch {
-      throw err_nice_transport.fromId(EErrId_NiceTransport.transport_not_found, {
+      throw err_nice_transport.fromId(EErrId_NiceTransport.not_found, {
         actionId: primed.id,
       });
     }

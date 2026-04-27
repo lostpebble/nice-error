@@ -665,7 +665,9 @@ describe("Input validation failure in resolver path", () => {
       input: { name: 42 }, // name must be string
     };
 
-    await expect(dom.hydratePrimed(invalidWire as any).execute()).rejects.toThrow(/validation/i);
+    expect(() => {
+      dom.hydratePrimed(invalidWire as any).execute();
+    }).toThrow();
   });
 });
 

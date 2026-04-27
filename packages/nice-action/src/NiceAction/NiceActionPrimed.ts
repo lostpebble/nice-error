@@ -72,7 +72,7 @@ export class NiceActionPrimed<
   }
 
   hydratePrimeJson(wire: INiceActionPrimed_JsonObject<DOM, ID>): NiceActionPrimed<DOM, ID, SCH> {
-    return this.coreAction.actionDomain.hydratePrimed(wire.input) as NiceActionPrimed<DOM, ID, SCH>;
+    return this.coreAction.actionDomain.hydratePrimed(wire) as NiceActionPrimed<DOM, ID, SCH>;
   }
 
   hydrateResponseJson(
@@ -107,17 +107,6 @@ export class NiceActionPrimed<
 
   async execute(meta?: IActionMetaInputs): Promise<TInferOutputFromSchema<SCH>["Output"]> {
     return this.coreAction.actionDomain._executeAction(this, { actionMeta: meta ?? {} });
-  }
-
-  validateInput(): this {
-    const newInput = this.coreAction.schema.validateInput(this.input, {
-      domain: this.domain,
-      actionId: this.id,
-    });
-
-    this._input = newInput;
-
-    return this;
   }
 
   /**

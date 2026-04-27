@@ -156,7 +156,7 @@ export class NiceActionDomain<
       timeCreated: serialized.timeCreated,
     });
 
-    const rawInput = coreAction.schema.deserializeInput(serialized.input);
+    const rawInput = coreAction.validateInput(coreAction.deserializeInput(serialized.input));
     return new NiceActionPrimed(coreAction, rawInput, {
       timePrimed: serialized.timePrimed,
     });

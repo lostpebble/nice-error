@@ -49,7 +49,7 @@ export class ActionRuntimeEnvironment {
         }
 
         const handlersForKey = this._handlersByTag.get(matchKey)!;
-        this._handlersByTag.set(matchKey, [handler, ...handlersForKey]);
+        this._handlersByTag.set(matchKey, [...handlersForKey, handler]);
       }
     }
 

@@ -1,8 +1,6 @@
 import type { INiceActionRootDomain } from "../NiceActionDomain.types";
 import { NiceActionRootDomain } from "../RootDomain/NiceActionRootDomain";
 
-export const createActionRootDomain = <ROOT_DOM extends INiceActionRootDomain>(definition: {
-  domain: ROOT_DOM["domain"];
-}) => {
-  return new NiceActionRootDomain<ROOT_DOM>(definition);
+export const createActionRootDomain = <ID extends string>(definition: { domain: ID }) => {
+  return new NiceActionRootDomain<INiceActionRootDomain<ID>>(definition);
 };

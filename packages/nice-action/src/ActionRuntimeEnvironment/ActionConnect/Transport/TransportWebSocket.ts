@@ -77,7 +77,9 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
   private async _connect(
     onInitialized: (info: ITransportInitializationFinishedInfo) => void,
   ): Promise<void> {
-    type TInitStatus = ITransportStatusInfo_Base<ETransportStatus.ready> | ITransportStatusInfo_Failed;
+    type TInitStatus =
+      | ITransportStatusInfo_Base<ETransportStatus.ready>
+      | ITransportStatusInfo_Failed;
     let initNotified = false;
     const notifyInit = (newStatus: TInitStatus) => {
       if (!initNotified) {
@@ -90,7 +92,7 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
       this.websocket = await this.def.createWebSocket();
     } catch (e) {
       console.error("Failed to create WebSocket:", e);
-      const error = err_nice_transport.fromId(EErrId_NiceTransport.transport_ws_create_failed, {
+      const error = err_nice_transport.fromId(EErrId_NiceTransport.ws_create_failed, {
         originalError: e instanceof Error ? e : undefined,
       });
       const failedStatus: ITransportStatusInfo_Failed = {
@@ -124,7 +126,7 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
       // Error event may have already set failed — avoid double-reject
       if (this._status.status !== ETransportStatus.failed) {
         console.error("WebSocket closed:", event);
-        const error = err_nice_transport.fromId(EErrId_NiceTransport.transport_ws_disconnected);
+        const error = err_nice_transport.fromId(EErrId_NiceTransport.ws_disconnected);
         const failedStatus: ITransportStatusInfo_Failed = {
           status: ETransportStatus.failed,
           error,
@@ -138,7 +140,7 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
 
     this.websocket.addEventListener("error", (event) => {
       console.error("WebSocket error:", event);
-      const error = err_nice_transport.fromId(EErrId_NiceTransport.transport_ws_send_failed);
+      const error = err_nice_transport.fromId(EErrId_NiceTransport.ws_disconnected);
       const failedStatus: ITransportStatusInfo_Failed = {
         status: ETransportStatus.failed,
         error,
@@ -155,7 +157,7 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
   }
 
   disconnect(): void {
-    const error = err_nice_transport.fromId(EErrId_NiceTransport.transport_ws_disconnected);
+    const error = err_nice_transport.fromId(EErrId_NiceTransport.ws_disconnected);
     // Set uninitialized before close() so the close event handler skips the failed transition
     this._status = { status: ETransportStatus.uninitialized };
     this.rejectPendingWebSocketRequests(error);

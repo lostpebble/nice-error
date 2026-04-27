@@ -1,6 +1,5 @@
-import type { StandardSchemaV1 } from "@standard-schema/spec";
+import type { JSONSerializableValue } from "@nice-code/error";
 import { nanoid } from "nanoid";
-import * as v from "valibot";
 import type { NiceActionDomain } from "../ActionDomain/NiceActionDomain";
 import type {
   INiceActionDomain,
@@ -71,18 +70,6 @@ export class NiceAction<
     });
   }
 
-  toValidationSchema(): StandardSchemaV1 {
-    return v.object({
-      domain: v.literal(this.domain),
-      allDomains: v.pipe(
-        v.array(v.string()),
-        v.length(this.allDomains.length),
-        v.includes(this.domain),
-      ),
-      id: v.literal(this.id),
-    });
-  }
-
   is(action: unknown): action is NiceActionPrimed<DOM, ID, SCH> {
     return (
       action instanceof NiceActionPrimed &&
@@ -102,7 +89,11 @@ export class NiceAction<
     input: TInferInputFromSchema<SCH>["Input"],
     meta?: IActionMetaInputs,
   ): Promise<TInferOutputFromSchema<SCH>["Output"]> {
-    const primed = new NiceActionPrimed(this, input);
+    const validatedInput = this.schema.validateInput(input, {
+      actionId: this.id,
+      domain: this.domain,
+    });
+    const primed = new NiceActionPrimed(this, validatedInput);
     return this.actionDomain._executeAction(primed, { actionMeta: meta ?? {} });
   }
 
@@ -152,5 +143,27 @@ export class NiceAction<
     const primed = this.prime(input);
     const result = await primed.executeSafe(meta);
     return new NiceActionResponse<DOM, ID, SCH>(primed, result);
+  }
+
+  deserializeInput(serialized: JSONSerializableValue): TInferInputFromSchema<SCH>["Input"] {
+    return this.schema.deserializeInput(serialized);
+  }
+
+  serializeInput(raw: TInferInputFromSchema<SCH>["Input"]): JSONSerializableValue {
+    return this.schema.serializeInput(raw);
+  }
+
+  validateInput(input: unknown): TInferInputFromSchema<SCH>["Input"] {
+    return this.schema.validateInput(input, {
+      domain: this.domain,
+      actionId: this.id,
+    });
+  }
+
+  validateOutput(output: unknown): TInferOutputFromSchema<SCH>["Output"] {
+    return this.schema.validateOutput(output, {
+      domain: this.domain,
+      actionId: this.id,
+    });
   }
 }

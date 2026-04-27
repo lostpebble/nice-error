@@ -43,19 +43,22 @@ export abstract class Transport<DEF extends TActionTransportDef> {
     const timeout = this.def.timeout ?? connectionDefaultTimeout;
 
     return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.requestResolvers.delete(primed.cuid);
+        reject(err_nice_transport.fromId(EErrId_NiceTransport.timeout, { timeout }));
+      }, timeout);
+
       this.requestResolvers.set(primed.cuid, {
         type: this.type,
         resolve,
         reject,
-        timer: setTimeout(() => {
-          this.requestResolvers.delete(primed.cuid);
-          reject(err_nice_transport.fromId(EErrId_NiceTransport.transport_timeout, { timeout }));
-        }, timeout),
+        timer,
         primed,
       });
 
       this.send(primed).catch((err) => {
         this.requestResolvers.delete(primed.cuid);
+        clearTimeout(timer);
         reject(err);
       });
     });

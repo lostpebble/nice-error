@@ -40,7 +40,7 @@ export class TransportHttp extends Transport<IActionTransportDef_Http> {
           return;
         } catch (e: any) {
           throw err_nice_transport
-            .fromId(EErrId_NiceTransport.transport_send_failed, {
+            .fromId(EErrId_NiceTransport.send_failed, {
               actionId: primed.id,
               httpStatusCode: res.status,
               message: e.message,
@@ -52,7 +52,7 @@ export class TransportHttp extends Transport<IActionTransportDef_Http> {
       const json: unknown = await res.json();
 
       if (!isActionResponseJsonObject(json)) {
-        throw err_nice_transport.fromId(EErrId_NiceTransport.transport_invalid_action_response, {
+        throw err_nice_transport.fromId(EErrId_NiceTransport.invalid_action_response, {
           actionId: primed.id,
         });
       }

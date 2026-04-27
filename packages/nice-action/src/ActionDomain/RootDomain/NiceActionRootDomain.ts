@@ -96,18 +96,17 @@ export class NiceActionRootDomain<
           : undefined;
 
       if (handler != null || defaultExecution != null) {
-        const validatedPrimed = primed.validateInput();
-        const allListeners = [...(listeners ?? []), ...this._listeners];
+        const allListeners = [...this._listeners, ...(listeners ?? [])];
 
         for (const listener of allListeners) {
-          listener.execution?.(validatedPrimed, envData);
+          listener.execution?.(primed, envData);
         }
 
         let response: NiceActionResponse<any, any>;
         if (handler != null) {
-          response = await handler.dispatchAction(validatedPrimed);
+          response = await handler.dispatchAction(primed);
         } else {
-          const rawResult = await defaultExecution!(validatedPrimed, envData);
+          const rawResult = await defaultExecution!(primed, envData);
           if (rawResult instanceof NiceActionResponse) {
             response = rawResult;
           } else if (rawResult != null && isActionResponseJsonObject(rawResult)) {

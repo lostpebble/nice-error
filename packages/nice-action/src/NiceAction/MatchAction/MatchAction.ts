@@ -57,6 +57,7 @@ class MatchAction<ACT extends INiceAction<any>> {
 
     if (this._otherwise != null) {
       await this._otherwise(action);
+      return true;
     }
 
     return false;
