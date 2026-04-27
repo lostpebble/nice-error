@@ -44,15 +44,7 @@ export type {
 export { EErrId_NiceAction, err_nice_action } from "./errors/err_nice_action";
 export { matchAction } from "./NiceAction/MatchAction/MatchAction";
 export { NiceAction } from "./NiceAction/NiceAction";
-export {
-  EActionRequestExpectation,
-  EActionRouteStep,
-  EActionState,
-} from "./NiceAction/NiceAction.enums";
-export type {
-  IActionRouteEntry,
-  IActionRouteEntry_RequestStart,
-} from "./NiceAction/NiceAction.route.types";
+export { EActionState } from "./NiceAction/NiceAction.enums";
 export type {
   INiceAction,
   INiceAction_JsonObject,

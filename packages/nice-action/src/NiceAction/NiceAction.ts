@@ -15,6 +15,7 @@ import {
   type INiceActionPrimed_JsonObject,
   type TNiceActionResult,
 } from "./NiceAction.types";
+import type { TNarrowActionType } from "./NiceActionCombined.types";
 import { NiceActionPrimed } from "./NiceActionPrimed";
 import { NiceActionResponse } from "./NiceActionResponse";
 
@@ -70,13 +71,23 @@ export class NiceAction<
     });
   }
 
-  is(action: unknown): action is NiceActionPrimed<DOM, ID, SCH> {
+  is<ACT extends INiceAction<any>>(
+    action: ACT | unknown | null | undefined,
+  ): action is TNarrowActionType<ACT, DOM, ID> {
     return (
       action instanceof NiceActionPrimed &&
       action.coreAction.domain === this.domain &&
       action.coreAction.id === this.id
     );
   }
+
+  // is(action: unknown): action is NiceActionPrimed<DOM, ID, SCH> {
+  //   return (
+  //     action instanceof NiceActionPrimed &&
+  //     action.coreAction.domain === this.domain &&
+  //     action.coreAction.id === this.id
+  //   );
+  // }
 
   prime(
     input: TInferInputFromSchema<SCH>["Input"],

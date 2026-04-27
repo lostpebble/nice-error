@@ -1,4 +1,4 @@
-import { nanoid } from "nanoid/non-secure";
+import { nanoid } from "nanoid";
 import type { NiceActionDomain } from "../../ActionDomain/NiceActionDomain";
 import type { INiceActionDomain } from "../../ActionDomain/NiceActionDomain.types";
 import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
