@@ -100,6 +100,7 @@ export class NiceActionDomain<
         actionId: id as string,
       });
     }
+
     return new NiceAction<ACT_DOM, ID, ACT_DOM["actions"][ID]>(
       this,
       actionSchema,

@@ -7,6 +7,7 @@ import type {
   INiceAction,
   TNiceActionResponse_JsonObject,
 } from "../../NiceAction/NiceAction.types";
+import type { TDistributedDomainActions } from "../../NiceAction/NiceActionCombined.types";
 import type { NiceActionPrimed } from "../../NiceAction/NiceActionPrimed";
 import type { NiceActionResponse } from "../../NiceAction/NiceActionResponse";
 import type { IRuntimeEnvironmentMeta } from "../ActionRuntimeEnvironment.types";
@@ -64,12 +65,12 @@ export type TExecutionAndResponseHandlers<A extends INiceAction<any, any>> = TAt
 }>;
 
 export type TListenToActionExecutionFn<DOM extends INiceActionDomain> = (
-  primed: NiceActionPrimed<DOM>,
+  primed: TDistributedDomainActions<NiceActionPrimed<DOM>, DOM>,
   envData: IActionMetaInputsWithRuntime,
 ) => void;
 
 export type TListenToActionResponseFn<DOM extends INiceActionDomain> = (
-  response: NiceActionResponse<DOM>,
+  response: TDistributedDomainActions<NiceActionResponse<DOM>, DOM>,
   envData: IActionMetaInputsWithRuntime,
 ) => void;
 

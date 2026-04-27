@@ -28,6 +28,13 @@ export const demoActionConnect = new ActionConnect([connectionConfig]).routeDoma
         response.result,
       );
 
+      if (response.id === "add_message") {
+        if (response.result.ok) {
+          // Make sure this is typed properly
+          response.result.output.lastFiveMessages.forEach((msg) => {});
+        }
+      }
+
       if (
         matchAction(response).with({
           domain: act_domain_demo,

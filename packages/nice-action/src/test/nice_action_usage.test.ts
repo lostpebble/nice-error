@@ -40,8 +40,9 @@ describe("NiceAction — basic domain", () => {
     testRuntime.addHandlers([
       new ActionHandler().forDomain(domain, {
         execution: (act) => {
-          const ping = domain.matchAction(act, "ping");
-          if (ping) mockFn(ping.input.msg);
+          if (act.id === "ping") {
+            mockFn(act.input.msg);
+          }
         },
       }),
     ]);
@@ -70,8 +71,8 @@ describe("NiceAction — basic domain", () => {
     }).addHandlers([
       new ActionHandler().forDomain(greetDomain, {
         execution: (act) => {
-          const greet = greetDomain.matchAction(act, "greet");
-          if (greet) return act.setResponse({ greeting: `Hello, ${greet.input.name}!` });
+          if (act.id !== "greet") return;
+          return act.setResponse({ greeting: `Hello, ${act.input.name}!` });
         },
       }),
     ]);
@@ -109,8 +110,8 @@ describe("NiceAction — serialization", () => {
     testRuntime.addHandlers([
       new ActionHandler().forDomain(dateDomain, {
         execution: (act) => {
-          const schedule = dateDomain.matchAction(act, "schedule");
-          if (schedule) received(schedule.input.timeStart);
+          if (act.id !== "schedule") return;
+          received(act.input.timeStart);
         },
       }),
     ]);
@@ -137,11 +138,9 @@ describe("NiceAction — serialization", () => {
     testRuntime.addHandlers([
       new ActionHandler().forDomain(domain, {
         execution: (act) => {
-          const send = domain.matchAction(act, "send");
-          if (send) {
-            capturedCount = send.input.count;
-            capturedLabel = send.input.label;
-          }
+          if (act.id !== "send") return;
+          capturedCount = act.input.count;
+          capturedLabel = act.input.label;
         },
       }),
     ]);
@@ -174,14 +173,14 @@ describe("NiceAction — multiple actions per domain", () => {
     testRuntime.addHandlers([
       new ActionHandler().forDomain(multiDomain, {
         execution: (act) => {
-          const increment = multiDomain.matchAction(act, "increment");
-          if (increment) {
-            log(`increment:${increment.input.by}`);
+          if (act.id === "increment") {
+            log(`increment:${act.input}`);
             return;
           }
 
-          const reset = multiDomain.matchAction(act, "reset");
-          if (reset) log(`reset:${reset.input.to}`);
+          if (act.id === "reset") {
+            log(`reset:${act.input.to}`);
+          }
         },
       }),
     ]);
@@ -211,8 +210,8 @@ describe("NiceAction — child domains", () => {
     testRuntime.addHandlers([
       new ActionHandler().forDomain(child, {
         execution: (act) => {
-          const pong = child.matchAction(act, "pong");
-          if (pong) childLog(pong.input.v);
+          if (act.id !== "pong") return;
+          childLog(act.input.v);
         },
       }),
     ]);
@@ -241,7 +240,9 @@ describe("NiceAction — error handling", () => {
   it("throws when setRuntimeEnvironment is called twice on the same root domain", () => {
     const { testRootDomain } = _createTestRootDomainAndRuntime();
 
-    expect(() => testRootDomain.setRuntimeEnvironment(createActionRuntime({ envId: "env2" }))).toThrow(/already/i);
+    expect(() =>
+      testRootDomain.setRuntimeEnvironment(createActionRuntime({ envId: "env2" })),
+    ).toThrow(/already/i);
   });
 
   it("throws when action id does not exist in domain", () => {
@@ -274,8 +275,8 @@ describe("NiceActionPrimed — primed re-execution", () => {
     testRuntime.addHandlers([
       new ActionHandler().forDomain(dom, {
         execution: (act) => {
-          const fire = dom.matchAction(act, "fire");
-          if (fire) calls(fire.input.n);
+          if (act.id !== "fire") return;
+          calls(act.input.n);
         },
       }),
     ]);
@@ -310,11 +311,9 @@ describe("NiceAction — async handler", () => {
     testRuntime.addHandlers([
       new ActionHandler().forDomain(dom, {
         execution: async (act) => {
-          const fetch = dom.matchAction(act, "fetch");
-          if (fetch) {
-            await Promise.resolve();
-            return act.setResponse({ greeting: `Hi, ${fetch.input.name}` });
-          }
+          if (act.id !== "fetch") return;
+          await Promise.resolve();
+          return act.setResponse({ greeting: `Hi, ${act.input.name}` });
         },
       }),
     ]);

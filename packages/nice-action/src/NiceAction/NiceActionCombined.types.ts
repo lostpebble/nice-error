@@ -24,3 +24,6 @@ export type TNarrowActionType<
       : ACT extends NiceAction<any>
         ? NiceAction<D, ID>
         : INiceAction<D, ID>;
+
+export type TDistributedDomainActions<ACT extends INiceAction<any>, DOM extends INiceActionDomain> =
+  { [ID in keyof DOM["actions"] & string]: TNarrowActionType<ACT, DOM, ID> }[keyof DOM["actions"] & string];

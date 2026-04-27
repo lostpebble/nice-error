@@ -34,8 +34,8 @@ export class NiceAction<
 
   constructor(
     readonly actionDomain: NiceActionDomain<DOM>,
-    id: ID,
     readonly schema: SCH,
+    id: ID,
     hydrationData?: Pick<INiceAction_JsonObject<DOM, ID>, "cuid" | "timeCreated">,
   ) {
     this.id = id;
