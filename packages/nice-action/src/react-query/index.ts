@@ -127,7 +127,7 @@ export function useNiceQuery<
   const { tag, meta, enabled, ...queryOptions } = options ?? {};
 
   return useQuery({
-    queryKey: niceActionQueryKey(action, input, { tag, meta }),
+    queryKey: input != null ? niceActionQueryKey(action, input, { tag, meta }) : niceActionQueryKey(action),
     queryFn: () => action.execute(input!, { tag, meta }),
     enabled: input != null && (enabled ?? true),
     ...queryOptions,

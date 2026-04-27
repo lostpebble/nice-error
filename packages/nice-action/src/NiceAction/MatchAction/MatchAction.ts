@@ -1,5 +1,4 @@
-import type { MaybePromise } from "bun";
-import type { INiceActionDomain } from "../../ActionDomain/NiceActionDomain.types";
+import type { INiceActionDomain, MaybePromise } from "../../ActionDomain/NiceActionDomain.types";
 import type { INiceAction } from "../NiceAction.types";
 import type { TNarrowActionType } from "../NiceActionCombined.types";
 
@@ -36,7 +35,7 @@ class MatchAction<ACT extends INiceAction<any>> {
     return this;
   }
 
-  _run():
+  private _findMatch():
     | {
         matched: true;
         handler: TMatchHandler<ACT>;
@@ -51,39 +50,36 @@ class MatchAction<ACT extends INiceAction<any>> {
       const idMatches = entry.id == null || action.id === entry.id;
 
       if (domainMatches && idMatches) {
-        if (entry.handler != null) {
-          entry.handler(action);
-        }
         return { matched: true, handler: entry.handler };
       }
     }
 
     if (this._otherwise != null) {
-      this._otherwise(action);
       return { matched: true, handler: this._otherwise };
     }
 
     return { matched: false };
   }
 
-  async runAsync(): Promise<boolean> {
-    const result = this._run();
+  run(): boolean {
+    const result = this._findMatch();
 
-    if (result.matched && result.handler != null) {
-      await result.handler(this.action);
-      return true;
+    if (result.matched) {
+      result.handler(this.action);
     }
 
     return result.matched;
   }
 
-  run(): boolean {
-    const result = this._run();
-    if (result.matched && result.handler != null) {
+  async runAsync(): Promise<boolean> {
+    const result = this._findMatch();
+
+    if (result.matched) {
+      await result.handler(this.action);
       return true;
     }
 
-    return result.matched;
+    return false;
   }
 }
 

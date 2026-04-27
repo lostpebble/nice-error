@@ -46,7 +46,7 @@ describe("matchAction — domain-only matching", () => {
     const primed = domA.action("foo").prime({ x: 1 });
 
     const matched = matchAction(primed)
-      .with({ domain: domA, handler: async (a) => handler(a) })
+      .with({ domain: domA, handler: (a) => handler(a) })
       .run();
 
     expect(matched).toBe(true);
@@ -63,11 +63,11 @@ describe("matchAction — domain-only matching", () => {
 
     await matchAction(primedFoo)
       .with({ domain: domA, handler: async () => handlerFoo() })
-      .run();
+      .runAsync();
 
     await matchAction(primedBar)
       .with({ domain: domA, handler: async () => handlerBar() })
-      .run();
+      .runAsync();
 
     expect(handlerFoo).toHaveBeenCalledOnce();
     expect(handlerBar).toHaveBeenCalledOnce();
@@ -80,7 +80,7 @@ describe("matchAction — domain-only matching", () => {
 
     const matched = await matchAction(primed)
       .with({ domain: domA, handler: async () => handler() })
-      .run();
+      .runAsync();
 
     expect(matched).toBe(false);
     expect(handler).not.toHaveBeenCalled();
@@ -99,7 +99,7 @@ describe("matchAction — domain + id matching", () => {
 
     const matched = await matchAction(primed)
       .with({ domain: domA, id: "foo", handler: async (a) => handler(a) })
-      .run();
+      .runAsync();
 
     expect(matched).toBe(true);
     expect(handler).toHaveBeenCalledWith(primed);
@@ -112,7 +112,7 @@ describe("matchAction — domain + id matching", () => {
 
     const matched = await matchAction(primed)
       .with({ domain: domA, id: "foo", handler: async () => handler() })
-      .run();
+      .runAsync();
 
     expect(matched).toBe(false);
     expect(handler).not.toHaveBeenCalled();
@@ -125,7 +125,7 @@ describe("matchAction — domain + id matching", () => {
 
     const matched = await matchAction(primed)
       .with({ domain: domA, id: "foo", handler: async () => handler() })
-      .run();
+      .runAsync();
 
     expect(matched).toBe(false);
     expect(handler).not.toHaveBeenCalled();
@@ -146,7 +146,7 @@ describe("matchAction — first-match-wins", () => {
     await matchAction(primed)
       .with({ domain: domA, handler: async () => first() })
       .with({ domain: domA, handler: async () => second() })
-      .run();
+      .runAsync();
 
     expect(first).toHaveBeenCalledOnce();
     expect(second).not.toHaveBeenCalled();
@@ -161,7 +161,7 @@ describe("matchAction — first-match-wins", () => {
     await matchAction(primed)
       .with({ domain: domA, id: "foo", handler: async () => specific() })
       .with({ domain: domA, handler: async () => catchAll() })
-      .run();
+      .runAsync();
 
     expect(specific).toHaveBeenCalledOnce();
     expect(catchAll).not.toHaveBeenCalled();
@@ -176,7 +176,7 @@ describe("matchAction — first-match-wins", () => {
     await matchAction(primed)
       .with({ domain: domA, handler: async () => catchAll() })
       .with({ domain: domA, id: "foo", handler: async () => specific() })
-      .run();
+      .runAsync();
 
     expect(catchAll).toHaveBeenCalledOnce();
     expect(specific).not.toHaveBeenCalled();
@@ -193,7 +193,7 @@ describe("matchAction — first-match-wins", () => {
       .with({ domain: domB, handler: async () => wrongDomain() })
       .with({ domain: domA, id: "bar", handler: async () => wrongId() })
       .with({ domain: domA, id: "foo", handler: async () => correct() })
-      .run();
+      .runAsync();
 
     expect(wrongDomain).not.toHaveBeenCalled();
     expect(wrongId).not.toHaveBeenCalled();
@@ -212,7 +212,7 @@ describe("matchAction — run() return value", () => {
 
     const result = await matchAction(primed)
       .with({ domain: domA, handler: async () => {} })
-      .run();
+      .runAsync();
 
     expect(result).toBe(true);
   });
@@ -223,7 +223,7 @@ describe("matchAction — run() return value", () => {
 
     const result = await matchAction(primed)
       .with({ domain: domA, handler: async () => {} })
-      .run();
+      .runAsync();
 
     expect(result).toBe(false);
   });
@@ -232,7 +232,7 @@ describe("matchAction — run() return value", () => {
     const { domA } = makeSetup();
     const primed = domA.action("foo").prime({ x: 1 });
 
-    const result = await matchAction(primed).run();
+    const result = await matchAction(primed).runAsync();
 
     expect(result).toBe(false);
   });
@@ -251,7 +251,7 @@ describe("matchAction — .otherwise()", () => {
     await matchAction(primed)
       .with({ domain: domA, handler: async () => {} })
       .otherwise(async (a) => fallback(a))
-      .run();
+      .runAsync();
 
     expect(fallback).toHaveBeenCalledOnce();
     expect(fallback).toHaveBeenCalledWith(primed);
@@ -265,7 +265,7 @@ describe("matchAction — .otherwise()", () => {
     await matchAction(primed)
       .with({ domain: domA, handler: async () => {} })
       .otherwise(async () => fallback())
-      .run();
+      .runAsync();
 
     expect(fallback).not.toHaveBeenCalled();
   });
@@ -280,7 +280,7 @@ describe("matchAction — .otherwise()", () => {
       .otherwise(async (a) => {
         received = a;
       })
-      .run();
+      .runAsync();
 
     expect(received).toBe(primed);
   });
@@ -303,7 +303,7 @@ describe("matchAction — action state narrowing in handler", () => {
           received = a;
         },
       })
-      .run();
+      .runAsync();
 
     expect(received).toBeInstanceOf(NiceAction);
   });
@@ -321,7 +321,7 @@ describe("matchAction — action state narrowing in handler", () => {
           if (a instanceof NiceActionPrimed) receivedInput = a.input;
         },
       })
-      .run();
+      .runAsync();
 
     expect(receivedInput).toEqual({ x: 99 });
   });
@@ -340,7 +340,7 @@ describe("matchAction — action state narrowing in handler", () => {
           if (a instanceof NiceActionResponse) receivedResult = a.result;
         },
       })
-      .run();
+      .runAsync();
 
     expect(receivedResult).toEqual({ ok: true, output: { result: "done" } });
   });
@@ -359,9 +359,9 @@ describe("matchAction — action state narrowing in handler", () => {
       else if (a instanceof NiceAction) states.push("empty");
     };
 
-    await matchAction(coreAction).with({ domain: domA, handler: check }).run();
-    await matchAction(primed).with({ domain: domA, handler: check }).run();
-    await matchAction(response).with({ domain: domA, handler: check }).run();
+    await matchAction(coreAction).with({ domain: domA, handler: check }).runAsync();
+    await matchAction(primed).with({ domain: domA, handler: check }).runAsync();
+    await matchAction(response).with({ domain: domA, handler: check }).runAsync();
 
     expect(states).toEqual(["empty", "primed", "response"]);
   });
@@ -385,7 +385,7 @@ describe("matchAction — async handlers", () => {
           order.push("handler");
         },
       })
-      .run();
+      .runAsync();
 
     order.push("after run");
     expect(order).toEqual(["handler", "after run"]);
@@ -402,7 +402,7 @@ describe("matchAction — async handlers", () => {
         await Promise.resolve();
         order.push("otherwise");
       })
-      .run();
+      .runAsync();
 
     order.push("after run");
     expect(order).toEqual(["otherwise", "after run"]);
@@ -426,7 +426,7 @@ describe("matchAction — multi-domain routing", () => {
       matchAction(act)
         .with({ domain: domA, handler: async () => handlerA() })
         .with({ domain: domB, handler: async () => handlerB() })
-        .run();
+        .runAsync();
 
     await runWith(primedA);
     await runWith(primedB);
@@ -443,12 +443,12 @@ describe("matchAction — multi-domain routing", () => {
     await matchAction(domA.action("foo").prime({ x: 1 }))
       .with({ domain: domA, id: "foo", handler: async () => fooHandler() })
       .with({ domain: domA, id: "bar", handler: async () => barHandler() })
-      .run();
+      .runAsync();
 
     await matchAction(domA.action("bar").prime({ y: "hi" }))
       .with({ domain: domA, id: "foo", handler: async () => fooHandler() })
       .with({ domain: domA, id: "bar", handler: async () => barHandler() })
-      .run();
+      .runAsync();
 
     expect(fooHandler).toHaveBeenCalledOnce();
     expect(barHandler).toHaveBeenCalledOnce();
