@@ -1,11 +1,26 @@
-import type { INiceActionDomain } from "../../ActionDomain/NiceActionDomain.types";
-import type { INiceAction } from "../NiceAction.types";
+import type { INiceActionDomain, TInferOutputFromSchema } from "../../ActionDomain/NiceActionDomain.types";
+import type { TInferActionError } from "../../ActionSchema/NiceActionSchema";
+import type { INiceAction, TNiceActionResult } from "../NiceAction.types";
 
 type TMatchHandler<A extends INiceAction<any>> = (action: A) => Promise<void>;
 
 type TMatchEntry<ACT extends INiceAction<any>> =
-  | { domainStr: string; id: string; handler: TMatchHandler<ACT> }
+  | { domainStr: string; id: string; handler: TMatchHandler<any> }
   | { domainStr: string; id?: undefined; handler: TMatchHandler<ACT> };
+
+type THandlerForId<
+  ACT extends INiceAction<any>,
+  DOM extends INiceActionDomain,
+  ID extends keyof DOM["actions"] & string,
+> = (
+  action: Omit<ACT, "id" | "result"> & {
+    id: ID;
+    result: TNiceActionResult<
+      TInferOutputFromSchema<DOM["actions"][ID]>["Output"],
+      TInferActionError<DOM["actions"][ID]>
+    >;
+  },
+) => Promise<void>;
 
 class MatchAction<
   ACT extends INiceAction<any>,
@@ -16,13 +31,13 @@ class MatchAction<
 
   constructor(readonly action: ACT) {}
 
-  with<ID extends keyof DOM["actions"] & string>(opts: {
-    domain: DOM;
+  with<D extends DOM, ID extends keyof D["actions"] & string>(opts: {
+    domain: D;
     id: ID;
-    handler: TMatchHandler<ACT>;
+    handler: THandlerForId<ACT, D, ID>;
   }): this;
   with<D extends DOM>(opts: { domain: D; handler: TMatchHandler<ACT> }): this;
-  with(opts: { domain: DOM; id?: string; handler: TMatchHandler<ACT> }): this {
+  with(opts: { domain: DOM; id?: string; handler: TMatchHandler<any> }): this {
     this._entries.push({ domainStr: opts.domain.domain, id: opts.id, handler: opts.handler });
     return this;
   }

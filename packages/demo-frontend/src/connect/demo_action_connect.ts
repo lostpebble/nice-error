@@ -35,7 +35,7 @@ export const demoActionConnect = new ActionConnect([connectionConfig]).routeDoma
           handler: async (action) => {
             if (action.result.ok) {
               // Make sure this is typed properly
-              console.log(action.result.output);
+              console.log(action.result.output.lastFiveMessages);
             }
             console.log(
               `ACTION RESPONSE [${action.id}] This is a response for the 'add_message' action`,
