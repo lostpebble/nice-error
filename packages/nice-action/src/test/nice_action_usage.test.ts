@@ -122,7 +122,7 @@ describe("NiceAction — serialization", () => {
     expect(received).toHaveBeenCalledWith(ts);
   });
 
-  it("action schema input is typed correctly after matchAction narrowing", async () => {
+  it("action schema input is typed correctly in the forDomain execution handler", async () => {
     const { testRootDomain, testRuntime } = _createTestRootDomainAndRuntime();
 
     const domain = testRootDomain.createChildDomain({

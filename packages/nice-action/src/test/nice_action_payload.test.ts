@@ -287,34 +287,11 @@ describe("NiceActionDomain.isDomainAction()", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 5. NiceActionDomain.matchAction — narrowed match
+// 5. ActionHandler.forDomainActionCases — per-action execution
 // ---------------------------------------------------------------------------
 
-describe("NiceActionDomain.matchAction()", () => {
-  it("returns the same primed action when domain and id match", () => {
-    const { domain: dom } = createTestActionDomain();
-    const primed = dom.action("send_message").prime({ message: "hi", channel: "c" });
-
-    expect(primed.id === "send_message").toBe(true);
-  });
-
-  it("returns null when the action id does not match", () => {
-    const dom = createActionRootDomain({
-      domain: "match_test_root",
-    }).createChildDomain({
-      domain: "multi",
-      actions: {
-        foo: action().input({ schema: v.object({ x: v.number() }) }),
-        bar: action().input({ schema: v.object({ y: v.number() }) }),
-      },
-    });
-
-    const fooPrimed = dom.action("foo").prime({ x: 1 });
-
-    expect((fooPrimed as any).id === "bar").toBe(false);
-  });
-
-  it("can be used inside a handler to narrow input type", async () => {
+describe("ActionHandler.forDomainActionCases()", () => {
+  it("narrows input type per action id in the execution handler", async () => {
     const narrowingRoot = createActionRootDomain({ domain: "narrowing" });
     const dom = narrowingRoot.createChildDomain({
       domain: "narrowing_child",

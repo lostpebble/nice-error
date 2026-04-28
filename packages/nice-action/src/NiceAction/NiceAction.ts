@@ -111,7 +111,7 @@ export class NiceAction<
    * ```ts
    * const result = await domain.action("getUser").executeSafe({ userId: "123" });
    * if (!result.ok) {
-   *   result.error.handleWith([
+   *   result.error.handleWithSync([
    *     forDomain(err_auth, (h) => res.status(401).end()),
    *   ]);
    *   return;

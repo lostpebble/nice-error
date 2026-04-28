@@ -4,13 +4,11 @@ import type { EActionState } from "../NiceAction/NiceAction.enums";
 export enum EErrId_NiceAction {
   action_id_not_in_domain = "action_id_not_in_domain",
   domain_already_exists_in_hierarchy = "domain_already_exists_in_hierarchy",
-  // domain_handler_conflict = "domain_handler_conflict",
   domain_no_handler = "domain_no_handler",
   hydration_domain_mismatch = "hydration_domain_mismatch",
   hydration_action_state_mismatch = "hydration_action_state_mismatch",
   hydration_action_id_not_found = "hydration_action_id_not_found",
   no_action_execution_handler = "no_action_execution_handler",
-  // no_action_response_handler = "no_action_response_handler",
   wire_action_not_primed_or_response = "wire_action_not_primed_or_response",
   wire_not_action_data = "wire_not_action_data",
   action_tag_handler_not_found = "action_tag_handler_not_found",
@@ -29,10 +27,6 @@ export const err_nice_action = err_nice.createChildDomain({
       message: ({ actionId, domain }) =>
         `Action with id "${actionId}" does not exist in domain "${domain}".`,
     }),
-    // [EErrId_NiceAction.domain_handler_conflict]: err<{ domain: string }>({
-    //   message: ({ domain }) =>
-    //     `Domain "${domain}" already has a handler set. Multiple handlers for the same domain are not allowed.`,
-    // }),
     [EErrId_NiceAction.domain_already_exists_in_hierarchy]: err<{
       domain: string;
       allParentDomains: string[];
@@ -73,13 +67,6 @@ export const err_nice_action = err_nice.createChildDomain({
       message: ({ domain, actionId }) =>
         `No action handler registered for "${actionId}" in domain "${domain}": no execution handler matched.`,
     }),
-    // [EErrId_NiceAction.no_action_response_handler]: err<{
-    //   domain: string;
-    //   actionId: string;
-    // }>({
-    //   message: ({ domain, actionId }) =>
-    //     `No response handler registered for action "${actionId}" in domain "${domain}".`,
-    // }),
     [EErrId_NiceAction.wire_action_not_primed_or_response]: err<{
       domain: string;
       actionId: string;

@@ -63,7 +63,7 @@ export class ActionHandler implements IActionHandler {
 
   /**
    * Register a handler for all actions in a domain.
-   * Receives the full primed action — use `domain.matchAction()` to narrow by id.
+   * Receives the full primed action — use `matchAction()` to narrow to a specific action id.
    * Useful for forwarding all domain actions to a remote endpoint.
    * Lower priority than `forAction`.
    */

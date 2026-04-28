@@ -6,10 +6,9 @@
  *  - First-match-wins priority within a handler
  *  - Handler instance shared across multiple domains
  *  - Named environment ids: ActionHandler({ tag }) + execute(input, tag)
- *  - action_environment_not_found when the requested tag has no handler
+ *  - action_tag_handler_not_found when the requested tag has no handler
  *  - environment_already_registered when setRuntimeEnvironment is called twice
  *  - Default fallback: no tag → default handler → error
- *  - resolve() vs forDomain() priority within a single ActionHandler
  *  - Action listeners fire for both default and named-env dispatches
  */
 import * as v from "valibot";
@@ -384,7 +383,7 @@ describe("named environment — handler tag", () => {
     );
   });
 
-  it("uses default handler as fallback when tag is not registered on this domain", async () => {
+  it("does not use default handler as fallback when tag is unregistered", async () => {
     const { root, dom } = makeCounterDomain();
     const log = vi.fn<(src: string) => void>();
 
@@ -415,7 +414,7 @@ describe("named environment — handler tag", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 9. Action listeners fire regardless of dispatch path
+// 8. Action listeners fire regardless of dispatch path
 // ---------------------------------------------------------------------------
 
 describe("action listeners — tag dispatch", () => {
@@ -451,7 +450,7 @@ describe("action listeners — tag dispatch", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 10. No handler → domain_no_handler
+// 9. No handler → domain_no_handler
 // ---------------------------------------------------------------------------
 
 describe("no handler", () => {
@@ -464,7 +463,7 @@ describe("no handler", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 11. Input validation fires before handler
+// 10. Input validation fires before handler
 // ---------------------------------------------------------------------------
 
 describe("handler — input validation", () => {

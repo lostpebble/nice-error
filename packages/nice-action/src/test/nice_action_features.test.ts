@@ -242,7 +242,7 @@ describe("ActionHandler standalone", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 5. addActionListener — observer pattern
+// 4. addActionListener — observer pattern
 // ---------------------------------------------------------------------------
 
 describe("NiceActionDomain.addActionListener", () => {
@@ -327,7 +327,7 @@ describe("NiceActionDomain.addActionListener", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 6. toJsonObject — serialization
+// 5. toJsonObject — serialization
 // ---------------------------------------------------------------------------
 
 describe("NiceActionPrimed.toJsonObject", () => {
@@ -409,7 +409,7 @@ describe("NiceAction.toJsonObject", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 7. hydrateAction — deserialization
+// 6. hydrateAction — deserialization
 // ---------------------------------------------------------------------------
 
 describe("NiceActionDomain.hydrateAction", () => {
