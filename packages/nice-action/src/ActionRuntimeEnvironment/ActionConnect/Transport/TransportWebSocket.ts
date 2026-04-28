@@ -1,4 +1,5 @@
 import type { NiceError } from "@nice-code/error";
+import type { TNiceActionResponse_JsonObject } from "../../../NiceAction/NiceAction.types";
 import type { NiceActionPrimed } from "../../../NiceAction/NiceActionPrimed";
 import { isActionResponseJsonObject } from "../../../utils/isActionResponseJsonObject";
 import { EErrId_NiceTransport_WebSocket, err_nice_transport_ws } from "./err_nice_transport_ws";
@@ -6,6 +7,7 @@ import { Transport } from "./Transport";
 import {
   ETransportStatus,
   type IActionTransportDef_Ws,
+  type ICustomWebsocketMessageSerde,
   type ITransportInitializationFinishedInfo,
   type ITransportStatusInfo_Base,
   type ITransportStatusInfo_Failed,
@@ -17,6 +19,7 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
   websocket?: WebSocket;
 
   protected _status: TTransportStatusInfo = { status: ETransportStatus.uninitialized };
+  private _customMessageSerde?: ICustomWebsocketMessageSerde;
 
   constructor(def: IActionTransportDef_Ws) {
     super(def);
@@ -44,10 +47,12 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
     };
   }
 
-  private handleMessage(data: string): void {
+  private handlePureActionResponseMessage(
+    message: string,
+  ): TNiceActionResponse_JsonObject | undefined {
     let json: unknown;
     try {
-      json = JSON.parse(data);
+      json = JSON.parse(message);
     } catch {
       return;
     }
@@ -56,12 +61,16 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
       return;
     }
 
-    const pending = this.requestResolvers.get(json.cuid);
+    return json;
+  }
+
+  private handleResponse(response: TNiceActionResponse_JsonObject<any>): void {
+    const pending = this.requestResolvers.get(response.cuid);
     if (pending == null) {
       return;
     }
 
-    this.respond(pending.primed.coreAction.actionDomain.hydrateResponse(json));
+    this.respond(pending.primed.coreAction.actionDomain.hydrateResponse(response));
   }
 
   private rejectPendingWebSocketRequests(error: NiceError): void {
@@ -89,7 +98,9 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
     };
 
     try {
-      this.websocket = await this.def.createWebSocket();
+      const { ws, customMessageSerde } = await this.def.createWebSocket();
+      this.websocket = ws;
+      this._customMessageSerde = customMessageSerde;
     } catch (e) {
       console.error("Failed to create WebSocket:", e);
       const error = err_nice_transport_ws.fromId(EErrId_NiceTransport_WebSocket.ws_create_failed, {
@@ -116,7 +127,13 @@ export class TransportWebSocket extends Transport<IActionTransportDef_Ws> {
 
     this.websocket.addEventListener("message", (event) => {
       if (typeof event.data === "string") {
-        this.handleMessage(event.data);
+        const response: TNiceActionResponse_JsonObject<any> | undefined =
+          this._customMessageSerde?.deserialize?.(event.data) ??
+          this.handlePureActionResponseMessage(event.data);
+
+        if (response) {
+          this.handleResponse(response);
+        }
       }
     });
 

@@ -7,7 +7,7 @@ const connectionConfig = new ConnectionConfig({
     {
       type: ETransportType.ws,
       createWebSocket: async () => {
-        return new WebSocket(`${WS_BACKEND_URL}/resolve_action/ws`);
+        return { ws: new WebSocket(`${WS_BACKEND_URL}/resolve_action/ws`) };
       },
     },
     {

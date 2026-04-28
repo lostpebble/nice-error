@@ -1,7 +1,7 @@
 import * as v from "valibot";
+import { makeMockWs } from "#test/helpers/transport";
 import { createActionRootDomain } from "../../../ActionDomain/helpers/createRootActionDomain";
 import { action } from "../../../ActionSchema/action";
-import { makeMockWs } from "#test/helpers/transport";
 import { ETransportStatus, ETransportType } from "./Transport.types";
 import { TransportWebSocket } from "./TransportWebSocket";
 
@@ -39,11 +39,12 @@ describe("TransportWebSocket", () => {
     const ws = makeMockWs();
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     const statusInfo = t.checkAndPrepare();
-    if (statusInfo.status !== ETransportStatus.initializing) throw new Error("expected initializing");
+    if (statusInfo.status !== ETransportStatus.initializing)
+      throw new Error("expected initializing");
 
     await Promise.resolve(); // createWebSocket resolves, listeners attach
     ws.$open();
@@ -60,7 +61,8 @@ describe("TransportWebSocket", () => {
     });
 
     const statusInfo = t.checkAndPrepare();
-    if (statusInfo.status !== ETransportStatus.initializing) throw new Error("expected initializing");
+    if (statusInfo.status !== ETransportStatus.initializing)
+      throw new Error("expected initializing");
 
     const info = await statusInfo.waitForInitialization;
     expect(info.newStatus.status).toBe(ETransportStatus.failed);
@@ -71,11 +73,12 @@ describe("TransportWebSocket", () => {
     const ws = makeMockWs();
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     const statusInfo = t.checkAndPrepare();
-    if (statusInfo.status !== ETransportStatus.initializing) throw new Error("expected initializing");
+    if (statusInfo.status !== ETransportStatus.initializing)
+      throw new Error("expected initializing");
 
     await Promise.resolve(); // listeners attach
     ws.$error();
@@ -88,7 +91,7 @@ describe("TransportWebSocket", () => {
     const ws = makeMockWs();
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     t.checkAndPrepare();
@@ -107,7 +110,7 @@ describe("TransportWebSocket", () => {
 
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     t.checkAndPrepare();
@@ -126,7 +129,7 @@ describe("TransportWebSocket", () => {
     const ws = makeMockWs();
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     t.checkAndPrepare();
@@ -146,7 +149,7 @@ describe("TransportWebSocket", () => {
 
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     t.checkAndPrepare();
@@ -178,7 +181,7 @@ describe("TransportWebSocket", () => {
 
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     t.checkAndPrepare();

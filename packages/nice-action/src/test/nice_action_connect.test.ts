@@ -162,7 +162,10 @@ describe("TransportWebSocket", () => {
   it("starts with uninitialized status", () => {
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => new Promise(() => {}),
+      createWebSocket: () =>
+        new Promise(() => ({
+          ws: {},
+        })),
     });
     expect(t.status.status).toBe(ETransportStatus.uninitialized);
   });
@@ -190,7 +193,7 @@ describe("TransportWebSocket", () => {
     const ws = makeMockWs();
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     t.checkAndPrepare();
@@ -204,7 +207,7 @@ describe("TransportWebSocket", () => {
     const ws = makeMockWs();
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     t.checkAndPrepare();
@@ -219,7 +222,7 @@ describe("TransportWebSocket", () => {
     const ws = makeMockWs();
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     t.checkAndPrepare();
@@ -234,7 +237,7 @@ describe("TransportWebSocket", () => {
     const ws = makeMockWs();
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     t.checkAndPrepare();
@@ -256,7 +259,7 @@ describe("TransportWebSocket", () => {
 
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     t.checkAndPrepare();
@@ -276,7 +279,7 @@ describe("TransportWebSocket", () => {
 
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     t.checkAndPrepare();
@@ -310,7 +313,7 @@ describe("TransportWebSocket", () => {
 
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     t.checkAndPrepare();
@@ -341,7 +344,7 @@ describe("TransportWebSocket", () => {
     const ws = makeMockWs();
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     const statusInfo = t.checkAndPrepare();
@@ -374,7 +377,7 @@ describe("TransportWebSocket", () => {
     const ws = makeMockWs();
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     const statusInfo = t.checkAndPrepare();
@@ -395,7 +398,7 @@ describe("TransportWebSocket", () => {
 
     const t = new TransportWebSocket({
       type: ETransportType.ws,
-      createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+      createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
     });
 
     t.checkAndPrepare();
@@ -493,11 +496,11 @@ describe("ConnectionConfig — transport selection", () => {
       transports: [
         {
           type: ETransportType.ws,
-          createWebSocket: () => Promise.resolve(ws1 as unknown as WebSocket),
+          createWebSocket: () => Promise.resolve({ ws: ws1 as unknown as WebSocket }),
         },
         {
           type: ETransportType.ws,
-          createWebSocket: () => Promise.resolve(ws2 as unknown as WebSocket),
+          createWebSocket: () => Promise.resolve({ ws: ws2 as unknown as WebSocket }),
         },
       ],
     });
@@ -534,7 +537,7 @@ describe("ConnectionConfig — transport selection", () => {
       transports: [
         {
           type: ETransportType.ws,
-          createWebSocket: () => Promise.resolve(ws as unknown as WebSocket),
+          createWebSocket: () => Promise.resolve({ ws: ws as unknown as WebSocket }),
         },
       ],
     });
@@ -654,7 +657,7 @@ describe("ActionConnect", () => {
     const ws = makeMockWs();
     const { root, domain } = makeDomain();
 
-    const createWebSocket = vi.fn().mockResolvedValue(ws as unknown as WebSocket);
+    const createWebSocket = vi.fn().mockResolvedValue({ ws: ws as unknown as WebSocket });
     const conn = new ActionConnect(
       [new ConnectionConfig({ transports: [{ type: ETransportType.ws, createWebSocket }] })],
       { tag: "remote" },

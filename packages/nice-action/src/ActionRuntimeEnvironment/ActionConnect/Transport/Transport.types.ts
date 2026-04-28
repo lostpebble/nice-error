@@ -1,4 +1,8 @@
 import type { NiceError } from "@nice-code/error";
+import type {
+  INiceActionPrimed_JsonObject,
+  TNiceActionResponse_JsonObject,
+} from "../../../NiceAction/NiceAction.types";
 import type { NiceActionPrimed } from "../../../NiceAction/NiceActionPrimed";
 import type { NiceActionResponse } from "../../../NiceAction/NiceActionResponse";
 import type { Transport } from "./Transport";
@@ -6,6 +10,7 @@ import type { Transport } from "./Transport";
 export enum ETransportType {
   ws = "ws",
   http = "http",
+  custom = "custom",
 }
 
 export enum ETransportStatus {
@@ -47,9 +52,17 @@ export interface IActionTransport_Base {
   timeout?: number;
 }
 
+export interface ICustomWebsocketMessageSerde {
+  serialize?: (primedJson: INiceActionPrimed_JsonObject<any>) => string;
+  deserialize?: (message: string) => TNiceActionResponse_JsonObject<any>;
+}
+
 export interface IActionTransportDef_Ws extends IActionTransport_Base {
   type: ETransportType.ws;
-  createWebSocket: () => Promise<WebSocket>;
+  createWebSocket: () => Promise<{
+    ws: WebSocket;
+    customMessageSerde?: ICustomWebsocketMessageSerde;
+  }>;
 }
 
 export interface IActionTransportDef_Http extends IActionTransport_Base {
@@ -57,7 +70,25 @@ export interface IActionTransportDef_Http extends IActionTransport_Base {
   url: string;
 }
 
-export type TActionTransportDef = IActionTransportDef_Ws | IActionTransportDef_Http;
+export interface ICustomActionTransport {
+  checkAndPrepare: () => TTransportStatusInfo;
+  handleAction: (
+    primed: NiceActionPrimed<any>,
+    onResponse: (response: NiceActionResponse<any>) => void,
+  ) => Promise<void>;
+  onDisconnect: () => void;
+}
+
+export interface IActionTransportDef_Custom extends IActionTransport_Base {
+  type: ETransportType.custom;
+  initialStatus: TTransportStatusInfo;
+  createTransport: () => ICustomActionTransport;
+}
+
+export type TActionTransportDef =
+  | IActionTransportDef_Ws
+  | IActionTransportDef_Http
+  | IActionTransportDef_Custom;
 
 export interface ITransportPendingRequest {
   type: ETransportType;
