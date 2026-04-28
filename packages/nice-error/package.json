@@ -4,7 +4,7 @@
   "module": "build/index.js",
   "types": "build/types/index.d.ts",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "exports": {
     ".": {
       "types": "./build/types/index.d.ts",
