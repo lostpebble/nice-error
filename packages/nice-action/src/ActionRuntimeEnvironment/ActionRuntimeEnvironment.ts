@@ -1,5 +1,10 @@
 import { nanoid } from "nanoid";
-import type { INiceAction } from "../NiceAction/NiceAction.types";
+import type {
+  INiceAction,
+  INiceAction_JsonObject,
+  INiceActionPrimed_JsonObject,
+  TNiceActionResponse_JsonObject,
+} from "../NiceAction/NiceAction.types";
 import type {
   IActionHandler,
   TMatchHandlerKey,
@@ -35,6 +40,11 @@ export class ActionRuntimeEnvironment {
     this.envId = input.envId;
     this.memCuid = `${input.envId}::${nanoid(8)}`;
     this.timeCreated = Date.now();
+  }
+
+  async handleActionRequest(wire: INiceActionPrimed_JsonObject<any>, tag?: string) {
+    const handler = this.getHandlerForAction(wire, tag);
+    // return await handler.(wire);
   }
 
   addHandlers(handlers: IActionHandler[]): this {

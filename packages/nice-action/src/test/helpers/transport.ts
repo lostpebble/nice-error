@@ -1,4 +1,8 @@
 import { vi } from "vitest";
+import type {
+  INiceActionPrimed_JsonObject,
+  TNiceActionResponse_JsonObject,
+} from "../../NiceAction/NiceAction.types";
 
 export function makeMockWs() {
   const _ls: Record<string, ((...a: any[]) => void)[]> = {};
@@ -45,6 +49,21 @@ export function echoFetch(transform: (input: any) => any) {
           output: transform(body.input),
           timeResponded: Date.now(),
         }),
+    };
+  });
+}
+
+export function fetchMockHandleAction(
+  handlerAction: (
+    action: INiceActionPrimed_JsonObject<any> | TNiceActionResponse_JsonObject<any>,
+  ) => any,
+) {
+  return vi.fn().mockImplementation(async (_url: string, init: RequestInit) => {
+    const body = JSON.parse(init.body as string);
+    const result = handlerAction(body);
+    return {
+      ok: true,
+      json: () => Promise.resolve(result),
     };
   });
 }
